@@ -39,6 +39,7 @@ namespace ul
 		inline XMFLOAT4X4 GetProjectMatrix();
 		inline XMFLOAT4X4 TransposeMatrix(const XMFLOAT4X4* matrix);
 		void   SetProject(eCamaraProjectType, float, float, float, float);
+		XMFLOAT4& GetEyePos();
 		void   LookTo(XMFLOAT4& eye, XMFLOAT4& dir);
 		void   LookAt(XMFLOAT4& eye, XMFLOAT4& at);
 	};
@@ -60,6 +61,11 @@ namespace ul
 		transpose = XMMatrixTranspose(transpose);
 		XMStoreFloat4x4(&result, transpose);
 		return result;
+	}
+
+	XMFLOAT4& BaseCamara::GetEyePos()
+	{
+		return position_;
 	}
 
 	class FirstPersonCamara: public BaseCamara

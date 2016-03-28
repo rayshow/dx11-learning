@@ -79,22 +79,16 @@ FirstPersonCamara::eCamaraKey FirstPersonCamara::keyMap(ulUint keycode)
 	switch (keycode)
 	{
 	case 'A':
-		Log_Info("move left");
 		return eCamaraMoveLeft;
 	case 'D':
-		Log_Info("move right");
 		return eCamaraMoveRight;
 	case 'W':
-		Log_Info("move forward");
 		return eCamaraMoveForward;
 	case 'S':
-		Log_Info("move back");
 		return eCamaraMoveBackward;
 	case 'Q':
-		Log_Info("move up");
 		return eCamaraMoveUp;
 	case 'E':
-		Log_Info("move down");
 		return eCamaraMoveDown;
 	case VK_SPACE:
 		return eCamaraMoveReset;

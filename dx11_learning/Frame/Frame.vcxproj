@@ -89,6 +89,7 @@
     <ClInclude Include="Application.h" />
     <ClInclude Include="Camara.h" />
     <ClInclude Include="D3D.h" />
+    <ClInclude Include="Dx11FrameBuffer.h" />
     <ClInclude Include="Graphics.h" />
     <ClInclude Include="Input.h" />
     <ClInclude Include="util\d3d11_helper.h" />
@@ -98,7 +99,6 @@
     <ClInclude Include="util\singleton.h" />
     <ClInclude Include="util\timer.h" />
     <ClInclude Include="util\tools.h" />
-    <ClInclude Include="util\utils.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

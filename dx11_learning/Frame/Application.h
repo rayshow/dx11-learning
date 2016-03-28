@@ -15,6 +15,8 @@ using std::string;
 
 namespace ul
 {
+	const static float BLACK_COLOR[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+
 	class Application :public Singleton<Application>
 	{
 	private:
@@ -27,13 +29,14 @@ namespace ul
 		HWND      hWnd_;
 		HINSTANCE hInstance_;
 		Timer     timer_;
-
+		bool      initialized_;
 	public:
 		Application() :
 			width_(0),
 			height_(0),
 			appName_("Dx11Appcalition"),
-			fullscreen_(false)
+			fullscreen_(false),
+			initialized_(false)
 		{
 			s_Singleton = this;
 			Log_Info("application construct.");
@@ -59,15 +62,24 @@ namespace ul
 			graphics_.Initialize(width, height, hWnd_, true, fullscreen_);
 
 			this->InitResource( GetDevicePtr(), GetDeviceContextPtr() );
-		
+			initialized_ = true;
+
+
+			// Bring the window up on the screen and set it as main focus.
+			ShowWindow(hWnd_, SW_SHOW);
+			SetForegroundWindow(hWnd_);
+			SetFocus(hWnd_);
+
+
 			Log_Info("application %s initialized.", appName_.c_str());
+
 			return true;
 		}
 
 		void Run()
 		{
 			MSG msg;
-			while (true)
+			while (initialized_)
 			{
 				if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
 				{
@@ -75,10 +87,17 @@ namespace ul
 					DispatchMessage(&msg);
 				}
 
+				if (msg.message == WM_SIZE)
+				{
+					int nWidth = LOWORD(msg.lParam); // width of client area
+					int nHeight = HIWORD(msg.wParam); // height of client area
+					this->OnResize(nWidth, nHeight);
+				}
 				if (msg.message == WM_QUIT || false == frame())
 				{
 					break;
 				}
+
 			}
 		}
 
@@ -108,6 +127,7 @@ namespace ul
 
 		void OnResize(int width, int height)
 		{
+			
 			graphics_.GetD3D().Resize(width, height);
 			this->WindowResize(width, height, GetDevicePtr(), GetDeviceContextPtr());
 		}
@@ -141,7 +161,7 @@ namespace ul
 
 		virtual void UpdateScene(float elapse) = 0;
 
-	private:
+	protected:
 		bool initializeWindow(int width, int height);
 		bool frame(){ 
 			timer_.Frame();
@@ -161,7 +181,7 @@ namespace ul
 		{
 			return graphics_.GetD3D().GetDeviceContextPtr();
 		}
-		ID3D11RenderTargetView* GetMainRT()
+		ID3D11RenderTargetView* GetMainRT() 
 		{
 			return graphics_.GetD3D().GetMainRenderTargetPtr();
 		}
@@ -169,6 +189,19 @@ namespace ul
 		ID3D11DepthStencilView* GetMainDSV()
 		{
 			return graphics_.GetD3D().GetMainDepthStencilViewPtr();
+		}
+
+		void ClearRenderTarget(ID3D11RenderTargetView* rt)
+		{
+			GetDeviceContextPtr()->ClearRenderTargetView(rt, BLACK_COLOR);
+		}
+
+		void ClearRenderTargets(int num, ID3D11RenderTargetView** rt)
+		{
+			for (int i = 0; i < num; ++i)
+			{
+				ClearRenderTarget(rt[i]);
+			}
 		}
 	};
 

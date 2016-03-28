@@ -179,6 +179,39 @@ namespace ul
 		RefClassPtr refClassPtr;
 	};
 
+	template<class T>
+	class AutoDeletePtr
+	{
+		typedef T  RefClass;
+		typedef T* RefClassPtr;
+	public:
+		AutoDeletePtr()
+		{
+			refClassPtr = nullptr;
+		}
+		~AutoDeletePtr()
+		{
+			Safe_Delete(refClassPtr);
+		}
+
+		RefClassPtr Get()
+		{
+			return refClassPtr;
+		}
+		RefClassPtr* GetPtr()
+		{
+			return &refClassPtr;
+		}
+
+		RefClassPtr operator->()
+		{
+			return refClassPtr;
+		}
+
+	private:
+		RefClassPtr refClassPtr;
+	};
+
 
 	template<typename V>
 	inline void SAFE_RELEASE_VECTOR(V &v)

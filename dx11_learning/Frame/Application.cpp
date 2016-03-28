@@ -124,11 +124,6 @@ bool Application::initializeWindow(int width, int height)
 		WS_TILEDWINDOW,
 		posX, posY, screenWidth, screenHeight, NULL, NULL, hInstance_, NULL);
 
-	// Bring the window up on the screen and set it as main focus.
-	ShowWindow(hWnd_, SW_SHOW);
-	SetForegroundWindow(hWnd_);
-	SetFocus(hWnd_);
-
 	return true;
 }
 

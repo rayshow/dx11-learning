@@ -181,6 +181,7 @@ void D3D::Shutdown()
 		swapChain_->SetFullscreenState(false, nullptr);
 		
 	}
+	resourceMgr_->ReleaseLoadedResourcePerSwapChain();
 	resourceMgr_->ReleaseLoadedResourceOnExit();
 	Safe_Delete(resourceMgr_);
 

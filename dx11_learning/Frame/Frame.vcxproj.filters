@@ -62,13 +62,13 @@
     <ClInclude Include="util\tools.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="util\utils.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="util\d3d11_helper.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="util\timer.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Dx11FrameBuffer.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

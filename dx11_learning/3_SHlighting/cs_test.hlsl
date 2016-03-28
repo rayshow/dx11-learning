@@ -56,5 +56,7 @@ void copy(uint2 id : SV_DispatchThreadID)
 	coord = coord * 2 - 1;
 
 	float3 dir =  GetDirection(coord, 5);
-	outTexture[id] = srcTexture.SampleLevel(g_SampleTriLinear, dir, 0);
+		float4 color = srcTexture.SampleLevel(g_SampleTriLinear, dir, 0);
+	
+	outTexture[id] = color;
 }

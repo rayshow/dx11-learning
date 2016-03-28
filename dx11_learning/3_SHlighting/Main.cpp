@@ -45,7 +45,7 @@ public:
 	{
 		ResourceMgr *mgr = ResourceMgr::GetSingletonPtr();
 
-		envTexture_ = mgr->CreateTextureFromFile("../res/uffizi_cross.dds");
+		envTexture_ = mgr->CreateTextureFromFile("../res/stpeters_cross.dds");
 		ID3D11Resource* texture;
 		D3D11_TEXTURE2D_DESC desc;
 		envTexture_->GetResource(&texture);
@@ -147,9 +147,22 @@ public:
 	};
 
 
+	void TestComputerShader(ID3D11DeviceContext* context)
+	{
+		context->CSSetSamplers(0, 1, &trilinear);
+		context->CSSetShaderResources(0, 1, &envTexture_);
+		context->CSSetUnorderedAccessViews(0, 1, &processedUAV, nullptr);
+		context->CSSetConstantBuffers(0, 1, &resolutionBuffer_);
+		context->CSSetShader(cs_testPass, nullptr, 0);
+		context->Dispatch(ENV_MAP_WIDTH / THREAD_DIMENSION, ENV_MAP_WIDTH / THREAD_DIMENSION, 1);
+
+	}
+
 	void ShValueFirstCompute(ID3D11DeviceContext* context, int dispatchDimension, int curResolution, int face)
 	{
+
 		ShOutValueUAV = ShUnorderedStructs[0];
+		context->CSSetSamplers(0, 1, &trilinear);
 		context->CSSetShaderResources(0, 1, &envTexture_);
 		context->CSSetUnorderedAccessViews(1, 1, &ShOutValueUAV, nullptr);
 
@@ -203,15 +216,6 @@ public:
 
 
 
-	void TestComputerShader(ID3D11DeviceContext* context)
-	{
-		context->CSSetSamplers(0, 1, &trilinear);
-		context->CSSetShaderResources(0, 1, &envTexture_);
-		context->CSSetUnorderedAccessViews(0, 1, &processedUAV, nullptr);
-		context->CSSetConstantBuffers(0, 1, &resolutionBuffer_);
-		context->CSSetShader(cs_testPass, nullptr, 0);
-		context->Dispatch(ENV_MAP_WIDTH / THREAD_DIMENSION, ENV_MAP_WIDTH / THREAD_DIMENSION, 1);
-	}
 
 	virtual void RenderFrame(ID3D11Device *dev,
 		ID3D11DeviceContext* context)
@@ -219,18 +223,18 @@ public:
 		this->SetParameter(dev, context);
 
 
-		//if (!CS_test)
-		//{
-		//	TestComputerShader(context);
+		if (!CS_test)
+		{
+			TestComputerShader(context);
 
-		//	if (FAILED(D3DX11SaveTextureToFile(context, processedTexture, D3DX11_IFF_DDS, "copy.dds")))
-		//	{
-		//		printf("save texture  error .\n");
-		//	}
-		//	else{
-		//		CS_test = true;
-		//	}
-		//}
+			if (FAILED(D3DX11SaveTextureToFile(context, processedTexture, D3DX11_IFF_DDS, "5.dds")))
+			{
+				printf("save texture  error .\n");
+			}
+			else{
+				CS_test = true;
+			}
+		}
 
 		if (!ShCached)
 		{
@@ -261,7 +265,7 @@ public:
 					DispatchGroup = DispatchGroup / 2;
 					CurTextureDimension /= 2;
 				}
-				context->CopyResource(ShCpuValue, ShBufferVec[ShBufferVec.size() - 1]);
+				context->CopyResource(ShCpuValue, ShBufferVec[ShBufferVec.size()-1]);
 
 				D3D11_MAPPED_SUBRESOURCE MappedResource;
 				Fail_Return_Void(context->Map(ShCpuValue, 0, D3D11_MAP_READ, 0, &MappedResource));
