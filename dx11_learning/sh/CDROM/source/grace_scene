@@ -1,0 +1,93 @@
+// This defines a simplified version of the grace cathedral scene in
+// figure 1 of our paper.  For simplicity, we've included only the
+// diffusely shaded objects here, i.e. there's no background, texture
+// or specular reflections, and we have only the table, armadillo and
+// central diffuse sphere.
+//  Author: Ravi Ramamoorthi, last modified April 15, 2001
+
+
+scene "Grace Cathedral" {
+  geometry {
+    	{
+	  translate 0 -1.5 0.0 ;
+	  scale 3.0 .5 2.0 ;
+          ball "table" 1 0 0 0 1 {constrain 0;}
+	  object "table" {
+		model "cube" ;
+		shader "grace" ;
+		param "albedo" 2.882 ;
+	  }
+	}
+
+	{
+	  translate -2.5 -11.0 -1.5 ;
+	  scale .5 9.0 .5 ;
+          ball "leg1" 1 0 0 0 1 {constrain 0;}
+	  object "leg1" {
+		model "cube" ;
+		shader "grace" ;
+		param "albedo" 2.882 ;
+	  }
+	}
+
+	{
+	  translate 2.5 -11.0 1.5 ;
+	  scale .5 9.0 .5 ;
+          ball "leg2" 1 0 0 0 1 {constrain 0;}
+	  object "leg2" {
+		model "cube" ;
+		shader "grace" ;
+		param "albedo" 2.882 ;
+	  }
+	}
+
+	{
+	  translate -2.5 -11.0 1.5 ;
+	  scale .5 9.0 .5 ;
+          ball "leg3" 1 0 0 0 1 {constrain 0;}
+	  object "leg3" {
+		model "cube" ;
+		shader "grace" ;
+		param "albedo" 2.882 ;
+	  }
+	}
+
+	{
+	  translate 2.5 -11.0 -1.5 ;
+	  scale .5 9.0 .5 ;
+          ball "leg4" 1 0 0 0 1 {constrain 0;}
+	  object "leg4" {
+		model "cube" ;
+		shader "grace" ;
+		param "albedo" 2.882 ;
+	  }
+	}
+
+	{
+	  translate 0.00 -0.2 -1.0 ;
+	  scale 0.8 ;
+	  {
+	    ball "diffsphereball" 1 0 0 0 1 {constrain 0;}
+	    object "Sphere" {
+	      model "sphere" ;
+	      shader "grace" ;
+	      param "albedo" 6.5 ;
+	    }
+	  }
+	}
+
+	{
+	  translate 0.0 0.0 1.0 ;
+	  {
+	    translate 0 0.6 -0.5 ;
+	    ball "armiball" 1 0 0 0 1 {constrain 0;}
+	    object "armi" {
+	      model "armi" ;
+	      shader "grace" ;
+	      param "albedo" 6.5 ;
+	    }
+	  }
+	}
+  }
+  view { pos 0 0 10 ; dir 0 0 -1 ; up 0 1 0 ; }
+}
