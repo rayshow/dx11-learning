@@ -55,25 +55,28 @@ float3 GetDirection(float2 uv, int face)
 		switch (face)
 	{
 		case 0:
-			direction = float3(uv, 1);
-			break;
-		case 1:
-			direction = float3(uv, -1);
-			break;
-		case 2:
 			uv = uv.yx;
+			uv.y = -uv.y;
 			direction = float3(1, uv);
 			break;
-		case 3:
+		case 1:
 			uv = uv.yx;
 			direction = float3(-1, uv);
 			break;
-		case 4:
+		case 2:
 			uv.y = -uv.y;
 			direction = float3(uv.x, 1, uv.y);
 			break;
-		case 5:
+		case 3:
 			direction = float3(uv.x, -1, uv.y);
+			break;
+		case 4:
+
+			direction = float3(uv, 1);
+			break;
+		case 5:
+
+			direction = float3(uv, -1);
 			break;
 	}
 
@@ -106,6 +109,7 @@ void FirstPass(uint2 id : SV_DispatchThreadID)
 	Coeffs first;
 
 	float2 uv = (float2)id / resolution;
+	uv.y = 1 - uv.y;
 	uv = uv * 2 - 1;
 	float3 dir = GetDirection(uv, face);
 

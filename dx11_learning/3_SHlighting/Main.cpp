@@ -45,12 +45,20 @@ public:
 	{
 		ResourceMgr *mgr = ResourceMgr::GetSingletonPtr();
 
-		envTexture_ = mgr->CreateTextureFromFile("../res/stpeters_cross.dds");
+		envTexture_ = mgr->CreateTextureFromFile("../res/uffizi_cross.dds");
+
+		float r[9], g[9], b[9];
+		
 		ID3D11Resource* texture;
 		D3D11_TEXTURE2D_DESC desc;
 		envTexture_->GetResource(&texture);
 		((ID3D11Texture2D*)texture)->GetDesc(&desc);
 		ENV_MAP_WIDTH = desc.Width;
+		D3DX11SHProjectCubeMap(context, 3, (ID3D11Texture2D*)texture, r, g, b);
+		for (int i = 0; i < 9; ++i)
+		{
+			Log_Info("c.val[%d] = float3(%f, %f, %f);",i, r[i], g[i], b[i]);
+		}
 
 		// 环境贴图查找表
 		D3D11_TEXTURE2D_DESC lukupDesc;
@@ -137,7 +145,6 @@ public:
 
 		SamDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
 		Null_Return_Void((trilinear = mgr->CreateSamplerState(SamDesc)));  //三线性
-
 		Null_Return_Void((ShCpuValue = mgr->CreateBuffer(cpu_buffer_desc, nullptr)));
 		Null_Return_Void((SHvalueFirstPass = mgr->CreateComputeShader("main.hlsl", "FirstPass", "cs_5_0")));
 		Null_Return_Void((SHvalueNextPass =  mgr->CreateComputeShader("main.hlsl", "NextPass", "cs_5_0")));
@@ -155,7 +162,6 @@ public:
 		context->CSSetConstantBuffers(0, 1, &resolutionBuffer_);
 		context->CSSetShader(cs_testPass, nullptr, 0);
 		context->Dispatch(ENV_MAP_WIDTH / THREAD_DIMENSION, ENV_MAP_WIDTH / THREAD_DIMENSION, 1);
-
 	}
 
 	void ShValueFirstCompute(ID3D11DeviceContext* context, int dispatchDimension, int curResolution, int face)
@@ -213,9 +219,6 @@ public:
 		pConstants->face =1;
 		context->Unmap(resolutionBuffer_, 0);
 	}
-
-
-
 
 	virtual void RenderFrame(ID3D11Device *dev,
 		ID3D11DeviceContext* context)
@@ -295,7 +298,7 @@ public:
 			finalResult.sumWeight = resultWeight;
 			for (int i = 0; i < 9; ++i)
 			{
-				Log_Info("float3(%f, %f, %f);", finalResult.val[i].x, finalResult.val[i].y, finalResult.val[i].z);
+				Log_Info("c.val[%d] = float3(%f, %f, %f);", i,finalResult.val[i].x, finalResult.val[i].y, finalResult.val[i].z);
 			}
 			ShCached = true;
 		}

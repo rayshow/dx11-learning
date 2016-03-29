@@ -35,21 +35,32 @@ namespace ul
 		bool                mainCamara;
 
 	public:
-		inline XMFLOAT4X4 GetViewMatrix();
-		inline XMFLOAT4X4 GetProjectMatrix();
-		inline XMFLOAT4X4 TransposeMatrix(const XMFLOAT4X4* matrix);
+		inline XMFLOAT4X4  GetTransposeViewMatrix();
+		inline XMFLOAT4X4  GetTransposeProjectMatrix();
+		inline XMFLOAT4X4& GetViewMatrix();
+		inline XMFLOAT4X4& GetProjectMatrix();
+		inline XMFLOAT4X4  TransposeMatrix(const XMFLOAT4X4* matrix);
 		void   SetProject(eCamaraProjectType, float, float, float, float);
 		XMFLOAT4& GetEyePos();
 		void   LookTo(XMFLOAT4& eye, XMFLOAT4& dir);
 		void   LookAt(XMFLOAT4& eye, XMFLOAT4& at);
 	};
 
-	XMFLOAT4X4 BaseCamara::GetViewMatrix()
+	inline XMFLOAT4X4& BaseCamara::GetViewMatrix()
+	{
+		return view_;
+	}
+	inline XMFLOAT4X4& BaseCamara::GetProjectMatrix()
+	{
+		return project_;
+	}
+
+	XMFLOAT4X4 BaseCamara::GetTransposeViewMatrix()
 	{
 		return TransposeMatrix(&view_);
 	}
 
-	XMFLOAT4X4 BaseCamara::GetProjectMatrix()
+	XMFLOAT4X4 BaseCamara::GetTransposeProjectMatrix()
 	{
 		return TransposeMatrix(&project_);
 	}
@@ -63,7 +74,7 @@ namespace ul
 		return result;
 	}
 
-	XMFLOAT4& BaseCamara::GetEyePos()
+	inline XMFLOAT4& BaseCamara::GetEyePos()
 	{
 		return position_;
 	}

@@ -23,7 +23,8 @@ LRESULT CALLBACK MessageProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			//client size
 			int nWidth = LOWORD(lparam); // width of client area
 			int nHeight = HIWORD(lparam); // height of client area
-			app->OnResize(nWidth, nHeight);
+			if (nWidth>=1&&nHeight>=1)
+				app->OnResize(nWidth, nHeight);
 			return 0;
 		}
 		case WM_PAINT:

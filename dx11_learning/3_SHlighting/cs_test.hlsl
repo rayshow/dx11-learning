@@ -19,28 +19,28 @@ float3 GetDirection(float2 uv, int face)
 		switch (face)
 	{
 		case 0:
-			direction = float3(uv, 1);
-			break;
-		case 1:
-			direction = float3(uv, -1);
-			break;
-		case 2:
 			uv = uv.yx;
+			uv.y = -uv.y;
 			direction = float3(1, uv);
 			break;
-		case 3:
+		case 1:
 			uv = uv.yx;
 			direction = float3(-1, uv);
 			break;
-		case 4:
+		case 2:
 			uv.y = -uv.y;
 			direction = float3(uv.x, 1, uv.y);
 			break;
-		case 5:
+		case 3:
 			direction = float3(uv.x, -1, uv.y);
 			break;
-		default:
-			direction = float3(1, 1, 1);
+		case 4:
+			
+			direction = float3( uv, 1);
+			break;
+		case 5:
+			
+			direction = float3(uv, -1);
 			break;
 	}
 
@@ -55,7 +55,7 @@ void copy(uint2 id : SV_DispatchThreadID)
 	coord.y = 1 - coord.y;
 	coord = coord * 2 - 1;
 
-	float3 dir =  GetDirection(coord, 5);
+	float3 dir =  GetDirection(coord,5);
 		float4 color = srcTexture.SampleLevel(g_SampleTriLinear, dir, 0);
 	
 	outTexture[id] = color;

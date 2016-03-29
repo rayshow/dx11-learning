@@ -42,6 +42,7 @@ bool D3D::Initialize(
 
 	for (ulUint i = 0; i < numberModes; ++i)
 	{
+		//Log_Info("width %d height %d", displayModeListPtr[i].Width, displayModeListPtr[i].Height);
 		if (displayModeListPtr[i].Width == width &&
 			displayModeListPtr[i].Height == height)
 		{
@@ -60,6 +61,8 @@ bool D3D::Initialize(
 	swapChainDesc.BufferDesc.Width = width;
 	swapChainDesc.BufferDesc.Height = height;
 	swapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	numerator = 0;
+	denominator = 1;
 	if (enableVsyn_)
 	{
 		swapChainDesc.BufferDesc.RefreshRate.Numerator = numerator;

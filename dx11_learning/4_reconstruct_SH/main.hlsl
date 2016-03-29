@@ -8,9 +8,10 @@ cbuffer cbPerObject : register(b0)
 	float4x4 colorConvent[3];
 }
 
-cbuffer cbEnvMap
+cbuffer cbEnvMap: register(b1)
 {
-	float4x4 g_invProjView;
+	float4x4 g_invView;
+	float4x4 g_invProj;
 	float4   g_camaraEye;
 };
 
@@ -95,16 +96,19 @@ PS_SingleOutput PS_Display(PS_TranslateInput I)
 {
 	PS_SingleOutput O;
 	float2 coord = I.f2TexCoord;
-	float3 depth = depthBuffer.SampleLevel(g_SampleTrilinear, coord, 0);
+	float  depth = depthBuffer.SampleLevel(g_SampleTrilinear, coord, 0).r;
 	float3 color = colorBuffer.SampleLevel(g_SampleTrilinear, coord, 0);
 
+	if (depth == 0)
+	{
+		float3 posView = screenToCamara(coord, 1, g_invProj);
+		float3 posWorld = mul(posView, (float3x3)g_invView);
+		float3 eyeToPoint = normalize(g_camaraEye - posWorld);
+		eyeToPoint.y = -eyeToPoint.y;
+		color = env.SampleLevel(g_SampleTrilinear, eyeToPoint, 0);
+	}
 
-
-
-	if (depth.x == 0)
-		O.rt0.rgb = float3(1, 0, 0);
-	else
-		O.rt0.rgb = color;
+	O.rt0.rgb = color;
 	return O;
 }
 
@@ -122,18 +126,47 @@ void SH_Y2(float3 n, inout float sh[9])
 	sh[8] = 0.546274215296f * (n.x * n.x - n.y * n.y);
 }
 
-void SHResult(inout Coeffs c)
+void SHResult_stpeters_cross(inout Coeffs c)
 {
-	c.val[0] = float3(3.629553, 2.629230, 2.330241);
-	c.val[1] = float3(-1.758101, -1.436402, -1.259139);
-	c.val[2] = float3(-0.248311, -0.101627, -0.010648);
-	c.val[3] = float3(-0.345998, -0.223130, -0.101090);
-	c.val[4] = float3(0.202062, 0.146508, 0.045813);
-	c.val[5] = float3(0.466751, 0.253007, 0.116325);
-	c.val[6] = float3(-0.901142, -0.762130, -0.741006);
-	c.val[7] = float3(-0.044793, -0.033679, 0.004262);
-	c.val[8] = float3(-0.821333, -0.322317, 0.033945);
+	c.val[0] = float3(3.627909, 2.628220, 2.329475);
+	c.val[1] = float3(-1.764583, -1.440238, -1.262240);
+	c.val[2] = float3(-0.245652, -0.099981, -0.009327);
+	c.val[3] = float3(-0.345937, -0.223090, -0.101011);
+	c.val[4] = float3(0.201632, 0.146153, 0.045499);
+	c.val[5] = float3(0.471821, 0.255883, 0.118612);
+	c.val[6] = float3(-0.900894, -0.761977, -0.740918);
+	c.val[7] = float3(-0.047082, -0.035095, 0.003084);
+	c.val[8] = float3(-0.820679, -0.321894, 0.034262);
 }
+
+void SHResult_uffizi_cross(inout Coeffs c)
+{
+	c.val[0] = float3(3.176455, 3.083038, 3.506252);
+	c.val[1] = float3(-3.708286, -3.678735, -4.274433);
+	c.val[2] = float3(-0.026662, -0.024183, -0.030795);
+	c.val[3] = float3(0.081442, 0.084279, 0.113477);
+	c.val[4] = float3(-0.186518, -0.188335, -0.246335);
+	c.val[5] = float3(0.094862, 0.087919, 0.101911);
+	c.val[6] = float3(-2.790150, -2.753834, -3.186087);
+	c.val[7] = float3(-0.005642, -0.003932, -0.002459);
+	c.val[8] = float3(-2.413705, -2.405697, -2.838634);
+}
+
+
+void SHResult_rnl_cross(inout Coeffs c)
+{
+	c.val[0] = float3(3.793014, 4.273633, 4.521361);
+	c.val[1] = float3(-2.892342, -3.593026, -4.153489);
+	c.val[2] = float3(0.389177, 0.305846, 0.108674);
+	c.val[3] = float3(1.035336, 1.033241, 0.885729);
+	c.val[4] = float3(-0.618883, -0.551082, -0.393519);
+	c.val[5] = float3(-0.079163, 0.146668, 0.469398);
+	c.val[6] = float3(-0.934035, -1.254196, -1.528312);
+	c.val[7] = float3(0.582851, 0.513954, 0.375490);
+	c.val[8] = float3(0.208647, -0.038505, -0.446823);
+}
+
+
 
 float3 convolve(float sh[9], Coeffs result)
 {
@@ -155,10 +188,10 @@ PS_DoubleOutput PS_FillBufferPass(PS_TranslateInput I)
 	float sh[9];
 	Coeffs result;
 	SH_Y2(normal.xyz, sh);
-	SHResult(result);
+	SHResult_stpeters_cross(result);
 	float3 color = convolve(sh, result);
 
-	O.rt0.rgb = color;
+	O.rt0.rgb = color / (1 + color);
 	O.rt1.r = I.f4Position.z / I.f4Position.w;
 
 	return O;

@@ -56,21 +56,25 @@ namespace ul
 			this->width_  = width;
 			this->height_ = height;
 
+			//init window
 			fullscreen_ = false;
 			this->initializeWindow(width, height);
 			input_.Initialize();
-			graphics_.Initialize(width, height, hWnd_, true, fullscreen_);
+			
+			//init graphics
+			RECT rect;
+			GetClientRect(hWnd_, &rect);
+			graphics_.Initialize(rect.right, rect.bottom, hWnd_, true, fullscreen_);
 
+			//call InitResource 
 			this->InitResource( GetDevicePtr(), GetDeviceContextPtr() );
-			initialized_ = true;
-
-
-			// Bring the window up on the screen and set it as main focus.
+			
+			// when initialized show window
 			ShowWindow(hWnd_, SW_SHOW);
 			SetForegroundWindow(hWnd_);
 			SetFocus(hWnd_);
 
-
+			initialized_ = true;
 			Log_Info("application %s initialized.", appName_.c_str());
 
 			return true;
@@ -86,18 +90,10 @@ namespace ul
 					TranslateMessage(&msg);
 					DispatchMessage(&msg);
 				}
-
-				if (msg.message == WM_SIZE)
-				{
-					int nWidth = LOWORD(msg.lParam); // width of client area
-					int nHeight = HIWORD(msg.wParam); // height of client area
-					this->OnResize(nWidth, nHeight);
-				}
 				if (msg.message == WM_QUIT || false == frame())
 				{
 					break;
 				}
-
 			}
 		}
 

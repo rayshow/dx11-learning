@@ -20,7 +20,8 @@ struct CB_PerFrame
 
 struct CB_EnvMap
 {
-	XMFLOAT4X4 invProjView;
+	XMFLOAT4X4 invView;
+	XMFLOAT4X4 invProj;
 	XMFLOAT4   eyePos;
 };
 
@@ -136,11 +137,17 @@ public:
 		context->RSSetState(resterState_);
 		context->PSSetSamplers(0, 1, &TriLinerSampler_);
 
-		XMFLOAT4X4 v = camara_.GetViewMatrix();
+		XMFLOAT4X4 tv = camara_.GetTransposeViewMatrix();
+		XMFLOAT4X4 tp = camara_.GetTransposeProjectMatrix();
 		XMFLOAT4X4 p = camara_.GetProjectMatrix();
-		XMMATRIX invProjView = XMMatrixMultiply(XMLoadFloat4x4(&p), XMLoadFloat4x4(&v));
+		XMFLOAT4X4 v = camara_.GetViewMatrix();
+
+	
 		XMVECTOR det;
-		invProjView = XMMatrixInverse(&det, invProjView);
+		XMMATRIX invProj = XMMatrixInverse(&det, XMLoadFloat4x4(&p) );
+		XMMATRIX invView = XMMatrixInverse(&det, XMLoadFloat4x4(&v) );
+		invProj = XMMatrixTranspose(invProj);
+		invView = XMMatrixTranspose(invView);
 
 		//mvp
 		D3D11_MAPPED_SUBRESOURCE MappedResource;
@@ -150,17 +157,17 @@ public:
 		CB_PerFrame* pConstants = (CB_PerFrame*)MappedResource.pData;
 		
 		pConstants->world = world_;
-		pConstants->view =  v;
-		pConstants->project = p;
+		pConstants->view =  tv;
+		pConstants->project = tp;
 		
 		context->Unmap(perframeBuffer_, 0);
 
 		//envmap
-		D3D11_MAPPED_SUBRESOURCE MappedResource;
-		memset(&MappedResource, 0, sizeof(D3D11_MAPPED_SUBRESOURCE));
 		Fail_Return_Void(context->Map(envmapBuffer_, 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedResource));
 		CB_EnvMap* envmap = (CB_EnvMap*)MappedResource.pData;
-		XMStoreFloat4x4(&envmap->invProjView, invProjView);
+		XMStoreFloat4x4(&envmap->invProj, invProj);
+		XMStoreFloat4x4(&envmap->invView, invView);
+
 		envmap->eyePos = camara_.GetEyePos();
 		context->Unmap(envmapBuffer_, 0);
 	}
@@ -187,11 +194,12 @@ public:
 		context->OMSetRenderTargets(1, &mainRT, nullptr);
 		ID3D11ShaderResourceView* two[3] = { envTexture_, colorSRV_, depthSRV_ };
 		context->PSSetShaderResources(0, 3, two);
+		context->VSSetConstantBuffers(1, 1, &envmapBuffer_);
+		context->PSSetConstantBuffers(1, 1, &envmapBuffer_);
 		context->VSSetShader(fullScreenVertex_, nullptr, 0);
 		context->PSSetShader(fullScreenPixel_, nullptr, 0);
 		context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		context->Draw(3, 0);
-
 
 		ID3D11ShaderResourceView*    pSRV[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 		context->PSSetShaderResources(0, 8, pSRV);
