@@ -35,9 +35,9 @@ public:
 
 		ModelReader reader;
 		ModelData data;
-		reader.Load("../res/ty_model/", "../res/ty_model/slj_zwshu0060_wb.model", true, &data);
+		reader.Load("../res/ty_model/", "../res/ty_model/slj_zwshu0060_wb.model", true, true, data);
 		tree_.create(dev, data);
-		ModelData_Free(&data);
+		ModelData_Free(data);
 
 		Null_Return_Void((
 			modelVertex_ = mgr->CreateVertexShaderAndInputLayout(
@@ -88,6 +88,7 @@ public:
 		context->IASetInputLayout(xyznuvtbwwiii_);
 		context->RSSetState(resterState_);
 		context->PSSetSamplers(0, 1, &LinerSampler_);
+		
 
 		XMFLOAT4X4 tv = camara_.GetTransposeViewMatrix();
 		XMFLOAT4X4 tp = camara_.GetTransposeProjectMatrix();

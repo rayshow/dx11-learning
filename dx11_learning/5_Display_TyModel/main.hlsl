@@ -85,11 +85,14 @@ PS_SingleOutput PS_FillBuffer(PS_TranslateInput I)
 	PS_SingleOutput O;
 	float2 coord = I.f2TexCoord;
 
-	float4 diffuse = g_Diffuse.SampleLevel(g_SampleLinear, coord, 0);
-	float4 normal = g_Normal.SampleLevel(g_SampleLinear, coord, 0);
-	float4 specular = g_Specular.SampleLevel(g_SampleLinear, coord, 0);
+		float4 diffuse = g_Diffuse.SampleLevel(g_SampleLinear, coord, 0);
+		float4 normal = g_Normal.SampleLevel(g_SampleLinear, coord, 0);
+		float4 specular = g_Specular.SampleLevel(g_SampleLinear, coord, 0);
+		O.rt0.rgb = diffuse;//float4(1, 0, 0, 1);// 
+		if (diffuse.a <= 0.3)
+			discard;
 
-	O.rt0.rgb =  diffuse;//float4(1, 0, 0, 1);//
+	
 
 	return O;
 }

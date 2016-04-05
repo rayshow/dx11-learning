@@ -11,9 +11,8 @@
 #define VERTEX_FLAG        "vertices"
 #define INDICE_FLAG        "indices"
 
-
-#define VERTEX_FORMAT_XYZNUVTB		    "xyznuvtb"
 #define VERTEX_FORMAT_XYZNUV		    "xyznuv"
+#define VERTEX_FORMAT_XYZNUVTB		    "xyznuvtb"
 #define VERTEX_FORMAT_XYZNUV2TB		    "xyznuv2tb"
 #define VERTEX_FORMAT_XYZNUVIIIWWTB		"xyznuviiiwwtb"
 #define VERTEX_FORMAT_XYZNUVIIIIWWWTB	"xyznuviiiiwwwtb"
@@ -38,14 +37,14 @@ struct sec_info_t
 typedef std::vector<sec_info_t> sec_info_list;
 
 
-struct ModelVertex
+struct VertexXyzNuv
 {
 	float		pos_[3];
 	float		normal_[3];
 	float		uv_[2];
 	
-	ModelVertex(){}
-	ModelVertex(float *pos,
+	VertexXyzNuv(){}
+	VertexXyzNuv(float *pos,
 		float *normal,
 		float *uv)
 	{
@@ -55,44 +54,53 @@ struct ModelVertex
 	}
 };
 
-struct VertexXyznuviiiwwtb : ModelVertex
-{
-	float      tangent_[3];
-	float      binormal_[3];
-	unsigned char      iii_[4];
-	unsigned char       ww_[4];
 
-	VertexXyznuviiiwwtb(){}
-	VertexXyznuviiiwwtb(
+struct VertexXyznuvtb : VertexXyzNuv
+{
+	float tangent_[3];
+	float binormal_[3];
+
+	VertexXyznuvtb(){}
+	VertexXyznuvtb(
+		float *pos,
+		float *normal,
+		float *uv,
+		float *tangent,
+		float *binormal) :VertexXyzNuv(pos, normal, uv)
+	{
+		memcpy(tangent_,  tangent, sizeof(float) * 3);
+		memcpy(binormal_, binormal, sizeof(float) * 3);
+	}
+};
+
+struct VertexXyznuvtbiiiww : VertexXyznuvtb
+{
+	float		       tangent_[3];
+	float			   binormal_[3];
+	unsigned char      iii_[4];
+	unsigned char      ww_[4];
+
+	VertexXyznuvtbiiiww(
 		float *pos,
 		float *normal,
 		float *uv,
 		float *tangent,
 		float *binormal,
-		float *iii,
-		float *ww
-		) :ModelVertex(pos, normal, uv)
+		unsigned char *iii,
+		unsigned char *ww
+		) :VertexXyznuvtb(pos, normal, uv, tangent, binormal)
 	{
-		//memcpy(tangent_, tangent, sizeof(float)* 3);
-		//memcpy(binormal, binormal, sizeof(float)* 3);
-		//memcpy(iii_, iii, sizeof(char)* 3);
-		//memcpy(ww_, ww, sizeof(char)* 2);
+		
 	}
 
-	static void print_data(VertexXyznuviiiwwtb&v, char* msg)
-	{
-	/*	sprintf(msg, "pos[%f, %f, %f], normal[%f, %f, %f], uv[%f, %f], tangent[%f, %f, %f], binormal[%f, %f, %f], iii[%d, %d, %d], ww[%d, %d]",
-			v.pos_[X], v.pos_[Y], v.pos_[Z], v.normal_[X], v.normal_[Y], v.normal_[Z], 
-			v.uv_[X], v.uv_[Y], v.tangent_[X], v.tangent_[Y], v.tangent_[Z], 
-			v.binormal_[X], v.binormal_[Y], v.binormal_[Z], 
-			v.iii_[X], v.iii_[Y], v.iii_[Z], v.ww_[X], v.ww_[Y]);*/
-	}
+
 };
 
 
 enum eVerticeType{
-	Vertex_XYZNUV,
-	Vertex_XYZNUVIIIWWTB,
+	eVertex_XYZNUV,
+	eVertex_XYZNUVTB,
+	eVertex_XYZNUVTBIIIWW,
 };
 
 struct group_info9
@@ -103,52 +111,45 @@ struct group_info9
 	int vertices;
 };
 
-struct group_info11
-{
-	int startIndex;
-	int indiceCount;
-	int startVertex;
-	int vertexCount;
-};
-
-struct PrimitiveData{
-	int verticeNum_;
-	eVerticeType type_;
-	byte                                   *verticesData_;
-	std::vector<unsigned short>            indices;
-	std::vector<group_info11*>             groups;
-};
-
 
 struct MaterialData{
-	std::string identifer;
-	std::string diffuseTexMap;
-	std::string normalTexMap;
-	std::string specularTexMap;
-	std::string rgbTexMap;
-	std::string renseTexMap;
-	std::string diffuseTexMap2;
+	std::string				 identifer;
+	int						 texCount;
+	std::vector<std::string> texturePath;
+};
+
+
+struct group_info11
+{
+	int indexOffset_;
+	int indexCount_;
+	MaterialData material_;
+};
+
+struct PrimitiveData
+{	
+	eVerticeType						   type_;
+	int									   verticeNum_;
+	int                                    stride_;
+	std::vector<byte>                      verticeBuffer_;
+	std::vector<unsigned short>            indices_;
 };
 
 
 struct ModelData
 {
-	PrimitiveData primData;
-	MaterialData  matData;
+	PrimitiveData						   primData;
+	std::vector<group_info11*>             groups_;
 };
 
 
-inline void ModelData_Free(ModelData* d)
+inline void ModelData_Free(ModelData& data)
 {
-	for (int i = 0; i < d->primData.groups.size(); ++i)
+	for (int i = 0; i < data.groups_.size(); ++i)
 	{
-		Safe_Delete(d->primData.groups[i]);
+		Safe_Delete(data.groups_[i]);
 	}
-	d->primData.groups.erase(d->primData.groups.begin(), d->primData.groups.end());
-
-	Safe_Delete_Array(d->primData.verticesData_);
 }
-
 
 inline int PAD(unsigned long size, int padding)
 {
@@ -172,19 +173,19 @@ inline void UNPACKNORMAL(unsigned int packNromal, float* ret)
 class ModelReader{
 public:
 	static bool Load(
-		const std::string& resDir,
+		const std::string& textureDir,
 		const std::string& modelName,
-		bool noBelong,
-		ModelData* data);
+		bool loadAsSingleModel,
+		bool useDDSTexture,
+		ModelData& data);
 
 private:
 	static bool LoadPrimitivesFile(
-		PrimitiveData& data,
+		ModelData& data,
 		const std::string& primName);
 
 	static bool LoadMaterialFile(
-		const std::string respath,
-		MaterialData& data,
+		ModelData& data,
 		const std::string& matName);
 
 	static bool ReadVerticesData(
@@ -193,7 +194,7 @@ private:
 		FILE *fp);
 
 	static bool ReadIndicesData(
-		PrimitiveData& data,
+		ModelData& data,
 		sec_info_t& info,
 		FILE *fp);
 

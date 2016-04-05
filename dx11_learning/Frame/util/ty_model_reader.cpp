@@ -16,19 +16,20 @@ using namespace rapidxml;
 
 
 bool ModelReader::Load(
-	const std::string& resDir,
+	const std::string& textureDir,
 	const std::string& modelName,
-	bool longlyRead,
-	ModelData* data)
+	bool loadAsSingleModel,
+	bool useDDSTexture,
+	ModelData& data)
 {
-	std::string dir = resDir;
+	std::string dir = textureDir;
 	std::string localDir="";
 	//preprocess
 	if (modelName.length() == 0)
 	{
 		return false;
 	}
-	int off = (std::max)((int)resDir.find_last_of("/"), (int)resDir.find_last_of("\\")) + 1;
+	int off = (std::max)((int)textureDir.find_last_of("/"), (int)textureDir.find_last_of("\\")) + 1;
 	if (off != dir.length())
 	{
 		dir += "/";
@@ -39,7 +40,7 @@ bool ModelReader::Load(
 		localDir = modelName.substr(0, off);
 	}
 	
-	std::string fullName = longlyRead? modelName : dir + modelName;// +MODEL_APPENDIX;
+	std::string fullName = loadAsSingleModel ? modelName : dir + modelName;// +MODEL_APPENDIX;
 
 	bool ret = false;
 	char visualName[MAX_PATH];
@@ -64,7 +65,6 @@ bool ModelReader::Load(
 			if( (nodelessVisual = root->first_node("nodelessVisual")) == nullptr)
 				nodelessVisual = root->first_node("nodefullVisual");
 
-
 			if (nodelessVisual)
 			{
 				//.visual file name
@@ -72,12 +72,12 @@ bool ModelReader::Load(
 				std::string visualPath(visualName);
 
 				//full path under game res dir
-				if (!longlyRead)
+				if (!loadAsSingleModel)
 				{
 					primitiveName = dir + visualPath + PRIMITIVE_APPENDIX;
 					materialName  = dir + visualPath + MATERIAL_APPENDIX;
 				}
-				else{//single read
+				else{
 					int seperateOff = visualPath.find_last_of('/')+1;
 					onlyName = visualPath.substr(seperateOff, visualPath.length() - seperateOff);
 					primitiveName = localDir + onlyName + PRIMITIVE_APPENDIX;
@@ -85,23 +85,34 @@ bool ModelReader::Load(
 				}
 				
 				//read primitive data
-				ret = LoadPrimitivesFile(data->primData, primitiveName);
+				ret = LoadPrimitivesFile(data, primitiveName);
 
 				//read material data
-				ret &= LoadMaterialFile(dir, data->matData, materialName);
+				ret &= LoadMaterialFile( data, materialName);
 
-				if (longlyRead)
+				string texPath;
+
+				//remove dirPath from read and add textureDir
+				for (int i = 0; i < data.groups_.size(); ++i)
 				{
-					int lastDiv = data->matData.diffuseTexMap.find_last_of('/');
-					data->matData.diffuseTexMap = dir + data->matData.diffuseTexMap.substr(lastDiv + 1);
-					lastDiv = data->matData.specularTexMap.find_last_of('/');
-					data->matData.specularTexMap = dir + data->matData.specularTexMap.substr(lastDiv + 1);
-					lastDiv = data->matData.normalTexMap.find_last_of('/');
-					data->matData.normalTexMap = dir + data->matData.normalTexMap.substr(lastDiv + 1);
-					lastDiv = data->matData.renseTexMap.find_last_of('/');
-					data->matData.renseTexMap = dir + data->matData.renseTexMap.substr(lastDiv + 1);
-					lastDiv = data->matData.rgbTexMap.find_last_of('/');
-					data->matData.rgbTexMap = dir + data->matData.rgbTexMap.substr(lastDiv + 1);
+					group_info11* groupInfo = data.groups_[i];
+					for (int j = 0; j < groupInfo->material_.texCount; ++j)
+					{
+						texPath = groupInfo->material_.texturePath[j];
+
+						if (useDDSTexture)
+						{
+							int lastDot = texPath.find_last_of('.');
+							texPath = texPath.substr(0, lastDot) + ".dds";
+						}
+
+						if (loadAsSingleModel)
+						{
+							int lastSeperate = texPath.find_last_of('/');
+							texPath = dir + texPath.substr(lastSeperate + 1);
+						}
+						groupInfo->material_.texturePath[j] = texPath;
+					}
 				}
 
 				if ( !ret )
@@ -112,27 +123,15 @@ bool ModelReader::Load(
 		}
 	}
 	catch (std::exception ex){
-	
 		return false;
 	}
-
-	int dotoff = data->matData.diffuseTexMap.find_last_of('.');
-	data->matData.diffuseTexMap = data->matData.diffuseTexMap.substr(0, dotoff) + ".dds";
-	dotoff = data->matData.specularTexMap.find_last_of('.');
-	data->matData.specularTexMap = data->matData.specularTexMap.substr(0, dotoff) + ".dds";
-	dotoff = data->matData.normalTexMap.find_last_of('.');
-	data->matData.normalTexMap = data->matData.normalTexMap.substr(0, dotoff) + ".dds";
-	dotoff = data->matData.renseTexMap.find_last_of('.');
-	data->matData.renseTexMap = data->matData.renseTexMap.substr(0, dotoff) + ".dds";
-	dotoff = data->matData.rgbTexMap.find_last_of('.');
-	data->matData.rgbTexMap = data->matData.rgbTexMap.substr(0, dotoff) + ".dds";
 
 	return true;
 }
 
 
 bool ModelReader::LoadPrimitivesFile(
-	PrimitiveData& data,
+	ModelData& data,
 	const std::string& primName)
 {
 	FILE *fp;
@@ -142,8 +141,6 @@ bool ModelReader::LoadPrimitivesFile(
 		assert(0);
 		return false;
 	}
-
-	
 
 	//valid magic number
 	unsigned long magic_number = 0;
@@ -227,7 +224,7 @@ bool ModelReader::LoadPrimitivesFile(
 		if (sec_list[i].sec_file_name.find(VERTEX_FLAG) != std::string::npos ||
 			sec_list[i].sec_file_name == VERTEX_FLAG)
 		{
-			if (!ReadVerticesData(data, sec_list[i], fp))
+			if (!ReadVerticesData(data.primData, sec_list[i], fp))
 			{
 				fclose(fp);
 				assert(0);
@@ -311,14 +308,14 @@ bool ModelReader::ReadVerticesData(
 	else if (VERTEX_FORMAT_XYZNUVTB == vertexFormatClean)
 	{
 		data.verticeNum_ = vertex_number;
-		data.type_ = Vertex_XYZNUVIIIWWTB;
-		data.verticesData_ = new byte[vertex_number*sizeof(VertexXyznuviiiwwtb)];
-		
+		data.type_ = eVertex_XYZNUVTBIIIWW;
+		data.stride_ = sizeof(VertexXyznuvtbiiiww);
+		data.verticeBuffer_.resize(vertex_number*data.stride_);
+		VertexXyznuvtbiiiww* buffer = static_cast<VertexXyznuvtbiiiww*>((void*)&data.verticeBuffer_[0]);
+
 		for (int i = 0; i < vertex_number; i++)
 		{
-		    VertexXyznuviiiwwtb *new_vertex = &((VertexXyznuviiiwwtb*)data.verticesData_)[i];
-			memset(new_vertex, 0, sizeof(VertexXyznuviiiwwtb));
-
+			VertexXyznuvtbiiiww *new_vertex = &buffer[i];
 			fread(&new_vertex->pos_, sizeof(float)* 3, 1, fp);
 			fread(&uint_normal, sizeof(unsigned int), 1, fp);
 			UNPACKNORMAL(uint_normal, new_vertex->normal_);
@@ -349,14 +346,16 @@ bool ModelReader::ReadVerticesData(
 	else if (VERTEX_FORMAT_XYZNUVIIIWWTB == vertexFormatClean)
 	{
 		data.verticeNum_ = vertex_number;
-		data.type_ = Vertex_XYZNUVIIIWWTB;
-		data.verticesData_ = new byte[vertex_number*sizeof(VertexXyznuviiiwwtb)];
+		data.type_ = eVertex_XYZNUVTBIIIWW;
+		data.stride_ = sizeof(VertexXyznuvtbiiiww);
+		data.verticeBuffer_.resize(vertex_number*data.stride_);
+		VertexXyznuvtbiiiww* buffer = static_cast<VertexXyznuvtbiiiww*>((void*)&data.verticeBuffer_[0]);
 		
 		char msg[1024];
 		for (int i = 0; i < vertex_number; i++)
 		{
-			VertexXyznuviiiwwtb *new_vertex = &((VertexXyznuviiiwwtb*)data.verticesData_)[i];
-			memset(new_vertex, 0, sizeof(VertexXyznuviiiwwtb));
+			VertexXyznuvtbiiiww *new_vertex = &buffer[i];
+			memset(new_vertex, 0, sizeof(VertexXyznuvtbiiiww));
 
 			fread(&new_vertex->pos_, sizeof(float)* 3, 1, fp);
 			fread(&uint_normal, sizeof(unsigned int), 1, fp);
@@ -370,20 +369,7 @@ bool ModelReader::ReadVerticesData(
 			UNPACKNORMAL(uint_tangent, new_vertex->tangent_);
 			fread(&uint_binormal, sizeof(unsigned int), 1, fp);
 			UNPACKNORMAL(uint_binormal, new_vertex->binormal_);
-
-
-
-			//fread(vertexformat, sizeof(char), 3, fp);            //iii
-			//fread(vertexformat, sizeof(char), 2, fp);            //ww
-
-			//fread(&uint_tangent, sizeof(unsigned int), 1, fp);
-			//UNPACKNORMAL(uint_tangent, normal);
-			//fread(&uint_binormal, sizeof(unsigned int), 1, fp);
-			//UNPACKNORMAL(uint_binormal, normal);
-			int a = 0;
-		
 		}
-		int a = 0;
 	}
 
 	else if (VERTEX_FORMAT_XYZNUVP2 == vertexFormatClean)
@@ -466,7 +452,7 @@ bool ModelReader::ReadVerticesData(
 }
 
 bool ModelReader::ReadIndicesData(
-	PrimitiveData& data,
+	ModelData& data,
 	sec_info_t& sec,
 	FILE *fp)
 {
@@ -483,22 +469,20 @@ bool ModelReader::ReadIndicesData(
 	for (int i = 0; i < index_number; i++)
 	{
 		fread(&index, sizeof(unsigned short), 1, fp);
-		data.indices.push_back(index);
+		data.primData.indices_.push_back(index);
 	}
 
-	data.groups.resize(group_number);
+	data.groups_.resize(group_number);
 	for(int i=0; i<group_number; ++i)
 	{
 		group_info9 info9;
 		fread(&info9, sizeof(group_info9), 1, fp);
-		data.groups[i] = new group_info11;
-		data.groups[i]->indiceCount = info9.primitives*3;
-		data.groups[i]->startIndex = info9.startIndex;
-		data.groups[i]->startVertex = info9.startVertex;
-		data.groups[i]->vertexCount = info9.vertices;
+		data.groups_[i] = new group_info11;
+		data.groups_[i]->indexCount_ = info9.primitives * 3;
+		data.groups_[i]->indexOffset_ = info9.startIndex;
 	}
 
-	if (data.indices.size() <= 0)
+	if (data.primData.indices_.size() <= 0 || data.groups_.size()<0)
 	{
 		assert(0);
 		return false;
@@ -507,8 +491,7 @@ bool ModelReader::ReadIndicesData(
 }
 
 bool ModelReader::LoadMaterialFile(
-	const std::string respath,
-	MaterialData& data,
+	ModelData& modelData,
 	const std::string& matName)
 {
 	std::string  val;
@@ -532,7 +515,6 @@ bool ModelReader::LoadMaterialFile(
 			//bounding box
 			if (!boundingBox)
 			{
-		
 				assert(0);
 				return false;
 			}
@@ -545,7 +527,6 @@ bool ModelReader::LoadMaterialFile(
 					ss >> min[X] >> min[Y] >> min[Z];
 				}
 				else{
-		
 					assert(0);
 					return false;
 				}
@@ -557,7 +538,6 @@ bool ModelReader::LoadMaterialFile(
 					ss >> max[X] >> max[Y] >> max[Z];
 				}
 				else{
-		
 					assert(0);
 					return false;
 				}
@@ -577,101 +557,57 @@ bool ModelReader::LoadMaterialFile(
 			xml_node<> *geometry = renderSet->first_node("geometry");
 			if (!geometry)
 			{
-				
 				assert(0);
 				return false;
 			}
 
 			//primitiveGroup
 			xml_node<> *primitiveGroup = geometry->first_node("primitiveGroup");
-			
 			if (!primitiveGroup)
 			{
-				
 				assert(0);
 				return false;
 			}
-		
-			std::string groupVal = primitiveGroup->value();
-		
-			//material
-			xml_node<> *material = primitiveGroup->first_node("material");
-			
-			if (material)
+			int index = 0;
+			for (; primitiveGroup != nullptr; primitiveGroup = primitiveGroup->next_sibling())
 			{
-				//identifer
-				xml_node<> *identifier = material->first_node("identifier");
-				char *v = material->value();
-				if (identifier)
+				MaterialData& data = modelData.groups_[index++]->material_;
+				std::string groupVal = primitiveGroup->value();
+
+				//material
+				xml_node<> *material = primitiveGroup->first_node("material");
+
+				if (material)
 				{
-					ss.str("");
-					ss.clear();
-					ss << identifier->value();
-					ss >> data.identifer;
+					//identifer
+					xml_node<> *identifier = material->first_node("identifier");
+					char *v = material->value();
+					if (identifier)
+					{
+						data.identifer = identifier->value();
+					}
+
+					//property
+					xml_node<> *prop = material->first_node("property");
+					for (; prop != nullptr; prop = prop->next_sibling())
+					{
+						xml_node<>* texture = prop->first_node("Texture");
+
+						if (!texture)
+						{
+							continue;
+						}
+						string texturePath = texture->value();
+						data.texturePath.push_back(texturePath);
 			
-				}
+					}//for_property
 
-				//property
-				xml_node<> *prop = material->first_node("property");
-				for (; prop != NULL; prop = prop->next_sibling())
-				{
-					xml_node<> *propFlag = prop->first_node();
-					if (!propFlag)
-					{
-						continue;
-					}
-					val = propFlag->value();
+					data.texCount = data.texturePath.size();
 
-					xml_node<> *propVal = propFlag->next_sibling();
-					if (!propVal)
-					{
-						continue;
-					}
-
-					ss.str("");
-					ss.clear();
-
-					ss << propVal->value();
-					char buf[128];
-					memcpy(buf, propVal->value(), 128);
-					
-					if (val.npos != val.find("diffuseTexMap") || (val.npos != val.find("Rock_DiffuseMap")))
-					{
-						ss >> data.diffuseTexMap;
-						data.diffuseTexMap = respath + data.diffuseTexMap;
-					}
-					else if (val.npos != val.find("normalTexMap"))
-					{
-						ss >> data.normalTexMap;
-						data.normalTexMap = respath + data.normalTexMap;
-					}
-					else if (val.npos != val.find("specularTexMap"))
-					{
-						ss >> data.specularTexMap;
-						data.specularTexMap = respath + data.specularTexMap;
-					}
-					else if (val.npos != val.find("ranseTexMap"))
-					{
-						ss >> data.renseTexMap;
-						data.renseTexMap = respath + data.renseTexMap;
-					}
-					else if (val.npos != val.find("rgbTexMap"))
-					{
-						ss >> data.rgbTexMap;
-						data.rgbTexMap = respath + data.rgbTexMap;
-					}
-			
-					ss.str("");
-					ss.clear();
-				}
-			}
-
-			ss.str("");
-			ss.clear();
-			
-		
-		}
-	}
+				}//if_material
+			}//for_primitive_group
+		}// if_root
+	}//try
 	catch (std::exception ex){
 		assert(0);
 		return false;
