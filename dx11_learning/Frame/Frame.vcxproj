@@ -39,7 +39,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>$(IncludePath);../Include/dx;../Include/assimp;</IncludePath>
+    <IncludePath>$(IncludePath);../Include/dx;../Include/assimp;../Include/rapidxml-1.13</IncludePath>
     <LibraryPath>../lib/x86;../Frame/prebuilt/$(Configuration);$(LibraryPath)</LibraryPath>
     <OutDir>prebuilt/$(Configuration)\</OutDir>
     <IntDir>mid/$(Configuration)\</IntDir>
@@ -84,6 +84,8 @@
     <ClCompile Include="D3D.cpp" />
     <ClCompile Include="util\logger.cpp" />
     <ClCompile Include="util\model_render.cpp" />
+    <ClCompile Include="util\ty_model_display11.cpp" />
+    <ClCompile Include="util\ty_model_reader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application.h" />
@@ -99,6 +101,8 @@
     <ClInclude Include="util\singleton.h" />
     <ClInclude Include="util\timer.h" />
     <ClInclude Include="util\tools.h" />
+    <ClInclude Include="util\ty_model_display11.h" />
+    <ClInclude Include="util\ty_model_reader.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

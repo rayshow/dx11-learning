@@ -2,3 +2,4 @@ http://www.rorydriscoll.com/2012/01/15/cubemap-texel-solid-angle/
 http://the-witness.net/news/2011/07/irradiance-caching-part-1/
 https://gist.github.com/dwilliamson/c8bc0224e374f2b5e42d
 http://solid-angle.blogspot.com/2009/12/screen-space-spherical-harmonic.html
+http://www.bubuko.com/infodetail-904958.html

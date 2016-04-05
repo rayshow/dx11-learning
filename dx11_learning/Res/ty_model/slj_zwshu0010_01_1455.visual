@@ -1,0 +1,66 @@
+<root>
+	<node>
+		<identifier>	Scene Root	</identifier>
+		<transform>
+			<row0>	1.000000 0.000000 0.000000	</row0>
+			<row1>	0.000000 1.000000 0.000000	</row1>
+			<row2>	0.000000 0.000000 1.000000	</row2>
+			<row3>	0.000000 0.000000 0.000000	</row3>
+		</transform>
+		<node>
+			<identifier>	NH_dummy	</identifier>
+			<transform>
+				<row0>	1.000000 0.000000 0.000000	</row0>
+				<row1>	0.000000 1.000000 0.000000	</row1>
+				<row2>	0.000000 0.000000 1.000000	</row2>
+				<row3>	0.374489 3.757337 -0.008670	</row3>
+			</transform>
+			<node>
+				<identifier>	yezi	</identifier>
+				<transform>
+					<row0>	1.000000 0.000000 0.000000	</row0>
+					<row1>	0.000000 1.000000 0.000000	</row1>
+					<row2>	0.000000 0.000000 1.000000	</row2>
+					<row3>	-0.374489 -3.757337 0.008670	</row3>
+				</transform>
+			</node>
+		</node>
+	</node>
+	<renderSet>
+		<treatAsWorldSpaceObject>	false	</treatAsWorldSpaceObject>
+		<node>	yezi	</node>
+		<geometry>
+			<vertices>	yezi.vertices	</vertices>
+			<primitive>	yezi.indices	</primitive>
+			<primitiveGroup>	0
+				<material>
+					<identifier>	NH_001	</identifier>
+					<fx>shaders/core/branch_shuye.fx</fx>
+					<collisionFlags>	16	</collisionFlags>
+					<materialKind>	0	</materialKind>
+					<property>	diffuseTexMap
+						<Texture>	scene/common/zw/zwshu/slj_zwshu0010_d_a_1455.tga	</Texture>
+					</property>
+					<property>	alphaTestEnable
+						<Bool>	true	</Bool>
+					</property>
+					<property>	alphaReference
+						<Int>	100	</Int>
+					</property>
+					<property>	doubleSided
+						<Int>	1	</Int>
+					</property>
+					<property>	WaveStrength
+						<Float>	5.000000	</Float>
+					</property>
+				<property>waveFactor<Vector4>0.01 0.1 0.8 0.5 	</Vector4>
+					</property>
+				</material>
+			</primitiveGroup>
+		</geometry>
+	</renderSet>
+	<boundingBox>
+		<min>	-7.058042 2.936752 -6.265196	</min>
+		<max>	7.058043 18.165632 6.265197	</max>
+	</boundingBox>
+</root>

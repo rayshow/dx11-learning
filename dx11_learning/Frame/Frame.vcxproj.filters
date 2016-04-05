@@ -30,6 +30,12 @@
     <ClCompile Include="util\model_render.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="util\ty_model_display11.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="util\ty_model_reader.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application.h">
@@ -69,6 +75,12 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Dx11FrameBuffer.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="util\ty_model_display11.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="util\ty_model_reader.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

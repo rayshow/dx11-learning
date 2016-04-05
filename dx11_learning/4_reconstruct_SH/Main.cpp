@@ -139,10 +139,9 @@ public:
 
 		XMFLOAT4X4 tv = camara_.GetTransposeViewMatrix();
 		XMFLOAT4X4 tp = camara_.GetTransposeProjectMatrix();
-		XMFLOAT4X4 p = camara_.GetProjectMatrix();
-		XMFLOAT4X4 v = camara_.GetViewMatrix();
+		XMFLOAT4X4 p =  camara_.GetProjectMatrix();
+		XMFLOAT4X4 v =  camara_.GetViewMatrix();
 
-	
 		XMVECTOR det;
 		XMMATRIX invProj = XMMatrixInverse(&det, XMLoadFloat4x4(&p) );
 		XMMATRIX invView = XMMatrixInverse(&det, XMLoadFloat4x4(&v) );
@@ -179,7 +178,6 @@ public:
 		ID3D11RenderTargetView* mainRT = this->GetMainRT();
 		ID3D11DepthStencilView* mainDSV = this->GetMainDSV();
 
-	
 		ID3D11RenderTargetView* gbuffer[2] = { colorRT_, depthRT_ };
 		ClearRenderTargets(2, gbuffer);
 

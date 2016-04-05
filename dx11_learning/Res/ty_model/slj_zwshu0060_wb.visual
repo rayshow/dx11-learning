@@ -1,0 +1,67 @@
+<root>
+	<node>
+		<identifier>	Scene Root	</identifier>
+		<transform>
+			<row0>	1.000000 0.000000 0.000000	</row0>
+			<row1>	0.000000 1.000000 0.000000	</row1>
+			<row2>	0.000000 0.000000 1.000000	</row2>
+			<row3>	0.000000 0.000000 0.000000	</row3>
+		</transform>
+	</node>
+	<renderSet>
+		<treatAsWorldSpaceObject>	false	</treatAsWorldSpaceObject>
+		<node>	Scene Root	</node>
+		<geometry>
+			<vertices>	vertices	</vertices>
+			<primitive>	indices	</primitive>
+			<primitiveGroup>	0
+				<material>
+					<identifier>	slj_zwshu0140_1d_wb	</identifier>
+					<fx>	shaders/core/scene_dns.fx	</fx>
+					<collisionFlags>	16	</collisionFlags>
+					<materialKind>	4	</materialKind>
+					<mi>	mi/common/zw/slj_zwshu0140_1d_wb.mi	</mi>
+					<property>	diffuseTexMap
+						<Texture>	scene/common/zw/zwshu/slj_zwshu0140_1d_wb.tga	</Texture>
+					</property>
+					<property>	normalTexMap
+						<Texture>	scene/common/zw/zwshu/slj_zwshu0140_1n_wb.tga	</Texture>
+					</property>
+					<property>	specularTexMap
+						<Texture>	scene/common/zw/zwshu/slj_zwshu0140_1s_wb.tga	</Texture>
+					</property>
+					<property>	alphaTestEnable
+						<Bool>	true	</Bool>
+					</property>
+				</material>
+			</primitiveGroup>
+			<primitiveGroup>	1
+				<material>
+					<identifier>	NH_001	</identifier>
+					<fx>	shaders/core/branch_shuye.fx	</fx>
+					<collisionFlags>	16	</collisionFlags>
+					<materialKind>	1	</materialKind>
+					<property>	diffuseTexMap
+						<Texture>	scene/common/zw/zwshu/slj_zwshu0140_2d_a_wb.tga	</Texture>
+					</property>
+					<property>	alphaReference
+						<Int>	120	</Int>
+					</property>
+					<property>	alphaTestEnable
+						<Bool>	true	</Bool>
+					</property>
+					<property>	doubleSided
+						<Int>	1	</Int>
+					</property>
+					<property>	waveFactor
+						<Vector4>	0.010000 0.100000 0.800000 0.100000	</Vector4>
+					</property>
+				</material>
+			</primitiveGroup>
+		</geometry>
+	</renderSet>
+	<boundingBox>
+		<min>	-1.439584 -0.710570 -2.887915	</min>
+		<max>	5.511416 17.916769 2.515095	</max>
+	</boundingBox>
+</root>

@@ -1,0 +1,9 @@
+<root>
+	<nodefullVisual>	scene/common/zw/zwshu/slj_zwshu0010_01_1455	</nodefullVisual>
+	<materialNames>	</materialNames>
+	<visibilityBox>
+		<min>	-5.430618 3.488433 -4.237683	</min>
+		<max>	4.072515 17.469969 5.621284	</max>
+	</visibilityBox>
+	<extent>	350.000000	</extent>
+</root>

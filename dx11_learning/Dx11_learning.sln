@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.21005.1
+VisualStudioVersion = 12.0.40629.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "1_HelloFrame", "1_HelloFrame\1_HelloFrame.vcxproj", "{4EACC42E-D3EE-428A-BF5E-5CADF0926B2C}"
 EndProject
@@ -12,6 +12,8 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "3_SHlightling", "3_SHlighting\3_SHlightling.vcxproj", "{3224E6F7-728B-416C-974C-1004A4EBF14A}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "4_reconstruct_SH", "4_reconstruct_SH\4_reconstruct_SH.vcxproj", "{D57AB39C-D676-48BD-888F-5CF2AD119AE1}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "5_DisplayTyModel", "5_Display_TyModel\5_DisplayTyModel.vcxproj", "{D65CC5AD-5E6C-482F-8CD4-CBCEDC1B58E6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -39,6 +41,10 @@ Global
 		{D57AB39C-D676-48BD-888F-5CF2AD119AE1}.Debug|Win32.Build.0 = Debug|Win32
 		{D57AB39C-D676-48BD-888F-5CF2AD119AE1}.Release|Win32.ActiveCfg = Release|Win32
 		{D57AB39C-D676-48BD-888F-5CF2AD119AE1}.Release|Win32.Build.0 = Release|Win32
+		{D65CC5AD-5E6C-482F-8CD4-CBCEDC1B58E6}.Debug|Win32.ActiveCfg = Debug|Win32
+		{D65CC5AD-5E6C-482F-8CD4-CBCEDC1B58E6}.Debug|Win32.Build.0 = Debug|Win32
+		{D65CC5AD-5E6C-482F-8CD4-CBCEDC1B58E6}.Release|Win32.ActiveCfg = Release|Win32
+		{D65CC5AD-5E6C-482F-8CD4-CBCEDC1B58E6}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

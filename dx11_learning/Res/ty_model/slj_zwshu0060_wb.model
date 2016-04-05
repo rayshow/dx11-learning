@@ -1,0 +1,11 @@
+<root>
+	<nodelessVisual>	scene/common/zw/zwshu/slj_zwshu0060_wb	</nodelessVisual>
+	<parent>	scene/common/zw/zwshu/slj_zwshu0060_wb_lod1	</parent>
+	<extent>	100.000000	</extent>
+	<materialNames>	</materialNames>
+	<directOcclusion>	0.000000	</directOcclusion>
+	<visibilityBox>
+		<min>	-1.251234 -0.710570 -2.887914	</min>
+		<max>	5.177646 17.664577 2.411275	</max>
+	</visibilityBox>
+</root>
