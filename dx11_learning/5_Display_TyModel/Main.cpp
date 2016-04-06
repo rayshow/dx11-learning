@@ -157,7 +157,6 @@ public:
 
 	virtual void Exit()
 	{
-		tree_.Release();
 	};
 private:
 	ID3D11VertexShader*  modelVertex_;
@@ -183,8 +182,10 @@ private:
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	PSTR pScmdline, int iCmdshow)
 {
+	//ul::SetBreakPointAtMemoryLeak(505);
 	ul::OpenConsoleAndDebugLeak();
-
+	
+	
 	Log_Info("hello");
 	//Utils::SetBreakPointAtMemoryLeak(154);
 	Lession1_Frame  *app = new Lession1_Frame;

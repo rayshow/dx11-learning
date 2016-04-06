@@ -15,16 +15,6 @@ namespace ul{
 		ulFloat		pos_[3];
 		ulFloat		normal_[3];
 		ulFloat		uv_[2];
-
-		SVertexXyzNuv(){}
-		SVertexXyzNuv(float *pos,
-			float *normal,
-			float *uv)
-		{
-			memcpy(pos_, pos, sizeof(float) * 3);
-			memcpy(normal_, normal, sizeof(float) * 3);
-			memcpy(uv_, uv, sizeof(float) * 3);
-		}
 	};
 
 
@@ -32,18 +22,6 @@ namespace ul{
 	{
 		ulFloat tangent_[3];
 		ulFloat binormal_[3];
-
-		SVertexXyznuvtb(){}
-		SVertexXyznuvtb(
-			ulFloat *pos,
-			ulFloat *normal,
-			ulFloat *uv,
-			ulFloat *tangent,
-			ulFloat *binormal) :SVertexXyzNuv(pos, normal, uv)
-		{
-			memcpy(tangent_, tangent, sizeof(float) * 3);
-			memcpy(binormal_, binormal, sizeof(float) * 3);
-		}
 	};
 
 	struct SVertexXyznuvtbiiiww : SVertexXyznuvtb
@@ -52,19 +30,6 @@ namespace ul{
 		ulFloat			   binormal_[3];
 		ulUbyte			   iii_[4];
 		ulUbyte            ww_[4];
-
-		SVertexXyznuvtbiiiww(
-			ulFloat *pos,
-			ulFloat *normal,
-			ulFloat *uv,
-			ulFloat *tangent,
-			ulFloat *binormal,
-			ulUbyte *iii,
-			ulUbyte *ww
-			) :SVertexXyznuvtb(pos, normal, uv, tangent, binormal)
-		{
-
-		}
 	};
 
 	struct SMaterialData{
@@ -157,13 +122,18 @@ namespace ul{
 	};
 
 
-
+	struct SRenderParameter
+	{
+		ulUint                      srvCount_;
+		ID3D11ShaderResourceView**  srvs_;
+	};
 
 	class Renderable
 	{
 	public:
+		virtual ~Renderable(){}
 		virtual void Render(ID3D11DeviceContext* context) = 0;
-		virtual void Release() =0;
+
 	};
  
 
@@ -173,32 +143,19 @@ namespace ul{
 		ulUint							            texCount_;
 		ulUint                                      indexOffset_;
 		ulUint									    indexCount_;
-		ID3D11ShaderResourceView**                  refTextures_;
+		SRenderParameter *							refParameter;
 	public:
-		SubBatch() :refTextures_(nullptr), texCount_(0), indexOffset_(0), indexCount_(0){}
+		SubBatch() :refParameter(nullptr), texCount_(0), indexOffset_(0), indexCount_(0){}
 
-		~SubBatch()
-		{
-			this->Release();
-		}
+		virtual ~SubBatch() {}
 
 		virtual void Render(ID3D11DeviceContext* context)
 		{
-			context->PSSetShaderResources(0, texCount_, refTextures_);
+			if (refParameter)
+			{
+				context->PSSetShaderResources(0, refParameter->srvCount_, refParameter->srvs_);
+			}
 			context->DrawIndexed(indexCount_, indexOffset_, 0);
-		}
-		virtual void Release()
-		{
-			for (ulUint i = 0; i < texCount_; ++i)
-			{
-				Safe_Release(refTextures_[i]);
-			}
-			if (texCount_ >= 1)
-			{
-				Safe_Delete_Array(refTextures_);
-			}
-			int a = 0;
-
 		}
 
 		void SetRenderBatch(ulUint indexOffset, ulUint indexCount)
@@ -207,7 +164,10 @@ namespace ul{
 			this->indexOffset_ = indexOffset;
 		}
 
-		void SetMaterial(ID3D11Device* dev, SMaterialData* pMaterial);
+		void SetParameter(SRenderParameter *parameter)
+		{
+			this->refParameter = parameter;
+		}
 	};
 
 
@@ -216,7 +176,7 @@ namespace ul{
 	public:
 		BaseModel() :vb_(nullptr), ib_(nullptr) {}
 
-	    ~BaseModel()
+		virtual ~BaseModel()
 		{
 			this->Release();
 		}
@@ -225,20 +185,35 @@ namespace ul{
 			SModelData& data);
 
 		virtual void Render(ID3D11DeviceContext* mD3dImmediateContext) override;
-		virtual void Release() override
+
+		void Release()
 		{
+			Log_Err("release renderable object.");
 			Safe_Release(vb_);
-			Safe_Release(ib_);			
+			Safe_Release(ib_);
+			for (int i = 0; i < renderParameters_.size(); ++i)
+			{
+				SRenderParameter *pParameter = renderParameters_[i];
+				if (pParameter->srvCount_ > 0)
+				{
+					for (int j = 0; j < pParameter->srvCount_; ++j)
+					{
+						Safe_Release(pParameter->srvs_[j]);
+					}
+					Safe_Delete_Array(pParameter->srvs_);
+				}
+				Safe_Delete(pParameter);
+			}
 		}
 		
 	protected:
-		ID3D11Buffer*			    vb_;
-		ID3D11Buffer*			    ib_;
-		ulUint						stride_;
-		ulUint						offset_;
-		ulUint					    childCount_;
-		std::vector<SubBatch>       children_;
-		std::vector<SMaterialData*> materials_;
+		ID3D11Buffer*			       vb_;
+		ID3D11Buffer*			       ib_;
+		ulUint					       stride_;
+		ulUint						   offset_;
+		ulUint						   childCount_;
+		std::vector<SubBatch>		   children_;
+		std::vector<SRenderParameter*> renderParameters_;
 	};
 
 

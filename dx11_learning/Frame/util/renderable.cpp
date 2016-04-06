@@ -45,7 +45,33 @@ bool BaseModel::Create(
 		return false;
 	}
 
+	//material 
+	renderParameters_.reserve(data.materials_.size());
+
+
+	for (int i = 0; i < data.materials_.size(); ++i)
+	{
+		SMaterialData *pMaterial = data.materials_[i];
+		SRenderParameter* pParameter = new SRenderParameter();
+		pParameter->srvCount_ = pMaterial->texCount;
+
+		if (pMaterial->texCount > 0)
+		{
+			pParameter->srvs_ = new ID3D11ShaderResourceView*[pMaterial->texCount];
+			for (int j = 0; j < pMaterial->texCount; ++j)
+			{
+				D3DX11CreateShaderResourceViewFromFileA(dev, pMaterial->texturePath[j].c_str(),
+					nullptr, nullptr, &pParameter->srvs_[j], nullptr);
+			}
+		}
+		else{
+			pParameter->srvs_ = nullptr;
+		}
+		renderParameters_.push_back(pParameter);
+	}
+
 	//render batch
+	children_.reserve(data.groups_.size());
 	for (unsigned int i = 0; i < data.groups_.size(); ++i)
 	{
 		SRenderGroupInfo* pGI = data.groups_[i];
@@ -55,7 +81,7 @@ bool BaseModel::Create(
 
 		if (data.materials_.size()>0 )
 		{
-			batch.SetMaterial(dev, data.materials_[pGI->materialID]);
+			batch.SetParameter(renderParameters_[ pGI->materialID] );
 		}
 			
 		children_.push_back(batch);
@@ -80,23 +106,3 @@ void BaseModel::Render(ID3D11DeviceContext* context)
 	int a = 0;
 }
 
-
-void SubBatch::SetMaterial(ID3D11Device* dev, SMaterialData* pMaterial)
-{
-	ResourceMgr* mgr = ResourceMgr::GetSingletonPtr();
-
-	this->texCount_ = pMaterial->texCount;
-
-	if (texCount_ > 0)
-	{
-		refTextures_ = new ID3D11ShaderResourceView*[texCount_];
-		for (unsigned int i = 0; i < texCount_; ++i)
-		{
-			D3DX11CreateShaderResourceViewFromFileA(dev, pMaterial->texturePath[i].c_str(),
-				nullptr, nullptr, &refTextures_[i], nullptr);
-		}
-
-	}
-
-
-}

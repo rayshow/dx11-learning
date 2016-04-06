@@ -10,7 +10,6 @@
 #include <D3DX11async.h>
 #include <d3dcompiler.h>
 
-
 #include <vector>
 #include <assert.h>
 #include <hash_map>

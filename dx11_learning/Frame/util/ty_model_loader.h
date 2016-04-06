@@ -10,7 +10,6 @@
 namespace ul
 {
 
-
 	#define MODEL_APPENDIX     ".model"
 	#define PRIMITIVE_APPENDIX ".primitives"
 	#define MATERIAL_APPENDIX  ".visual"
