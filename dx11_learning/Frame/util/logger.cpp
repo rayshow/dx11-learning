@@ -1,7 +1,7 @@
 
 #include <time.h>
 #include <assert.h>
-#include "Logger.h"
+#include "logger.h"
 
 #pragma warning(disable:4996)
 

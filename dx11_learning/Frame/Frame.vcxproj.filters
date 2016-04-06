@@ -15,72 +15,69 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Application.cpp">
+    <ClCompile Include="application.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Camara.cpp">
+    <ClCompile Include="camara.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="D3D.cpp">
+    <ClCompile Include="d3d.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="util\logger.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="util\model_render.cpp">
+    <ClCompile Include="util\renderable.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="util\ty_model_display11.cpp">
+    <ClCompile Include="util\common_model_loader.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="util\ty_model_reader.cpp">
-      <Filter>源文件</Filter>
+    <ClCompile Include="util\ty_model_loader.cpp">
+      <Filter>头文件</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Application.h">
+    <ClInclude Include="application.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Camara.h">
+    <ClInclude Include="camara.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="D3D.h">
+    <ClInclude Include="d3d.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Graphics.h">
+    <ClInclude Include="graphics.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Input.h">
+    <ClInclude Include="input.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="util\environmentable.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="util\logger.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="util\model_render.h">
+    <ClInclude Include="util\renderable.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="util\res_mgr.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="util\singleton.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="util\tools.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="util\d3d11_helper.h">
+    <ClInclude Include="util\singletonable.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="util\timer.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Dx11FrameBuffer.h">
+    <ClInclude Include="util\tools.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="util\ty_model_display11.h">
+    <ClInclude Include="util\common_model_loader.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="util\ty_model_reader.h">
+    <ClInclude Include="util\ty_model_loader.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

@@ -35,49 +35,43 @@ namespace ul
 		bool                mainCamara;
 
 	public:
-		inline XMFLOAT4X4  GetTransposeViewMatrix();
-		inline XMFLOAT4X4  GetTransposeProjectMatrix();
-		inline XMFLOAT4X4& GetViewMatrix();
-		inline XMFLOAT4X4& GetProjectMatrix();
-		inline XMFLOAT4X4  TransposeMatrix(const XMFLOAT4X4* matrix);
+		inline XMFLOAT4X4  GetTransposeViewMatrix()
+		{
+			return TransposeMatrix(&view_);
+		}
+		inline XMFLOAT4X4  GetTransposeProjectMatrix()
+		{
+			return TransposeMatrix(&project_);
+		}
+
+		inline XMFLOAT4X4& GetViewMatrix()
+		{
+			return view_;
+		}
+		inline XMFLOAT4X4& GetProjectMatrix()
+		{
+			return project_;
+		}
+		inline XMFLOAT4X4  TransposeMatrix(const XMFLOAT4X4* matrix)
+		{
+			XMMATRIX transpose = XMLoadFloat4x4(matrix);
+			XMFLOAT4X4 result;
+			transpose = XMMatrixTranspose(transpose);
+			XMStoreFloat4x4(&result, transpose);
+			return result;
+		}
+
 		void   SetProject(eCamaraProjectType, float, float, float, float);
-		XMFLOAT4& GetEyePos();
+		XMFLOAT4& GetEyePos()
+		{
+			return position_;
+		}
+
 		void   LookTo(XMFLOAT4& eye, XMFLOAT4& dir);
 		void   LookAt(XMFLOAT4& eye, XMFLOAT4& at);
-	};
+	};  //BaseCamara
 
-	inline XMFLOAT4X4& BaseCamara::GetViewMatrix()
-	{
-		return view_;
-	}
-	inline XMFLOAT4X4& BaseCamara::GetProjectMatrix()
-	{
-		return project_;
-	}
 
-	XMFLOAT4X4 BaseCamara::GetTransposeViewMatrix()
-	{
-		return TransposeMatrix(&view_);
-	}
-
-	XMFLOAT4X4 BaseCamara::GetTransposeProjectMatrix()
-	{
-		return TransposeMatrix(&project_);
-	}
-
-	inline XMFLOAT4X4 BaseCamara::TransposeMatrix(const XMFLOAT4X4* matrix)
-	{
-		XMMATRIX transpose = XMLoadFloat4x4(matrix);
-		XMFLOAT4X4 result;
-		transpose = XMMatrixTranspose(transpose);
-		XMStoreFloat4x4(&result, transpose);
-		return result;
-	}
-
-	inline XMFLOAT4& BaseCamara::GetEyePos()
-	{
-		return position_;
-	}
 
 	class FirstPersonCamara: public BaseCamara
 	{
@@ -116,8 +110,13 @@ namespace ul
 	public:
 		void Update(ulFloat elapsedTime);
 		void ProcessMessage(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-	};
-};
+	}; // FirstPersonCamara
+
+
+}; //ul
+
+
+
 
 
 

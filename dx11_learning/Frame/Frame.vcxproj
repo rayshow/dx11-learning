@@ -10,6 +10,31 @@
       <Platform>Win32</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="application.cpp" />
+    <ClCompile Include="camara.cpp" />
+    <ClCompile Include="d3d.cpp" />
+    <ClCompile Include="util\logger.cpp" />
+    <ClCompile Include="util\common_model_loader.cpp" />
+    <ClCompile Include="util\renderable.cpp" />
+    <ClCompile Include="util\ty_model_loader.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="application.h" />
+    <ClInclude Include="camara.h" />
+    <ClInclude Include="d3d.h" />
+    <ClInclude Include="graphics.h" />
+    <ClInclude Include="input.h" />
+    <ClInclude Include="util\environmentable.h" />
+    <ClInclude Include="util\logger.h" />
+    <ClInclude Include="util\common_model_loader.h" />
+    <ClInclude Include="util\renderable.h" />
+    <ClInclude Include="util\res_mgr.h" />
+    <ClInclude Include="util\singletonable.h" />
+    <ClInclude Include="util\timer.h" />
+    <ClInclude Include="util\tools.h" />
+    <ClInclude Include="util\ty_model_loader.h" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{7C78DFA1-7446-4D2E-9153-34FF7711A00F}</ProjectGuid>
     <RootNamespace>Frame</RootNamespace>
@@ -78,32 +103,6 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="Application.cpp" />
-    <ClCompile Include="Camara.cpp" />
-    <ClCompile Include="D3D.cpp" />
-    <ClCompile Include="util\logger.cpp" />
-    <ClCompile Include="util\model_render.cpp" />
-    <ClCompile Include="util\ty_model_display11.cpp" />
-    <ClCompile Include="util\ty_model_reader.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="Application.h" />
-    <ClInclude Include="Camara.h" />
-    <ClInclude Include="D3D.h" />
-    <ClInclude Include="Dx11FrameBuffer.h" />
-    <ClInclude Include="Graphics.h" />
-    <ClInclude Include="Input.h" />
-    <ClInclude Include="util\d3d11_helper.h" />
-    <ClInclude Include="util\logger.h" />
-    <ClInclude Include="util\model_render.h" />
-    <ClInclude Include="util\res_mgr.h" />
-    <ClInclude Include="util\singleton.h" />
-    <ClInclude Include="util\timer.h" />
-    <ClInclude Include="util\tools.h" />
-    <ClInclude Include="util\ty_model_display11.h" />
-    <ClInclude Include="util\ty_model_reader.h" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

@@ -1,5 +1,5 @@
 #include<algorithm>
-#include"Camara.h"
+#include"camara.h"
 
 #undef min
 #undef max

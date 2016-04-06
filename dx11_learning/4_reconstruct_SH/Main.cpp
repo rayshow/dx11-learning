@@ -1,12 +1,13 @@
 #include<Windows.h>
 #include<memory>
 
-#include"util/tools.h"
-#include"Application.h"
-#include"res_mgr.h"
-#include<model_render.h>
-#include<D3DX10Math.h>
 
+
+#include"util/tools.h"
+#include<common_model_loader.h>
+#include"util/res_mgr.h"
+#include"application.h"
+#include<D3DX10Math.h>
 using namespace ul;
 
 
@@ -38,12 +39,13 @@ public:
 
 		camara_.LookAt(XMFLOAT4(0, 0, 0, 0), XMFLOAT4(0, 0, 1, 0));
 
+		
 		Null_Return_Void((ball_ = mgr->CreateModelFromFile("../res/mesh/sphere.x")));
 		Null_Return_Void((envTexture_ = mgr->CreateTextureFromFile("../res/stpeters_cross.dds")));
 		Null_Return_Void((
 			commonInputVertexPass_ = mgr->CreateVertexShaderAndInputLayout(
 			"main.hlsl", "VS_RenderCommonMesh", "vs_5_0",
-			VertexXyznuv_Layout, ARRAYSIZE(VertexXyznuv_Layout), &commonInputLayout_)
+			G_Layout_VertexXyznuv, ARRAYSIZE(G_Layout_VertexXyznuv), &commonInputLayout_)
 		));
 		Null_Return_Void((commonInputPixelPass_ = mgr->CreatePixelShader("main.hlsl", "PS_FillBufferPass", "ps_5_0")));
 		Null_Return_Void((fullScreenVertex_ = mgr->CreateVertexShader("main.hlsl", "VS_FullScreenProcess", "vs_5_0")));
@@ -215,6 +217,7 @@ public:
 
 	virtual void Exit()
 	{
+		//ResourceMgr::GetSingleton().ReleaseLoadedResourceOnExit();
 	};
 private:
 	ID3D11VertexShader*  fullScreenVertex_;
@@ -230,7 +233,7 @@ private:
 	ID3D11SamplerState   *TriLinerSampler_;
 	ID3D11SamplerState   *PointSampler_;
 	ID3D11RasterizerState* resterState_;
-	ModelRender          * ball_;
+	Renderable           * ball_;
 
 	ID3D11RenderTargetView* colorRT_;
 	ID3D11ShaderResourceView *colorSRV_;

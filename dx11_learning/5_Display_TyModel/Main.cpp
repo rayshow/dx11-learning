@@ -5,9 +5,9 @@
 #include"Application.h"
 #include"res_mgr.h"
 
-#include<ty_model_display11.h>
-#include<ty_model_reader.h>
-#include<model_render.h>
+#include<ty_model_loader.h>
+#include<renderable.h>
+#include<common_model_loader.h>
 #include<D3DX10Math.h>
 
 using namespace ul;
@@ -34,15 +34,16 @@ public:
 		camara_.LookAt(XMFLOAT4(0, 0, 0, 0), XMFLOAT4(0, 0, 1, 0));
 
 		ModelReader reader;
-		ModelData data;
+		SModelData data;
 		reader.Load("../res/ty_model/", "../res/ty_model/slj_zwshu0060_wb.model", true, true, data);
-		tree_.create(dev, data);
+		tree_.Create(dev, data);
 		ModelData_Free(data);
 
+		
 		Null_Return_Void((
 			modelVertex_ = mgr->CreateVertexShaderAndInputLayout(
 			"main.hlsl", "VS_FillBuffer", "vs_5_0",
-			VertexXyznuvtbiiiww_Layout, ARRAYSIZE(VertexXyznuvtbiiiww_Layout), &xyznuvtbwwiii_)
+			G_Layout_VertexXyznuvtbiiiww, ARRAYSIZE(G_Layout_VertexXyznuvtbiiiww), &xyznuvtbwwiii_)
 		));
 		Null_Return_Void((modelPixel_ = mgr->CreatePixelShader("main.hlsl", "PS_FillBuffer", "ps_5_0")));
 		Null_Return_Void((perframeBuffer_ = mgr->CreateConstantBuffer(sizeof(CB_PerFrame))));
@@ -126,7 +127,7 @@ public:
 		context->PSSetShader(modelPixel_, nullptr, 0);
 		context->VSSetConstantBuffers(0, 1, &perframeBuffer_);
 		
-		tree_.render(context);
+		tree_.Render(context);
 
 		ID3D11ShaderResourceView*    pSRV[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 		context->PSSetShaderResources(0, 8, pSRV);

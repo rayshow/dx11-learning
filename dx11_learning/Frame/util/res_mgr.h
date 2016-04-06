@@ -29,8 +29,10 @@
 
 #include"tools.h"
 #include"logger.h"
-#include"singleton.h"
-#include"model_render.h"
+#include"singletonable.h"
+#include"common_model_loader.h"
+#include"renderable.h"
+
 
 using std::vector;
 using std::string;
@@ -41,7 +43,7 @@ using std::unique_ptr;
 namespace ul
 {
 	//ªÿ ’ºØ
-	class ResourceMgr : public Singleton<ResourceMgr>
+	class ResourceMgr : public Singletonable<ResourceMgr>
 	{
 	public:
 		//view resource 
@@ -65,7 +67,7 @@ namespace ul
 		typedef vector<ID3D11Buffer*>                         BufferVector;
 
 		typedef map< string, ID3D11ShaderResourceView*>      ShaderResourceFilePool;
-		typedef map< string, ModelRender*>                   ModelPool;
+		typedef map< string, Renderable*>					 ModelPool;
 
 		//view iter
 		typedef ShaderResViewVector::iterator      ShaderResViewVectorIter;
@@ -316,7 +318,7 @@ namespace ul
 				return rt;
 			}
 
-		inline ModelRender* CreateModelFromFile(const string& fileName)
+		inline Renderable* CreateModelFromFile(const string& fileName)
 		{
 			ModelPoolIter find = m_sResReleaseOnExit.modelPool.find(fileName);
 			//exists
@@ -326,16 +328,18 @@ namespace ul
 				return find->second;
 			}
 
-			ModelRender *model = new ModelRender();
-			Null_Return_Null_With_Msg(
-				model,
-				"malloc memory error."
-			);
-
+			CommonModelLoader loader;
+			SModelData data;
 			False_Return_Null_With_Msg(
-				model->LoadMesh(fileName),
+				loader.LoadFile(fileName, data),
 				"create model %s error.", fileName.c_str()
 			);
+
+			BaseModel* model = new BaseModel();
+			Null_Return_Null(model);
+			model->Create(m_device, data);
+			ModelData_Free(data);
+
 			m_sResReleaseOnExit.modelPool.insert(std::make_pair(fileName, model));
 			Log_Info("read model %s ok", fileName.c_str());
 			return model;

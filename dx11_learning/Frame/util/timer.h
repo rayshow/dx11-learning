@@ -28,7 +28,7 @@ namespace ul
 			QueryPerformanceFrequency(&counterFrequency_);
 			QueryPerformanceCounter(&lastCount_);
 			elapseTimeSamples_.resize(sampleCapacity_);
-			for (int i = 0; i < sampleCapacity_; ++i)
+			for (unsigned int i = 0; i < sampleCapacity_; ++i)
 			{
 				elapseTimeSamples_[i] = new TimerFrame();
 				elapseTimeSamples_[i]->frameIndex_ = 0;

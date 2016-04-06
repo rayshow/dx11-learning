@@ -78,6 +78,7 @@ namespace ul
 	// 调试和一些比较方便的宏
 #define Null(p)  (nullptr == (p))
 #define False(p) (false == (p))
+#define Zero(p) (0==(p))
 #define Fail(p) ( 0 > (p))
 
 #define Log_Err(msg, ...)    Logger::error(__FILE__, __LINE__, msg,  __VA_ARGS__)

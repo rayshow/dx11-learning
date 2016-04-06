@@ -4,10 +4,10 @@
 #include<Windows.h>
 #include<string>
 
-#include"util/singleton.h"
-#include"Graphics.h"
-#include"Input.h"
-#include"Camara.h"
+#include"util/singletonable.h"
+#include"graphics.h"
+#include"input.h"
+#include"camara.h"
 #include"util/timer.h"
 
 using std::string;
@@ -17,7 +17,7 @@ namespace ul
 {
 	const static float BLACK_COLOR[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
 
-	class Application :public Singleton<Application>
+	class Application :public Singletonable<Application>
 	{
 	private:
 		int       width_;
@@ -113,6 +113,7 @@ namespace ul
 					return 0;
 				}
 			}
+			return 0;
 		}
 
 		void Shutdown()
