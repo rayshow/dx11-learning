@@ -319,6 +319,8 @@ bool ModelReader::ReadVerticesData(
 			UNPACKNORMAL(uint_tangent, pVertex->tangent_);
 			fread(&uint_binormal, sizeof(unsigned int), 1, fp);
 			UNPACKNORMAL(uint_binormal, pVertex->binormal_);
+
+
 		}
 	}
 	else if (VERTEX_FORMAT_XYZNUV2TB == vertexFormatClean)

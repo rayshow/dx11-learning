@@ -532,7 +532,7 @@ namespace ul
 					);
 				m_sResReleaseOnExit.samplerStates.push_back(samplerState);
 				return samplerState;
-			}
+		}
 
 		//´´½¨»ìºÏ×´Ì¬
 		inline ID3D11BlendState*

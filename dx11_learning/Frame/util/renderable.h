@@ -17,6 +17,20 @@ namespace ul{
 		ulFloat		uv_[2];
 	};
 
+	inline void VertexXyzNuv_Fill(
+		SVertexXyzNuv& vertex,
+		float x, float y, float z,
+		float nx, float ny, float nz, float u, float v)
+	{
+		vertex.pos_[0] = x;
+		vertex.pos_[1] = y;
+		vertex.pos_[2] = z;
+		vertex.normal_[0] = nx;
+		vertex.normal_[1] = ny;
+		vertex.normal_[2] = nz;
+		vertex.uv_[0] = u;
+		vertex.uv_[1] = v;
+	}
 
 	struct SVertexXyznuvtb : SVertexXyzNuv
 	{
@@ -71,7 +85,6 @@ namespace ul{
 		std::vector<ulUshort>            indices_;
 	};
 
-
 	struct SModelData
 	{
 		PrimitiveData							   primtives_;
@@ -84,7 +97,6 @@ namespace ul{
 		for (ulUint i = 0; i < data.groups_.size(); ++i)
 		{
 			Safe_Delete(data.groups_[i]);
-			
 		}
 		for (ulUint i = 0; i < data.materials_.size(); ++i)
 		{
@@ -115,6 +127,7 @@ namespace ul{
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+
 		{ "TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 32, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "BINORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 44, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "III", 0, DXGI_FORMAT_R8G8B8A8_UINT, 0, 56, D3D11_INPUT_PER_VERTEX_DATA, 0 },
@@ -188,18 +201,11 @@ namespace ul{
 
 		void Release()
 		{
-			Log_Err("release renderable object.");
-			Safe_Release(vb_);
-			Safe_Release(ib_);
-			for (int i = 0; i < renderParameters_.size(); ++i)
+			for (ulUint i = 0; i < renderParameters_.size(); ++i)
 			{
 				SRenderParameter *pParameter = renderParameters_[i];
 				if (pParameter->srvCount_ > 0)
 				{
-					for (int j = 0; j < pParameter->srvCount_; ++j)
-					{
-						Safe_Release(pParameter->srvs_[j]);
-					}
 					Safe_Delete_Array(pParameter->srvs_);
 				}
 				Safe_Delete(pParameter);

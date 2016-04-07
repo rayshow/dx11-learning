@@ -26,11 +26,8 @@ bool BaseModel::Create(
 	ZeroMemory(&vdata, sizeof(vdata));
 	vdata.pSysMem = &data.primtives_.verticeBuffer_[0];
 
-	if (FAILED(dev->CreateBuffer(&vbd, &vdata, &vb_)))
-	{
-		assert(0);
-		return false;
-	}
+	Null_Return_False((vb_ = mgr->CreateBuffer(vbd, &vdata)));
+
 
 	//ib
 	ibd = vbd;
@@ -39,17 +36,12 @@ bool BaseModel::Create(
 	ZeroMemory(&idata, sizeof(idata));
 	idata.pSysMem = &data.primtives_.indices_[0];
 
-	if (FAILED(dev->CreateBuffer(&ibd, &idata, &ib_)))
-	{
-		assert(0);
-		return false;
-	}
+	Null_Return_False((ib_ = mgr->CreateBuffer(ibd, &idata)));
 
 	//material 
 	renderParameters_.reserve(data.materials_.size());
 
-
-	for (int i = 0; i < data.materials_.size(); ++i)
+	for (ulUint i = 0; i < data.materials_.size(); ++i)
 	{
 		SMaterialData *pMaterial = data.materials_[i];
 		SRenderParameter* pParameter = new SRenderParameter();
@@ -60,8 +52,7 @@ bool BaseModel::Create(
 			pParameter->srvs_ = new ID3D11ShaderResourceView*[pMaterial->texCount];
 			for (int j = 0; j < pMaterial->texCount; ++j)
 			{
-				D3DX11CreateShaderResourceViewFromFileA(dev, pMaterial->texturePath[j].c_str(),
-					nullptr, nullptr, &pParameter->srvs_[j], nullptr);
+				pParameter->srvs_[j] = mgr->CreateTextureFromFile(pMaterial->texturePath[j]);
 			}
 		}
 		else{
@@ -72,7 +63,7 @@ bool BaseModel::Create(
 
 	//render batch
 	children_.reserve(data.groups_.size());
-	for (unsigned int i = 0; i < data.groups_.size(); ++i)
+	for (ulUint i = 0; i < data.groups_.size(); ++i)
 	{
 		SRenderGroupInfo* pGI = data.groups_[i];
 		SubBatch batch;
@@ -99,7 +90,7 @@ void BaseModel::Render(ID3D11DeviceContext* context)
 	context->IASetIndexBuffer(ib_, DXGI_FORMAT_R16_UINT, 0);
 	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-	for (unsigned int i = 0; i < childCount_; ++i)
+	for (ulUint i = 0; i < childCount_; ++i)
 	{
 		children_[i].Render(context);
 	}

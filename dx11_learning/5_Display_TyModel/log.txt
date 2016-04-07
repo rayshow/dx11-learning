@@ -1,9 +1,0 @@
-[ INFO 13:19:48 ]: hello 
-[ INFO 13:19:48 ]: application construct. 
-[ INFO 13:19:48 ]: D3D device and context initializing. 
-[ INFO 13:19:48 ]: D3D device and context initialized. 
-[ INFO 13:19:48 ]: resource manager initialized. 
-[ INFO 13:19:48 ]: read texture ../Res/test.dds ok 
-[ INFO 13:19:48 ]: application Dx11Appcalition initialized. 
-[ INFO 13:20:01 ]: resource mgr release all resource. 
-[ INFO 13:20:01 ]: application destoryed. 

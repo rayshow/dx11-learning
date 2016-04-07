@@ -8,6 +8,7 @@
 #include<ty_model_loader.h>
 #include<renderable.h>
 #include<common_model_loader.h>
+#include<environmentable.h>
 #include<D3DX10Math.h>
 
 using namespace ul;
@@ -122,7 +123,7 @@ public:
 		this->SetParameter(dev, context);
 		ID3D11RenderTargetView* mainRT = this->GetMainRT();
 		ID3D11DepthStencilView* mainDSV = this->GetMainDSV();
-		context->OMSetRenderTargets(1, &mainRT, nullptr);
+		context->OMSetRenderTargets(1, &mainRT, mainDSV);
 		context->VSSetShader(modelVertex_, nullptr, 0);
 		context->PSSetShader(modelPixel_, nullptr, 0);
 		context->VSSetConstantBuffers(0, 1, &perframeBuffer_);
