@@ -10,6 +10,8 @@
 #include<common_model_loader.h>
 #include<environmentable.h>
 #include<D3DX10Math.h>
+#include<AntTweakBar.h>
+
 
 using namespace ul;
 
@@ -24,23 +26,47 @@ struct CB_PerFrame
 class Lession1_Frame :public Application
 {
 public:
+	
 	virtual ~Lession1_Frame(){}
 public:
-
 	virtual void InitResource(ID3D11Device *dev,
 		ID3D11DeviceContext* context)
 	{
 		ResourceMgr *mgr = ResourceMgr::GetSingletonPtr();
+		mgr->SetResourceBasePath("../res/");
 
-		camara_.LookAt(XMFLOAT4(0, 0, 0, 0), XMFLOAT4(0, 0, 1, 0));
+		uiRotate_.w = 1;
+		uiLightDir_.x = 1;
 
-		ModelReader reader;
-		SModelData data;
-		reader.Load("../res/ty_model/", "../res/ty_model/slj_zwshu0060_wb.model", true, true, data);
-		tree_.Create(dev, data);
-		ModelData_Free(data);
+		XMVECTOR axis = XMLoadFloat4(&XMFLOAT4(1, 0, 0, 0));
+		XMVECTOR rotate = XMQuaternionRotationAxis(axis, -XM_PI / 2);
+		XMStoreFloat4(&uiRotate_, rotate);
 
-		
+		//ui
+		TwInit(TW_DIRECT3D11, this->GetDevicePtr());
+		TwBar *bar = TwNewBar("TweakBar");
+		TwDefine(" GLOBAL help='This example shows how to integrate AntTweakBar into a DirectX11 application.' "); 
+		int barSize[2] = { 224, 320 };
+		TwSetParam(bar, NULL, "size", TW_PARAM_INT32, 2, barSize);
+		TwAddVarRW(bar, "Level", TW_TYPE_INT32, &uiLevel_, "min=0 max=100 group=Sponge keyincr=l keydecr=L");
+		TwAddVarRW(bar, "Animate", TW_TYPE_BOOLCPP, &uiAnim_, "group=Sponge key=o");
+		TwAddVarRW(bar, "Rotation", TW_TYPE_QUAT4F, &uiRotate_, "opened=true axisz=-z group=Sponge");
+		TwAddVarRW(bar, "Light direction", TW_TYPE_DIR3F, &uiLightDir_, "opened=true axisz=-z showval=false");
+		TwAddVarRW(bar, "Camera distance", TW_TYPE_FLOAT, &uiCamaraDistance_, "min=0 max=4 step=0.01 keyincr=PGUP keydecr=PGDOWN");
+		TwAddVarRW(bar, "Background", TW_TYPE_COLOR4F, &uiLightColor_, "colormode=hls");
+
+		camara_.LookAt(XMFLOAT4(0, 0,-100, 0), XMFLOAT4(0, 0, 0, 0));
+	
+		skybox_.Create(dev, "../res/skybox/skyDiffuseHDR.dds", "../res/skybox/skySpecularHDR.dds");
+		pistol_ = mgr->CreateModelFromFile("pbr_model/pistol/pistol.fbx");
+
+		Null_Return_Void((
+			skyVertex_ = mgr->CreateVertexShaderAndInputLayout(
+			"skybox.hlsl", "VS_FillBuffer", "vs_5_0",
+			G_Layout_VertexXyznuv, ARRAYSIZE(G_Layout_VertexXyznuv), &xyznuv_)
+			));
+		Null_Return_Void((skyPixel_ = mgr->CreatePixelShader("skybox.hlsl", "PS_FillBuffer", "ps_5_0")));
+
 		Null_Return_Void((
 			modelVertex_ = mgr->CreateVertexShaderAndInputLayout(
 			"main.hlsl", "VS_FillBuffer", "vs_5_0",
@@ -81,6 +107,23 @@ public:
 		rester.MultisampleEnable = false;
 		rester.ScissorEnable = false;
 		Null_Return_Void((resterState_ = mgr->CreateRasterState(rester)));
+
+	
+		
+	};
+
+	virtual void WindowResize(int width, int height,
+		ID3D11Device *dev,
+		ID3D11DeviceContext* context)
+	{
+		ResourceMgr *mgr = ResourceMgr::GetSingletonPtr();
+		mgr->ReleaseLoadedResourcePerSwapChain();
+
+		aspect = (float)width / (float)height;
+		XMStoreFloat4x4(&world_, XMMatrixIdentity());
+		camara_.SetProject(BaseCamara::eCamara_Perspective, XM_PI / 4, aspect, 0.1f, 1000.0f);
+
+		int a = 0;
 	};
 
 
@@ -90,8 +133,13 @@ public:
 		context->IASetInputLayout(xyznuvtbwwiii_);
 		context->RSSetState(resterState_);
 		context->PSSetSamplers(0, 1, &LinerSampler_);
-		
 
+		XMVECTOR rotQuaternion = XMLoadFloat4(&uiRotate_);
+		XMMATRIX rotMatrix = XMMatrixRotationQuaternion(rotQuaternion);
+		rotMatrix = XMMatrixTranspose(rotMatrix);
+		XMStoreFloat4x4(&world_, rotMatrix);
+
+		
 		XMFLOAT4X4 tv = camara_.GetTransposeViewMatrix();
 		XMFLOAT4X4 tp = camara_.GetTransposeProjectMatrix();
 		XMFLOAT4X4 p =  camara_.GetProjectMatrix();
@@ -110,12 +158,15 @@ public:
 
 		CB_PerFrame* pConstants = (CB_PerFrame*)MappedResource.pData;
 		
+
 		pConstants->world = world_;
 		pConstants->view =  tv;
 		pConstants->project = tp;
 		context->Unmap(perframeBuffer_, 0);
-
 	}
+
+
+
 
 	virtual void RenderFrame(ID3D11Device *dev,
 		ID3D11DeviceContext* context)
@@ -123,31 +174,34 @@ public:
 		this->SetParameter(dev, context);
 		ID3D11RenderTargetView* mainRT = this->GetMainRT();
 		ID3D11DepthStencilView* mainDSV = this->GetMainDSV();
+
+		////sky box
+		//context->OMSetRenderTargets(1, &mainRT, nullptr);
+		//context->VSSetShader(skyVertex_, nullptr, 0);
+		//context->PSSetShader(skyPixel_, nullptr, 0);
+		//context->VSSetConstantBuffers(0, 1, &perframeBuffer_);
+		//skybox_.Render(context);
+
+		//obj
 		context->OMSetRenderTargets(1, &mainRT, mainDSV);
-		context->VSSetShader(modelVertex_, nullptr, 0);
-		context->PSSetShader(modelPixel_, nullptr, 0);
-		context->VSSetConstantBuffers(0, 1, &perframeBuffer_);
-		
-		tree_.Render(context);
+		pistol_->Render(context);
+
+		//ui
+		TwDraw();
 
 		ID3D11ShaderResourceView*    pSRV[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 		context->PSSetShaderResources(0, 8, pSRV);
 	};
 
-	virtual void WindowResize(int width, int height,
-		ID3D11Device *dev,
-		ID3D11DeviceContext* context)
+	virtual int MsgProcess(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 	{
-		ResourceMgr *mgr = ResourceMgr::GetSingletonPtr();
-		mgr->ReleaseLoadedResourcePerSwapChain();
+		// Send event message to AntTweakBar
+		if (TwEventWin(hwnd, msg, wparam, lparam))
+		{
+			return 0;
+		}
+		
 
-		aspect = (float)width / (float)height;
-		XMStoreFloat4x4(&world_, XMMatrixIdentity());
-		camara_.SetProject(BaseCamara::eCamara_Perspective, XM_PI / 4, aspect, 0.1f, 1000.0f);
-	};
-
-	virtual void MsgProcess(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
-	{
 		camara_.ProcessMessage(hwnd, msg, wparam, lparam);
 	}
 
@@ -158,12 +212,15 @@ public:
 
 	virtual void Exit()
 	{
+		TwTerminate();
 	};
 private:
+	ID3D11VertexShader*  skyVertex_;
+	ID3D11PixelShader*   skyPixel_;
 	ID3D11VertexShader*  modelVertex_;
 	ID3D11PixelShader*   modelPixel_;
 	ID3D11InputLayout*   xyznuvtbwwiii_;
-	
+	ID3D11InputLayout*   xyznuv_;
 	ID3D11Buffer*        perframeBuffer_;
 	ID3D11Buffer*        envmapBuffer_;
 
@@ -173,10 +230,19 @@ private:
 
 	ID3D11RasterizerState* resterState_;
 
-	BaseModel             tree_;
-	FirstPersonCamara camara_;
+	SkyBox                skybox_;
+	Renderable*           pistol_;
+
+	FirstPersonCamara	 camara_;
 	XMFLOAT4X4 world_, view_, project_;
 	float aspect;
+	
+	int                   uiLevel_;
+	int                   uiAnim_;
+	XMFLOAT4              uiRotate_;
+	XMFLOAT4              uiLightDir_;
+	float                 uiCamaraDistance_;
+	XMFLOAT4              uiLightColor_;
 };
 
 

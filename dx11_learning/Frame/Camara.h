@@ -102,7 +102,7 @@ namespace ul
 	public:
 		FirstPersonCamara():
 			rotateScaler_(1),
-			moveScaler_(10)
+			moveScaler_(50)
 		{}
 	protected:
 		virtual eCamaraKey keyMap(ulUint keycode);

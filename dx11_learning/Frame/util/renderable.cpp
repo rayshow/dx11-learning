@@ -15,7 +15,6 @@ bool BaseModel::Create(
 	D3D11_SUBRESOURCE_DATA vdata, idata;
 	ResourceMgr* mgr = ResourceMgr::GetSingletonPtr();
 
-
 	//vb
 	vbd.Usage = D3D11_USAGE_IMMUTABLE;
 	vbd.ByteWidth = data.primtives_.verticeNum_*data.primtives_.stride_;
@@ -27,7 +26,6 @@ bool BaseModel::Create(
 	vdata.pSysMem = &data.primtives_.verticeBuffer_[0];
 
 	Null_Return_False((vb_ = mgr->CreateBuffer(vbd, &vdata)));
-
 
 	//ib
 	ibd = vbd;
@@ -41,12 +39,19 @@ bool BaseModel::Create(
 	//material 
 	renderParameters_.reserve(data.materials_.size());
 
+	//vertex layout
+	D3D11_INPUT_ELEMENT_DESC desc[G_MAX_INPUT_ELEMENT_COUNT];
+	ulUint count;
+	GetInputDescByVerticeType(data.primtives_.type_, desc, &count);
+	
+
 	for (ulUint i = 0; i < data.materials_.size(); ++i)
 	{
 		SMaterialData *pMaterial = data.materials_[i];
 		SRenderParameter* pParameter = new SRenderParameter();
-		pParameter->srvCount_ = pMaterial->texCount;
 
+		//texture
+		pParameter->srvCount_ = pMaterial->texCount;
 		if (pMaterial->texCount > 0)
 		{
 			pParameter->srvs_ = new ID3D11ShaderResourceView*[pMaterial->texCount];
@@ -58,6 +63,28 @@ bool BaseModel::Create(
 		else{
 			pParameter->srvs_ = nullptr;
 		}
+		
+		//shader
+		pParameter->vsEnterPoint_ = mgr->CreateVertexShaderAndInputLayout(pMaterial->shaderFile.c_str(),
+			pMaterial->vsEnterPoint.c_str(), "vs_5_0", desc, count, &pParameter->vertexLayout_);
+		if ( Null(pParameter->vsEnterPoint_) || Null(pParameter->vertexLayout_))
+		{
+			Log_Err("create vertex shader error from file:%s function: %s", pMaterial->shaderFile.c_str(),
+				pMaterial->vsEnterPoint.c_str());
+			Safe_Delete(pParameter);
+			return false;
+		}
+
+		pParameter->psEnterPoint_ = mgr->CreatePixelShader(pMaterial->shaderFile.c_str(),
+			pMaterial->psEnterPoint.c_str(), "ps_5_0");
+		if (Null(pParameter->psEnterPoint_))
+		{
+			Log_Err("create pixel shader error from file:%s function: %s", pMaterial->shaderFile.c_str(),
+				pMaterial->psEnterPoint.c_str());
+			Safe_Delete(pParameter);
+			return false;
+		}
+
 		renderParameters_.push_back(pParameter);
 	}
 

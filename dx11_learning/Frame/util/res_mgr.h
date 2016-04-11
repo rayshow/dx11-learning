@@ -136,7 +136,8 @@ namespace ul
 		sReleaseOnExit                 m_sResReleaseOnExit;
 		ID3D11Device*                  m_device;
 		ID3D11DeviceContext*           m_context;
-		static ResourceMgr*                   G_MGR;
+		string                         resourceBasePath_;
+
 	public:
 		ResourceMgr(){}
 	private:
@@ -150,14 +151,21 @@ namespace ul
 #if defined( DEBUG ) || defined( _DEBUG )
 			dwShaderFlags |= D3DCOMPILE_DEBUG | D3DCOMPILE_PREFER_FLOW_CONTROL | D3DCOMPILE_SKIP_OPTIMIZATION;
 #endif
-
 			AutoReleasePtr<ID3DBlob> ErrorBlobPtr;
-			Fail_Return_False_With_Msg(
-				D3DX11CompileFromFileA(szFileName, nullptr, nullptr, szEntryPoint, szShaderModel,
-				dwShaderFlags, 0, nullptr, ppBlobOut, ErrorBlobPtr.GetPtr(), nullptr),
-				(char*)ErrorBlobPtr->GetBufferPointer()
-				);
+			ID3DBlob* msg;
 
+			HRESULT hr =D3DX11CompileFromFileA(szFileName, nullptr, nullptr, szEntryPoint, szShaderModel,
+				dwShaderFlags, 0, nullptr, ppBlobOut, ErrorBlobPtr.GetPtr(), nullptr);
+			if (Fail(hr))
+			{
+				if (hr == D3D11_ERROR_FILE_NOT_FOUND)
+				{
+					Log_Err("not found file:%s", szFileName);
+					return false;
+				}
+				Log_Err("error compile:%s", ErrorBlobPtr->GetBufferPointer());
+				return false;
+			}
 			return true;
 		}
 
@@ -178,7 +186,10 @@ namespace ul
 			createInputLayout(const D3D11_INPUT_ELEMENT_DESC *descs, UINT count, ID3DBlob* pBlob)
 		{
 				ID3D11InputLayout *layout;
-				Fail_Return_Null(m_device->CreateInputLayout(descs, count, pBlob->GetBufferPointer(), pBlob->GetBufferSize(), &layout));
+				Fail_Return_Null_With_Msg(
+					m_device->CreateInputLayout(descs, count, pBlob->GetBufferPointer(), pBlob->GetBufferSize(), &layout),
+					"create input layout error."
+				);
 				m_sResReleaseOnExit.inputLayouts.push_back(layout);
 				return layout;
 			}
@@ -218,13 +229,39 @@ namespace ul
 
 
 	public:
+		
 		//≥ı ºªØ
 		inline void
 			init(ID3D11Device* dev){
+			m_device = dev;
+			Log_Info("resource manager initialized.");
+		}
+
+		inline void
+			init(ID3D11Device* dev, string resourceBasePath){
 				m_device = dev;
+				resourceBasePath_ = resourceBasePath;
 				Log_Info("resource manager initialized.");
 			}
 
+		inline void 
+			SetResourceBasePath(const string& resourcePath)
+		{
+			bool endWithSeperate = false;
+
+			if (resourcePath.find_last_of("/") == resourcePath.length() - 1)
+			{
+				endWithSeperate = true;
+			}
+
+			resourceBasePath_ = resourcePath;
+
+			if (!endWithSeperate)
+				resourceBasePath_ = resourceBasePath_ + "/";
+		}
+
+		
+		//rasterize state
 		inline ID3D11RasterizerState*
 			CreateRasterState(D3D11_RASTERIZER_DESC& desc)
 		{
@@ -329,9 +366,11 @@ namespace ul
 
 			CommonModelLoader loader;
 			SModelData data;
+
+			Log_Info("loading model %s ", fileName.c_str());
 			False_Return_Null_With_Msg(
-				loader.LoadFile(fileName, data),
-				"create model %s error.", fileName.c_str()
+				loader.LoadFile(resourceBasePath_,  fileName, data),
+				"loading model %s error.", fileName.c_str()
 			);
 
 			BaseModel* model = new BaseModel();

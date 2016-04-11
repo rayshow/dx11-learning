@@ -6,8 +6,7 @@
 #include"util/tools.h"
 #include"Application.h"
 #include"res_mgr.h"
-#include"model_render.h"
-#include"d3d11_helper.h"
+#include<renderable.h>
 
 using namespace ul;
 

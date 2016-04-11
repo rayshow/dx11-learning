@@ -69,8 +69,17 @@ public:
 		context->Draw(3, 0);
 	};
 
+	virtual void MsgProcess(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
+	{
+	}
+
+	virtual void UpdateScene(float elapse)
+	{
+	}
+
 	virtual void Exit()
 	{
+
 	};
 private:
 	ID3D11VertexShader*  fullScreenVertex_;

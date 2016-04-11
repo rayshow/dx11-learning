@@ -4,7 +4,7 @@
 #include"util/tools.h"
 #include"Application.h"
 #include"res_mgr.h"
-#include<model_render.h>
+#include<renderable.h>
 #include<D3DX10Math.h>
 
 using namespace ul;
@@ -42,7 +42,7 @@ public:
 		Null_Return_Void((
 			commonInputVertexPass_ = mgr->CreateVertexShaderAndInputLayout(
 			"main.hlsl", "VS_RenderNormalMesh", "vs_5_0",
-			VertexXyznuv_Layout, ARRAYSIZE(VertexXyznuv_Layout), &commonInputLayout_)
+			G_Layout_VertexXyznuv, ARRAYSIZE(G_Layout_VertexXyznuv), &commonInputLayout_)
 		));
 		Null_Return_Void((commonInputPixelPass_ = mgr->CreatePixelShader("main.hlsl", "PS_ResultPass", "ps_5_0")));
 		Null_Return_Void((perframeBuffer_ = mgr->CreateConstantBuffer(sizeof(CB_PerFrame))));
@@ -117,8 +117,17 @@ public:
 		ball_->Render(context);
 	};
 
+	virtual void MsgProcess(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
+	{
+	}
+
+	virtual void UpdateScene(float elapse)
+	{
+	}
+
 	virtual void Exit()
 	{
+
 	};
 private:
 	ID3D11VertexShader*  fullScreenVertex_;
@@ -131,7 +140,7 @@ private:
 	ID3D11ShaderResourceView *texture_;
 	ID3D11SamplerState   *pointSampler_;
 	ID3D11RasterizerState* resterState_;
-	ModelRender          * ball_;
+	Renderable          * ball_;
 };
 
 

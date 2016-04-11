@@ -30,6 +30,8 @@ namespace ul
 		HINSTANCE hInstance_;
 		Timer     timer_;
 		bool      initialized_;
+	
+
 	public:
 		Application() :
 			width_(0),
@@ -46,6 +48,10 @@ namespace ul
 		};
 
 	public:
+		HWND GetHwnd()
+		{
+			return hWnd_;
+		}
 		void SetAppcationName(const string& name)
 		{
 			appName_ = name;
@@ -66,9 +72,11 @@ namespace ul
 			GetClientRect(hWnd_, &rect);
 			graphics_.Initialize(rect.right, rect.bottom, hWnd_, true, fullscreen_);
 
+
 			//call InitResource 
 			this->InitResource( GetDevicePtr(), GetDeviceContextPtr() );
 			
+
 			// when initialized show window
 			ShowWindow(hWnd_, SW_SHOW);
 			SetForegroundWindow(hWnd_);
@@ -99,21 +107,15 @@ namespace ul
 
 		LRESULT CALLBACK InputProcess(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		{
-			this->MsgProcess(hwnd, msg, wparam, lparam);
-			switch (msg)
+			//lost device and reset
+			if (msg == WM_SIZE)
 			{
-				case WM_KEYDOWN:
-				{
-					input_.KeyDown(wparam);
-					return 0;
-				}
-				case WM_KEYUP:
-				{
-					input_.KeyUp(wparam);
-					return 0;
-				}
-			}
-			return 0;
+				int nWidth = LOWORD(lparam); // width of client area
+				int nHeight = HIWORD(lparam); // height of client area
+				if (nWidth >= 1 && nHeight >= 1)
+					this->OnResize(nWidth, nHeight);
+			}			
+			return this->MsgProcess(hwnd, msg, wparam, lparam);
 		}
 
 		void Shutdown()
@@ -124,7 +126,6 @@ namespace ul
 
 		void OnResize(int width, int height)
 		{
-			
 			graphics_.GetD3D().Resize(width, height);
 			this->WindowResize(width, height, GetDevicePtr(), GetDeviceContextPtr());
 		}
@@ -151,7 +152,7 @@ namespace ul
 			ID3D11Device *dev,
 			ID3D11DeviceContext* context) = 0;
 
-		virtual void MsgProcess(
+		virtual int MsgProcess(
 			HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) = 0;
 
 		virtual void Exit() = 0;

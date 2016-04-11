@@ -49,7 +49,6 @@ public:
 		));
 		Null_Return_Void((skyPixel_ = mgr->CreatePixelShader("skybox.hlsl", "PS_FillBuffer", "ps_5_0")));
 
-
 		Null_Return_Void((
 			modelVertex_ = mgr->CreateVertexShaderAndInputLayout(
 			"main.hlsl", "VS_FillBuffer", "vs_5_0",
@@ -86,13 +85,12 @@ public:
 		rester.DepthBiasClamp = 0;
 		rester.DepthClipEnable = true;
 		rester.SlopeScaledDepthBias = 0;
-		rester.FillMode = D3D11_FILL_SOLID;
+		rester.FillMode = D3D11_FILL_WIREFRAME;
 		rester.FrontCounterClockwise = false;
 		rester.MultisampleEnable = false;
 		rester.ScissorEnable = false;
 		Null_Return_Void((resterState_ = mgr->CreateRasterState(rester)));
 	};
-
 
 	void SetParameter(ID3D11Device *dev,
 		ID3D11DeviceContext* context)
@@ -130,13 +128,14 @@ public:
 		this->SetParameter(dev, context);
 		ID3D11RenderTargetView* mainRT = this->GetMainRT();
 		ID3D11DepthStencilView* mainDSV = this->GetMainDSV();
-		context->OMSetRenderTargets(1, &mainRT, nullptr);
 
+	/*	
+		context->OMSetRenderTargets(1, &mainRT, nullptr);
 		context->VSSetShader(skyVertex_, nullptr, 0);
 		context->PSSetShader(skyPixel_, nullptr, 0);
 		context->VSSetConstantBuffers(0, 1, &perframeBuffer_);
 		skybox_.Render(context);
-
+*/
 		context->OMSetRenderTargets(1, &mainRT, mainDSV);
 		context->VSSetShader(modelVertex_, nullptr, 0);
 		context->PSSetShader(modelPixel_, nullptr, 0);
@@ -188,6 +187,7 @@ private:
 	ID3D11SamplerState   *PointSampler_;
 
 	ID3D11RasterizerState* resterState_;
+
 
 	SkyBox                skybox_;
 	BaseModel             tree_;

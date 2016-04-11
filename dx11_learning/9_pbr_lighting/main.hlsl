@@ -1,6 +1,4 @@
 
-
-
 cbuffer cbPerFrame : register(b0)
 {
 	float4x4 g_f4x4World;
@@ -85,12 +83,12 @@ PS_SingleOutput PS_FillBuffer(PS_TranslateInput I)
 	PS_SingleOutput O;
 	float2 coord = I.f2TexCoord;
 
-	float4 diffuse = g_Diffuse.SampleLevel(g_SampleLinear, coord, 0);
+	/*float4 diffuse = g_Diffuse.SampleLevel(g_SampleLinear, coord, 0);
 	float4 normal = g_Normal.SampleLevel(g_SampleLinear, coord, 0);
-	float4 specular = g_Specular.SampleLevel(g_SampleLinear, coord, 0);
+	float4 specular = g_Specular.SampleLevel(g_SampleLinear, coord, 0);*/
 		
-	clip(diffuse.a - 0.2);
-	O.rt0.rgb = diffuse;
+	//clip(diffuse.a - 0.2);
+	O.rt0.rgb = float4(0.2, 0, 0, 1);// diffuse;
 
 	return O;
 }

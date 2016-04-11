@@ -46,9 +46,43 @@ namespace ul{
 		ulUbyte            ww_[4];
 	};
 
+	const D3D11_INPUT_ELEMENT_DESC G_Layout_VertexXyznuv[] =
+	{
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+	};
+
+	const D3D11_INPUT_ELEMENT_DESC G_Layout_VertexXyznuvtb[] =
+	{
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 32, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "BINORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 44, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+	};
+
+	// Create the shaders
+	const D3D11_INPUT_ELEMENT_DESC G_Layout_VertexXyznuvtbiiiww[] =
+	{
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+
+		{ "TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 32, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "BINORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 44, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "III", 0, DXGI_FORMAT_R8G8B8A8_UINT, 0, 56, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "WW", 0, DXGI_FORMAT_R8G8B8A8_UINT, 0, 60, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+	};
+
+	const ulUint G_MAX_INPUT_ELEMENT_COUNT = 7;
+
 	struct SMaterialData{
 		std::string				 identifer;
 		ulUint  				 texCount;
+		std::string              shaderFile;
+		std::string              vsEnterPoint;
+		std::string              psEnterPoint;
 		std::vector<std::string> texturePath;
 	};
 
@@ -92,6 +126,25 @@ namespace ul{
 		std::vector<SRenderGroupInfo*>             groups_;
 	};
 
+	inline void GetInputDescByVerticeType(EVerticeType type, D3D11_INPUT_ELEMENT_DESC* desc, ulUint* count)
+	{
+		switch (type)
+		{
+		case eVertex_XYZNUV:
+			memcpy(desc, G_Layout_VertexXyznuv, sizeof(G_Layout_VertexXyznuv));
+			*count = 3;
+			return;
+		case eVertex_XYZNUVTB:
+			memcpy(desc, G_Layout_VertexXyznuvtb, sizeof(G_Layout_VertexXyznuvtb));
+			*count = 5;
+			return;
+		case eVertex_XYZNUVTBIIIWW:
+			memcpy(desc, G_Layout_VertexXyznuvtbiiiww, sizeof(G_Layout_VertexXyznuvtbiiiww));
+			*count = 7;
+			return;
+		}
+	}
+
 	inline void ModelData_Free(SModelData& data)
 	{
 		for (ulUint i = 0; i < data.groups_.size(); ++i)
@@ -105,39 +158,15 @@ namespace ul{
 	};
 
 
-	const D3D11_INPUT_ELEMENT_DESC G_Layout_VertexXyznuv[] =
-	{
-		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-	};
-
-	const D3D11_INPUT_ELEMENT_DESC G_Layout_VertexXyznuvtb[] =
-	{
-		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 32, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "BINORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 44, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-	};
-
-	// Create the shaders
-	const D3D11_INPUT_ELEMENT_DESC G_Layout_VertexXyznuvtbiiiww[] =
-	{
-		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-
-		{ "TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 32, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "BINORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 44, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "III", 0, DXGI_FORMAT_R8G8B8A8_UINT, 0, 56, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "WW", 0, DXGI_FORMAT_R8G8B8A8_UINT, 0, 60, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-	};
+	
 
 
 	struct SRenderParameter
 	{
 		ulUint                      srvCount_;
+		ID3D11InputLayout*			vertexLayout_;
+		ID3D11VertexShader*         vsEnterPoint_;
+		ID3D11PixelShader*          psEnterPoint_;
 		ID3D11ShaderResourceView**  srvs_;
 	};
 
@@ -147,8 +176,7 @@ namespace ul{
 		virtual ~Renderable(){}
 		virtual void Render(ID3D11DeviceContext* context) = 0;
 
-	};
- 
+	}; 
 
 	class SubBatch : public Renderable
 	{
@@ -164,9 +192,17 @@ namespace ul{
 
 		virtual void Render(ID3D11DeviceContext* context)
 		{
+			context->IASetInputLayout(refParameter->vertexLayout_);
+			context->VSSetShader(refParameter->vsEnterPoint_, nullptr, 0);
+			context->PSSetShader(refParameter->psEnterPoint_, nullptr, 0);
+
 			if (refParameter)
 			{
 				context->PSSetShaderResources(0, refParameter->srvCount_, refParameter->srvs_);
+			}
+			else{
+				static ID3D11ShaderResourceView*    pSRV[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+				context->PSSetShaderResources(0, 8, pSRV);
 			}
 			context->DrawIndexed(indexCount_, indexOffset_, 0);
 		}
@@ -215,6 +251,7 @@ namespace ul{
 	protected:
 		ID3D11Buffer*			       vb_;
 		ID3D11Buffer*			       ib_;
+	
 		ulUint					       stride_;
 		ulUint						   offset_;
 		ulUint						   childCount_;
