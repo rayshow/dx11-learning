@@ -6,7 +6,7 @@ cbuffer cbPerFrame : register(b0)
 }
 
 SamplerState     g_SampleLinear          : register(s0);
-TextureCube      g_Specular               : register(t0);
+TextureCube      g_Specular              : register(t0);
 
 // 普通模型的顶点参数
 struct VS_VertexLayout

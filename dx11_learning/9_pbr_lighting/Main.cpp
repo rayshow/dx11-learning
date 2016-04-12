@@ -21,12 +21,13 @@ struct CB_PerFrame
 	XMFLOAT4X4 world;
 	XMFLOAT4X4 view;
 	XMFLOAT4X4 project;
+	XMFLOAT3   camaraPos;
+	float       padding;
 };
 
 class Lession1_Frame :public Application
 {
 public:
-	
 	virtual ~Lession1_Frame(){}
 public:
 	virtual void InitResource(ID3D11Device *dev,
@@ -37,7 +38,6 @@ public:
 
 		uiRotate_.w = 1;
 		uiLightDir_.x = 1;
-
 		XMVECTOR axis = XMLoadFloat4(&XMFLOAT4(1, 0, 0, 0));
 		XMVECTOR rotate = XMQuaternionRotationAxis(axis, -XM_PI / 2);
 		XMStoreFloat4(&uiRotate_, rotate);
@@ -55,9 +55,17 @@ public:
 		TwAddVarRW(bar, "Camera distance", TW_TYPE_FLOAT, &uiCamaraDistance_, "min=0 max=4 step=0.01 keyincr=PGUP keydecr=PGDOWN");
 		TwAddVarRW(bar, "Background", TW_TYPE_COLOR4F, &uiLightColor_, "colormode=hls");
 
-		camara_.LookAt(XMFLOAT4(0, 0,-100, 0), XMFLOAT4(0, 0, 0, 0));
-	
-		skybox_.Create(dev, "../res/skybox/skyDiffuseHDR.dds", "../res/skybox/skySpecularHDR.dds");
+
+		//camara
+		pCamara_ = this->GetSceneMgr().GetMainCamara();
+		pCamara_->LookAt(XMFLOAT4(0, 0, -100, 0), XMFLOAT4(0, 0, 0, 0));
+		camaraController_.SetCamara(pCamara_);
+
+		//environment, skybox
+		environment_ = this->GetSceneMgr().GetEnvironment();
+		environment_->SetEnvmaps("../res/skybox/sky1/domeDiffuseHDR.dds", "../res/skybox/sky1/domeSpecularHDR.dds", "../res/skybox/sky1/domeBrdf.dds");
+
+		//model
 		pistol_ = mgr->CreateModelFromFile("pbr_model/pistol/pistol.fbx");
 
 		Null_Return_Void((
@@ -107,9 +115,6 @@ public:
 		rester.MultisampleEnable = false;
 		rester.ScissorEnable = false;
 		Null_Return_Void((resterState_ = mgr->CreateRasterState(rester)));
-
-	
-		
 	};
 
 	virtual void WindowResize(int width, int height,
@@ -121,7 +126,7 @@ public:
 
 		aspect = (float)width / (float)height;
 		XMStoreFloat4x4(&world_, XMMatrixIdentity());
-		camara_.SetProject(BaseCamara::eCamara_Perspective, XM_PI / 4, aspect, 0.1f, 1000.0f);
+		pCamara_->SetProject(BaseCamara::eCamara_Perspective, XM_PI / 4, aspect, 0.1f, 1000.0f);
 
 		int a = 0;
 	};
@@ -132,7 +137,8 @@ public:
 	{
 		context->IASetInputLayout(xyznuvtbwwiii_);
 		context->RSSetState(resterState_);
-		context->PSSetSamplers(0, 1, &LinerSampler_);
+		ID3D11SamplerState* state[2] = { LinerSampler_, TriLinerSampler_ };
+		context->PSSetSamplers(0, 2, state);
 
 		XMVECTOR rotQuaternion = XMLoadFloat4(&uiRotate_);
 		XMMATRIX rotMatrix = XMMatrixRotationQuaternion(rotQuaternion);
@@ -140,10 +146,11 @@ public:
 		XMStoreFloat4x4(&world_, rotMatrix);
 
 		
-		XMFLOAT4X4 tv = camara_.GetTransposeViewMatrix();
-		XMFLOAT4X4 tp = camara_.GetTransposeProjectMatrix();
-		XMFLOAT4X4 p =  camara_.GetProjectMatrix();
-		XMFLOAT4X4 v =  camara_.GetViewMatrix();
+		XMFLOAT4X4 tv = pCamara_->GetTransposeViewMatrix();
+		XMFLOAT4X4 tp = pCamara_->GetTransposeProjectMatrix();
+		XMFLOAT4X4 p =	pCamara_->GetProjectMatrix();
+		XMFLOAT4X4 v =  pCamara_->GetViewMatrix();
+		XMFLOAT4   pos = pCamara_->GetEyePos();
 
 		XMVECTOR det;
 		XMMATRIX invProj = XMMatrixInverse(&det, XMLoadFloat4x4(&p) );
@@ -156,17 +163,14 @@ public:
 		memset(&MappedResource, 0, sizeof(D3D11_MAPPED_SUBRESOURCE));
 		Fail_Return_Void(context->Map(perframeBuffer_, 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedResource));
 
-		CB_PerFrame* pConstants = (CB_PerFrame*)MappedResource.pData;
-		
+		CB_PerFrame* pConstants = (CB_PerFrame*)MappedResource.pData;		
 
 		pConstants->world = world_;
 		pConstants->view =  tv;
 		pConstants->project = tp;
+		pConstants->camaraPos = XMFLOAT3(pos.x, pos.y, pos.z);
 		context->Unmap(perframeBuffer_, 0);
 	}
-
-
-
 
 	virtual void RenderFrame(ID3D11Device *dev,
 		ID3D11DeviceContext* context)
@@ -184,6 +188,8 @@ public:
 
 		//obj
 		context->OMSetRenderTargets(1, &mainRT, mainDSV);
+		context->VSSetConstantBuffers(0, 1, &perframeBuffer_);
+		context->PSSetConstantBuffers(0, 1, &perframeBuffer_);
 		pistol_->Render(context);
 
 		//ui
@@ -200,14 +206,12 @@ public:
 		{
 			return 0;
 		}
-		
-
-		camara_.ProcessMessage(hwnd, msg, wparam, lparam);
+		camaraController_.ProcessMessage(hwnd, msg, wparam, lparam);
 	}
 
 	virtual void UpdateScene(float elapse)
 	{
-		camara_.Update(elapse);
+		camaraController_.Update(elapse);
 	}
 
 	virtual void Exit()
@@ -233,7 +237,9 @@ private:
 	SkyBox                skybox_;
 	Renderable*           pistol_;
 
-	FirstPersonCamara	 camara_;
+	Environmentable*      environment_;
+	FirstPersonController camaraController_;
+	BaseCamara*           pCamara_;
 	XMFLOAT4X4 world_, view_, project_;
 	float aspect;
 	

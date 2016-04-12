@@ -7,8 +7,8 @@
 #include"util/singletonable.h"
 #include"graphics.h"
 #include"input.h"
-#include"camara.h"
 #include"util/timer.h"
+#include"scene_mgr.h"
 
 using std::string;
 
@@ -24,14 +24,14 @@ namespace ul
 		int       height_;
 		string    appName_;
 		bool      fullscreen_;
-		Input	  input_;
-		Graphics  graphics_;
 		HWND      hWnd_;
 		HINSTANCE hInstance_;
 		Timer     timer_;
 		bool      initialized_;
-	
-
+		
+		Input	  input_;
+		Graphics  graphics_;
+		SceneMgr  sceneMgr_;
 	public:
 		Application() :
 			width_(0),
@@ -52,6 +52,12 @@ namespace ul
 		{
 			return hWnd_;
 		}
+
+		SceneMgr& GetSceneMgr()
+		{
+			return sceneMgr_;
+		}
+
 		void SetAppcationName(const string& name)
 		{
 			appName_ = name;

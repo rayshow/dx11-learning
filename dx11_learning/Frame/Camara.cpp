@@ -47,7 +47,7 @@ void  BaseCamara::LookAt(XMFLOAT4& eye, XMFLOAT4& at)
 
 }
 
-void  BaseCamara::SetProject(eCamaraProjectType type,
+void  BaseCamara::SetProject(ECamaraProjectType type,
 	float p, float q, float nearclip =0.1, float farclip =1000 )
 {
 	near_ = nearclip;
@@ -74,7 +74,7 @@ void  BaseCamara::SetProject(eCamaraProjectType type,
 	}
 }
 
-FirstPersonCamara::eCamaraKey FirstPersonCamara::keyMap(ulUint keycode)
+FirstPersonController::eCamaraKey FirstPersonController::keyMap(ulUint keycode)
 {
 	switch (keycode)
 	{
@@ -98,7 +98,7 @@ FirstPersonCamara::eCamaraKey FirstPersonCamara::keyMap(ulUint keycode)
 	}
 }
 
-void FirstPersonCamara::ProcessMessage(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+void FirstPersonController::ProcessMessage(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	switch (uMsg)
 	{
@@ -148,7 +148,7 @@ void FirstPersonCamara::ProcessMessage(HWND hWnd, UINT uMsg, WPARAM wParam, LPAR
 
 }
 
-void FirstPersonCamara::Update(float elapsedTime)
+void FirstPersonController::Update(float elapsedTime)
 {
 	//recover the position of camara
 	if (keyDown_[eCamaraMoveReset])
@@ -191,29 +191,29 @@ void FirstPersonCamara::Update(float elapsedTime)
 	yawDelta = ptCurMouseDelta.x * rotateScaler_*elapsedTime;
 	pitchDelta = ptCurMouseDelta.y * rotateScaler_*elapsedTime;
 
-	yaw_ += yawDelta;
-	pitch_ += pitchDelta;
+	pCamara_->yaw_ += yawDelta;
+	pCamara_->pitch_ += pitchDelta;
 
 	//Log_Info("yaw:%f pitch:%f delta(%f %f)", yaw_, pitch_, yawDelta, pitchDelta);
 
 	// Limit pitch to straight up or straight down
-	pitch_ = std::max(-XM_PI / 2.0f, pitch_);
-	pitch_ = std::min( XM_PI / 2.0f, pitch_);
+	pCamara_->pitch_ = std::max(-XM_PI / 2.0f, pCamara_->pitch_);
+	pCamara_->pitch_ = std::min(XM_PI / 2.0f, pCamara_->pitch_);
 
-	XMMATRIX camaraRot = XMMatrixRotationRollPitchYaw(pitch_, yaw_, 0);
+	XMMATRIX camaraRot = XMMatrixRotationRollPitchYaw(pCamara_->pitch_, pCamara_->yaw_, 0);
 	XMVECTOR localUp = XMVectorSet(0, 1, 0, 0);
 	XMVECTOR localForward = XMVectorSet(0, 0, 1, 0);
 	XMVECTOR worldUp = XMVector4Transform(localUp, camaraRot);
 	XMVECTOR worldForward = XMVector4Transform(localForward, camaraRot);
 	moveDelta = XMVector4Transform(moveDelta, camaraRot);
 
-	XMVECTOR eyePos = XMLoadFloat4(&position_);
+	XMVECTOR eyePos = XMLoadFloat4(&pCamara_->position_);
 	eyePos += moveDelta;
 
 	XMVECTOR lookAt = eyePos + worldForward;
 	XMMATRIX view = XMMatrixLookAtLH(eyePos, lookAt, worldUp);
-	XMStoreFloat4x4(&view_, view);
-	XMStoreFloat4(&position_, eyePos);
+	XMStoreFloat4x4(&pCamara_->view_, view);
+	XMStoreFloat4(&pCamara_->position_, eyePos);
 	
 	moveDirection_ = XMFLOAT4(0, 0, 0, 0);
 }

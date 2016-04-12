@@ -10,54 +10,61 @@ namespace ul
 {
 	class Environmentable
 	{
-
 	protected:
-		ID3D11ShaderResourceView*  specularEnvmap_;
-		ID3D11ShaderResourceView*  diffuseEnvmap_;
+		ID3D11ShaderResourceView*  environmentMaps_[3];
 	public:
-		Environmentable() :
-			specularEnvmap_(nullptr),
-			diffuseEnvmap_(nullptr){}
-
-		bool Create(
-			const std::string& diffuseName,
-			const std::string& specularName)
+		Environmentable()
 		{
-			False_Return_False(this->setEnvmap(diffuseName, specularName));
+			memset(environmentMaps_, 0, sizeof(ID3D11ShaderResourceView*) * 3);
+		}
+
+		bool SetEnvmaps(
+			const std::string& diffuseName,
+			const std::string& specularName,
+			const std::string& intergeFileName)
+		{
+			False_Return_False(this->setEnvmap(diffuseName, specularName, intergeFileName));
 			return true;
 		}
 
 		virtual ~Environmentable(){}
 	public:
-	    ID3D11ShaderResourceView* GetSpecularEnvmap()
-		{
-			return specularEnvmap_;
-		}
-		 ID3D11ShaderResourceView* GetDiffuseEnvmap()
-		{
-			return diffuseEnvmap_;
-		}
+	
+		 ID3D11ShaderResourceView** GetEnvironmentmaps()
+		 {
+			 return environmentMaps_;
+		 }
+
 	protected:
 		bool setEnvmap(
 			const std::string& diffuseName,
-			const std::string& specularName)
+			const std::string& specularName,
+			const std::string& intergeFileName)
 		{
 			ResourceMgr* mgr = ResourceMgr::GetSingletonPtr();
 
 			Null_Return_False_With_Msg(
-				(diffuseEnvmap_ = mgr->CreateTextureFromFile(diffuseName)),
+				(environmentMaps_[0] = mgr->CreateTextureFromFile(diffuseName)),
 				"create diffuse env map from file:%s  error.",
 				diffuseName.c_str()
 			);
 
 			Null_Return_False_With_Msg(
-				(specularEnvmap_ = mgr->CreateTextureFromFile(specularName)),
+				(environmentMaps_[1] = mgr->CreateTextureFromFile(specularName)),
 				"create specular env map from file:%s  error.",
 				specularName.c_str()
 				);
+
+			Null_Return_False_With_Msg(
+				(environmentMaps_[2] = mgr->CreateTextureFromFile(intergeFileName)),
+				"create interge map from file:%s  error.",
+				intergeFileName.c_str()
+				);
+
 			return true;
 		}
 	};
+
 
 	class SkyBox : public BaseModel, public Environmentable
 	{
@@ -67,10 +74,11 @@ namespace ul
 		bool Create(
 			ID3D11Device* device,
 			const std::string& diffuseName,
-			const std::string& specularName
+			const std::string& specularName,
+			const std::string& intergeFileName
 			)
 		{
-			False_Return_False(this->setEnvmap(diffuseName, specularName));
+			False_Return_False(this->setEnvmap(diffuseName, specularName, intergeFileName));
 			this->createRenderData(device);
 
 			return true;
@@ -122,7 +130,7 @@ namespace ul
 			SRenderParameter* pParameter = new SRenderParameter();
 			pParameter->srvCount_ = 1;
 			pParameter->srvs_ = new ID3D11ShaderResourceView*[1];
-			pParameter->srvs_[0] = specularEnvmap_;
+			pParameter->srvs_[0] = environmentMaps_[0];
 			renderParameters_.push_back(pParameter);
 			
 			this->children_[0].SetParameter(pParameter);

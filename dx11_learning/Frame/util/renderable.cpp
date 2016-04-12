@@ -2,8 +2,40 @@
 
 #include"renderable.h"
 #include"res_mgr.h"
+#include"../scene_mgr.h"
 
 using namespace ul;
+
+
+SubBatch::SubBatch() :refParameter_(nullptr), texCount_(0), indexOffset_(0), indexCount_(0), refSceneMgr_(nullptr)
+{
+	refSceneMgr_ = SceneMgr::GetSingletonPtr();
+	assert(refSceneMgr_ != nullptr);
+}
+
+
+
+void SubBatch::Render(ID3D11DeviceContext* context)
+{
+	context->IASetInputLayout(refParameter_->vertexLayout_);
+	context->VSSetShader(refParameter_->vsEnterPoint_, nullptr, 0);
+	context->PSSetShader(refParameter_->psEnterPoint_, nullptr, 0);
+	context->PSSetShaderResources(refParameter_->srvCount_, 3, 
+		refSceneMgr_->GetEnvironment()->GetEnvironmentmaps());
+
+
+	if (refParameter_->srvCount_>0)
+	{
+		context->PSSetShaderResources(0, refParameter_->srvCount_, refParameter_->srvs_);
+	}
+	else{
+		static ID3D11ShaderResourceView*    pSRV[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+		context->PSSetShaderResources(0, 8, pSRV);
+	}
+	context->DrawIndexed(indexCount_, indexOffset_, 0);
+}
+
+
 
 bool BaseModel::Create(
 	ID3D11Device* dev,

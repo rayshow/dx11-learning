@@ -6,6 +6,7 @@
 
 #include<vector>
 #include"tools.h"
+//#include"../scene_mgr.h"
 
 namespace ul{
 	using namespace std;
@@ -157,10 +158,6 @@ namespace ul{
 		}
 	};
 
-
-	
-
-
 	struct SRenderParameter
 	{
 		ulUint                      srvCount_;
@@ -178,44 +175,32 @@ namespace ul{
 
 	}; 
 
+	class SceneMgr;
+
 	class SubBatch : public Renderable
 	{
 	protected:
 		ulUint							            texCount_;
 		ulUint                                      indexOffset_;
 		ulUint									    indexCount_;
-		SRenderParameter *							refParameter;
+		SRenderParameter*							refParameter_;
+		SceneMgr*                                   refSceneMgr_;
 	public:
-		SubBatch() :refParameter(nullptr), texCount_(0), indexOffset_(0), indexCount_(0){}
+		SubBatch();
 
 		virtual ~SubBatch() {}
 
-		virtual void Render(ID3D11DeviceContext* context)
-		{
-			context->IASetInputLayout(refParameter->vertexLayout_);
-			context->VSSetShader(refParameter->vsEnterPoint_, nullptr, 0);
-			context->PSSetShader(refParameter->psEnterPoint_, nullptr, 0);
+		virtual void Render(ID3D11DeviceContext* context);
 
-			if (refParameter)
-			{
-				context->PSSetShaderResources(0, refParameter->srvCount_, refParameter->srvs_);
-			}
-			else{
-				static ID3D11ShaderResourceView*    pSRV[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
-				context->PSSetShaderResources(0, 8, pSRV);
-			}
-			context->DrawIndexed(indexCount_, indexOffset_, 0);
-		}
-
-		void SetRenderBatch(ulUint indexOffset, ulUint indexCount)
+		inline void SetRenderBatch(ulUint indexOffset, ulUint indexCount)
 		{
 			this->indexCount_ = indexCount;
 			this->indexOffset_ = indexOffset;
 		}
 
-		void SetParameter(SRenderParameter *parameter)
+		inline void SetParameter(SRenderParameter *parameter)
 		{
-			this->refParameter = parameter;
+			this->refParameter_ = parameter;
 		}
 	};
 

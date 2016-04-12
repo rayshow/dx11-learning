@@ -25,6 +25,7 @@
     <ClInclude Include="d3d.h" />
     <ClInclude Include="graphics.h" />
     <ClInclude Include="input.h" />
+    <ClInclude Include="scene_mgr.h" />
     <ClInclude Include="util\environmentable.h" />
     <ClInclude Include="util\logger.h" />
     <ClInclude Include="util\common_model_loader.h" />

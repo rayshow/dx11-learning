@@ -97,6 +97,8 @@ bool CommonModelLoader::LoadFile(const std::string resourcePath, const std::stri
 	}
 	std::string materialName = meshFileName.substr(0, off) + ".material";
 	this->loadMaterial(resourcePath, materialName, data.materials_ );
+
+	return true;
 }
 
 
@@ -111,7 +113,7 @@ bool CommonModelLoader::loadVerticeData(EVerticeType type, const aiMesh* mesh, v
 			{
 				SVertexXyzNuv* pVertex = &batch[i];
 				memcpy(pVertex->pos_, &mesh->mVertices[i], sizeof(float) * 3);
-				memcpy(pVertex->uv_,  &mesh->mTextureCoords[i], sizeof(float) * 2);
+				memcpy(pVertex->uv_,  &mesh->mTextureCoords[0][i], sizeof(float) * 2);
 				memcpy(pVertex->normal_, &mesh->mNormals[i], sizeof(float) * 3);
 			}
 			break;

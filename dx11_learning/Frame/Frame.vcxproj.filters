@@ -80,5 +80,8 @@
     <ClInclude Include="util\ty_model_loader.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="scene_mgr.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

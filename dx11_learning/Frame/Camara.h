@@ -5,18 +5,19 @@
 #include<xnamath.h>
 
 #include"util/tools.h"
-#include"Application.h"
-#include"Input.h"
 
 namespace ul
 {
 	class BaseCamara
 	{
+		friend class FirstPersonController;
+
 	public:
 		BaseCamara():
 			mainCamara(false){}
 		virtual ~BaseCamara(){}
-		enum eCamaraProjectType{
+
+		enum ECamaraProjectType{
 			eCamara_Perspective,
 			eCamara_Ortho,
 		};
@@ -28,11 +29,11 @@ namespace ul
 		XMFLOAT4			lookDirection_;
 		ulFloat			    yaw_;
 		ulFloat			    pitch_;
-		eCamaraProjectType  projectType_;
-		float               near_;
-		float               far_;
-		float               projParam_[2];
-		bool                mainCamara;
+		ECamaraProjectType  projectType_;
+		ulFloat             near_;
+		ulFloat             far_;
+		ulFloat             projParam_[2];
+		ulBit               mainCamara;
 
 	public:
 		inline XMFLOAT4X4  GetTransposeViewMatrix()
@@ -61,7 +62,7 @@ namespace ul
 			return result;
 		}
 
-		void   SetProject(eCamaraProjectType, float, float, float, float);
+		void   SetProject(ECamaraProjectType, float, float, float, float);
 		XMFLOAT4& GetEyePos()
 		{
 			return position_;
@@ -72,8 +73,7 @@ namespace ul
 	};  //BaseCamara
 
 
-
-	class FirstPersonCamara: public BaseCamara
+	class FirstPersonController
 	{
 	public:
 		enum eCamaraKey{
@@ -93,17 +93,27 @@ namespace ul
 			eCamaraMouseMax
 		};
 	private:
-		ulFloat    rotateScaler_;
-		ulFloat    moveScaler_;
-		bool       keyDown_[eCamaraMoveMax];
-		bool       mouseDown_[eCamaraMouseMax];
-		XMFLOAT4   moveDirection_;
-		POINT      lastMousePosition_;
+		ulFloat     rotateScaler_;
+		ulFloat     moveScaler_;
+		bool        keyDown_[eCamaraMoveMax];
+		bool        mouseDown_[eCamaraMouseMax];
+		XMFLOAT4    moveDirection_;
+		POINT       lastMousePosition_;
+		BaseCamara *pCamara_;
+
 	public:
-		FirstPersonCamara():
+		FirstPersonController() :
 			rotateScaler_(1),
-			moveScaler_(50)
-		{}
+			moveScaler_(50),
+			pCamara_(nullptr)
+		{
+			
+		}
+
+		void SetCamara(BaseCamara* camara)
+		{
+			this->pCamara_ = camara;
+		}
 	protected:
 		virtual eCamaraKey keyMap(ulUint keycode);
 		void Reset(){}

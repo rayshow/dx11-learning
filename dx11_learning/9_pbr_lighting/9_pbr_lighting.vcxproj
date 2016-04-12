@@ -13,6 +13,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{3CC8F34D-93DF-4F9E-B9A7-5F2116C4B3E1}</ProjectGuid>
     <RootNamespace>My1_HelloFrame</RootNamespace>
+    <ProjectName>9_pbr_env_lighting</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

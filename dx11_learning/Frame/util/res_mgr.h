@@ -137,7 +137,6 @@ namespace ul
 		ID3D11Device*                  m_device;
 		ID3D11DeviceContext*           m_context;
 		string                         resourceBasePath_;
-
 	public:
 		ResourceMgr(){}
 	private:

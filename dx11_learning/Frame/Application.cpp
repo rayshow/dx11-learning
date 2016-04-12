@@ -19,9 +19,6 @@ LRESULT CALLBACK MessageProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			return 0;
 		}
 		
-		{
-		
-		}
 		case WM_PAINT:
 		{
 			PAINTSTRUCT ps;
