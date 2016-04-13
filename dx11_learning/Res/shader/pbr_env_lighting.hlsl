@@ -1,4 +1,3 @@
-
 cbuffer cbPerFrame : register(b0)
 {
 	float4x4 g_f4x4World;
@@ -6,14 +5,11 @@ cbuffer cbPerFrame : register(b0)
 	float4x4 g_f4x4Project;
 	float3   g_camaraPos;
 	float    g_padding;
-	
 }
 
-const float    g_fTextureGamma = 2.0;
-
-
-SamplerState     g_SampleLinear          : register(s0);
-SamplerState     g_SampleTrilinear       : register(s1);
+const float		   g_fTextureGamma = 2.0;
+SamplerState	   g_SampleLinear          : register(s0);
+SamplerState	   g_SampleTrilinear       : register(s1);
 
 Texture2D          g_Albedo                : register(t0);
 Texture2D		   g_Normal                : register(t1);
@@ -111,7 +107,7 @@ PS_TranslateInput VS_FillBuffer(VS_VertexLayout I)
 	//ndcŒª÷√
 	O.f4Position = mul(posVS, g_f4x4Project);
 	//normal 
-	O.f3Normal = normalize( mul(I.f3Normal, (float3x3)g_f4x4World) );
+	O.f3Normal =   normalize( mul(I.f3Normal, (float3x3)g_f4x4World) );
 	//coord
 	O.f2TexCoord = I.f2TexCoord;
 

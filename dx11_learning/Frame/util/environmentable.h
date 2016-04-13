@@ -66,27 +66,32 @@ namespace ul
 	};
 
 
-	class SkyBox : public BaseModel, public Environmentable
+	class SkyBox : public BaseModel
 	{
+	private:
+		Environmentable *environment_;
+
 	public:
 		SkyBox(){}
-		virtual ~SkyBox(){}
+		~SkyBox(){}
 		bool Create(
-			ID3D11Device* device,
-			const std::string& diffuseName,
-			const std::string& specularName,
-			const std::string& intergeFileName
+			ID3D11Device*    device,
+			Environmentable* environment
 			)
 		{
-			False_Return_False(this->setEnvmap(diffuseName, specularName, intergeFileName));
+			this->setEnvironment(environment);
 			this->createRenderData(device);
-
 			return true;
 		}
 	private:
+		void setEnvironment(Environmentable* environment)
+		{
+			this->environment_ = environment;
+		}
 		void createRenderData(ID3D11Device* device)
 		{
 			SModelData data;
+			ResourceMgr* mgr = ResourceMgr::GetSingletonPtr();
 			data.primtives_.stride_ = sizeof(SVertexXyzNuv);
 			data.primtives_.indiceNum_ = 36;
 			data.primtives_.type_ = eVertex_XYZNUV;
@@ -130,9 +135,21 @@ namespace ul
 			SRenderParameter* pParameter = new SRenderParameter();
 			pParameter->srvCount_ = 1;
 			pParameter->srvs_ = new ID3D11ShaderResourceView*[1];
-			pParameter->srvs_[0] = environmentMaps_[0];
+			pParameter->srvs_[0] = environment_->GetEnvironmentmaps()[1];
 			renderParameters_.push_back(pParameter);
-			
+
+			D3D11_INPUT_ELEMENT_DESC desc[G_MAX_INPUT_ELEMENT_COUNT];
+			ulUint count;
+			ID3D11InputLayout* layout;
+			GetInputDescByVerticeType(eVertex_XYZNUV, desc, &count);
+
+			Null_Return_Void(
+				(pParameter->vsEnterPoint_ = mgr->CreateVertexShaderAndInputLayout("skybox.hlsl", "VS_FillBuffer", "vs_5_0",
+				desc, count, &pParameter->vertexLayout_))
+			);
+			pParameter->psEnterPoint_ = mgr->CreatePixelShader("skybox.hlsl", "PS_FillBuffer", "ps_5_0");
+
+
 			this->children_[0].SetParameter(pParameter);
 		}
 

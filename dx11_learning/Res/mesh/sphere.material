@@ -1,0 +1,9 @@
+<materials>
+	<material>
+		<shader> 
+			<fileName>shader/render_sh.hlsl</fileName>
+			<vsEnterPoint>VS_RenderCommonMesh</vsEnterPoint>
+			<psEnterPoint>PS_FillBufferPass</psEnterPoint>
+		</shader>
+	</material>
+</materials>

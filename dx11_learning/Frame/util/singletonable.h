@@ -14,7 +14,6 @@ namespace ul{
 	public:
 		Singletonable()
 		{
-
 			if (s_Singleton)
 				return;
 #if defined( _MSC_VER ) && _MSC_VER < 1200	 

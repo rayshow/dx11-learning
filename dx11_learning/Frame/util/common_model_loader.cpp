@@ -191,8 +191,7 @@ bool CommonModelLoader::loadMaterial(
 			xml_node<> *normalMapNode = material->first_node("normalMap");
 			xml_node<> *specularMapNode = material->first_node("specularMap");
 			if (Null(shaderNode) || Null(fileNameNode) || Null(vsEnterPointNode) ||
-				Null(psEnterPointNode) || Null(albedoMapNode) || Null(normalMapNode) ||
-				Null(specularMapNode))
+				Null(psEnterPointNode) )
 			{
 				Log_Err("material node not find in file %s.", materialFileName.c_str());
 				Safe_Delete(materialData);
@@ -215,26 +214,38 @@ bool CommonModelLoader::loadMaterial(
 			buffer >> materialData->psEnterPoint;
 			buffer.clear();
 
-			//albedoMap
-			buffer << albedoMapNode->value();
-			buffer >> mapName;
-			materialData->texturePath.push_back(resourcePath+ mapName);
-			buffer.clear();
-			materialData->texCount++;
 
-			//normalMap
-			buffer << normalMapNode->value();
-			buffer >> mapName;
-			materialData->texturePath.push_back(resourcePath + mapName);
-			buffer.clear();
-			materialData->texCount++;
-
-			//specular
-			buffer << specularMapNode->value();
-			buffer >> mapName;
-			materialData->texturePath.push_back(resourcePath + mapName);
-			buffer.clear();
-			materialData->texCount++;
+			if (albedoMapNode)
+			{
+				//albedoMap
+				buffer << albedoMapNode->value();
+				buffer >> mapName;
+				materialData->texturePath.push_back(resourcePath + mapName);
+				buffer.clear();
+				materialData->texCount++;
+			}
+		
+		
+			if (normalMapNode)
+			{
+				//normalMap
+				buffer << normalMapNode->value();
+				buffer >> mapName;
+				materialData->texturePath.push_back(resourcePath + mapName);
+				buffer.clear();
+				materialData->texCount++;
+			}
+			
+			if (specularMapNode)
+			{
+				//specular
+				buffer << specularMapNode->value();
+				buffer >> mapName;
+				materialData->texturePath.push_back(resourcePath + mapName);
+				buffer.clear();
+				materialData->texCount++;
+			}
+		
 			
 			index++;
 			buffer << index;

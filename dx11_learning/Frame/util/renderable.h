@@ -176,7 +176,6 @@ namespace ul{
 	}; 
 
 	class SceneMgr;
-
 	class SubBatch : public Renderable
 	{
 	protected:
@@ -187,7 +186,6 @@ namespace ul{
 		SceneMgr*                                   refSceneMgr_;
 	public:
 		SubBatch();
-
 		virtual ~SubBatch() {}
 
 		virtual void Render(ID3D11DeviceContext* context);
@@ -210,7 +208,7 @@ namespace ul{
 	public:
 		BaseModel() :vb_(nullptr), ib_(nullptr) {}
 
-		virtual ~BaseModel()
+		virtual  ~BaseModel()
 		{
 			this->Release();
 		}

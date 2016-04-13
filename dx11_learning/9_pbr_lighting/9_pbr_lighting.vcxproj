@@ -76,6 +76,9 @@
     <ClCompile Include="Main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\Res\shader\base_define.hlsli" />
+    <None Include="..\Res\shader\full_screen_process.hlsli" />
+    <None Include="..\Res\shader\tone_mapping.hlsli" />
     <None Include="main.hlsl">
       <FileType>Document</FileType>
     </None>
@@ -86,12 +89,12 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <None Include="skybox.hlsl">
+    <None Include="..\Res\shader\pbr_env_lighting.hlsl">
       <FileType>Document</FileType>
     </None>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\Res\shader\pbr_env_lighting.hlsl">
+    <None Include="..\Res\shader\present_hdr_format.hlsl">
       <FileType>Document</FileType>
     </None>
   </ItemGroup>

@@ -36,8 +36,14 @@ public:
 		ID3D11DeviceContext* context)
 	{
 		ResourceMgr *mgr = ResourceMgr::GetSingletonPtr();
+		mgr->SetResourceBasePath("../res/");
 
-		camara_.LookAt(XMFLOAT4(0, 0, 0, 0), XMFLOAT4(0, 0, 1, 0));
+		//camara
+		pCamara_ = this->GetSceneMgr().GetMainCamara();
+		pCamara_->LookAt(XMFLOAT4(0, 0, -100, 0), XMFLOAT4(0, 0, 0, 0));
+		camaraController_.SetCamara(pCamara_);
+
+		pCamara_->LookAt(XMFLOAT4(0, 0, 0, 0), XMFLOAT4(0, 0, 1, 0));
 
 		
 		Null_Return_Void((ball_ = mgr->CreateModelFromFile("../res/mesh/sphere.x")));
@@ -96,7 +102,7 @@ public:
 
 		aspect = (float)width / (float)height;
 		XMStoreFloat4x4(&world_, XMMatrixIdentity());
-		camara_.SetProject(BaseCamara::eCamara_Perspective, XM_PI / 4, aspect, 0.1f, 1000.0f);
+		pCamara_->SetProject(BaseCamara::eCamara_Perspective, XM_PI / 4, aspect, 0.1f, 1000.0f);
 
 		//one texture
 		D3D11_TEXTURE2D_DESC rgba_nomips_Desc;
@@ -139,10 +145,10 @@ public:
 		context->RSSetState(resterState_);
 		context->PSSetSamplers(0, 1, &TriLinerSampler_);
 
-		XMFLOAT4X4 tv = camara_.GetTransposeViewMatrix();
-		XMFLOAT4X4 tp = camara_.GetTransposeProjectMatrix();
-		XMFLOAT4X4 p =  camara_.GetProjectMatrix();
-		XMFLOAT4X4 v =  camara_.GetViewMatrix();
+		XMFLOAT4X4 tv = pCamara_->GetTransposeViewMatrix();
+		XMFLOAT4X4 tp = pCamara_->GetTransposeProjectMatrix();
+		XMFLOAT4X4 p =  pCamara_->GetProjectMatrix();
+		XMFLOAT4X4 v =  pCamara_->GetViewMatrix();
 
 		XMVECTOR det;
 		XMMATRIX invProj = XMMatrixInverse(&det, XMLoadFloat4x4(&p) );
@@ -169,7 +175,8 @@ public:
 		XMStoreFloat4x4(&envmap->invProj, invProj);
 		XMStoreFloat4x4(&envmap->invView, invView);
 
-		envmap->eyePos = camara_.GetEyePos();
+		envmap->eyePos = pCamara_->GetEyePos();
+
 		context->Unmap(envmapBuffer_, 0);
 	}
 
@@ -205,14 +212,15 @@ public:
 		context->PSSetShaderResources(0, 8, pSRV);
 	};
 
-	virtual void MsgProcess(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
+	virtual int MsgProcess(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 	{
-		camara_.ProcessMessage(hwnd, msg, wparam, lparam);
+		camaraController_.ProcessMessage(hwnd, msg, wparam, lparam);
+		return 0;
 	}
 
 	virtual void UpdateScene(float elapse)
 	{
-		camara_.Update(elapse);
+		camaraController_.Update(elapse);
 	}
 
 	virtual void Exit()
@@ -235,14 +243,15 @@ private:
 	ID3D11RasterizerState* resterState_;
 	Renderable           * ball_;
 
-	ID3D11RenderTargetView* colorRT_;
+	ID3D11RenderTargetView*  colorRT_;
 	ID3D11ShaderResourceView *colorSRV_;
-	ID3D11RenderTargetView* depthRT_;
+	ID3D11RenderTargetView*  depthRT_;
 	ID3D11ShaderResourceView *depthSRV_;
 
+	FirstPersonController camaraController_;
+	BaseCamara*           pCamara_;
 
 
-	FirstPersonCamara camara_;
 	XMFLOAT4X4 world_, view_, project_;
 	float aspect;
 };

@@ -23,20 +23,20 @@ namespace ul
 	public:
 	
 	private:
-		bool            enableVsyn_;
-		bool            enableFullScreen_;
-		int             videoMemory_;
-		string		    videoCardDescription_;
-		IDXGISwapChain *swapChain_;
-		ID3D11Device   *device_;
-		ID3D11DeviceContext *deviceContext_;
-		ID3D11RenderTargetView *mainRT_;
-		ID3D11DepthStencilView  *mainDSV_;
-		ID3D11DepthStencilState *depthStenilState_;
-		ID3D11RasterizerState   *rasterState_;
-		ResourceMgr    *resourceMgr_;
-		D3D11_VIEWPORT  viewport_;
-		DXGI_SWAP_CHAIN_DESC  swapChainDesc_;
+		bool			         enableVsyn_;
+		bool			         enableFullScreen_;
+		int				         videoMemory_;
+		string			         videoCardDescription_;
+		IDXGISwapChain*          swapChain_;
+		ID3D11Device*            device_;
+		ID3D11DeviceContext*     deviceContext_;
+		ID3D11RenderTargetView*  mainRT_;
+		ID3D11DepthStencilView*  mainDSV_;
+		ID3D11DepthStencilState* depthStenilState_;
+		ID3D11RasterizerState*   rasterState_;
+		ResourceMgr*             resourceMgr_;
+		D3D11_VIEWPORT           viewport_;
+		DXGI_SWAP_CHAIN_DESC     swapChainDesc_;
 	public:
 		D3D() :
 			enableVsyn_(true),

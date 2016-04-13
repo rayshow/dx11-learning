@@ -11,17 +11,17 @@
 #include<environmentable.h>
 #include<D3DX10Math.h>
 #include<AntTweakBar.h>
-
+#include<postprocess.h>
 
 using namespace ul;
 
 
 struct CB_PerFrame
 {
-	XMFLOAT4X4 world;
-	XMFLOAT4X4 view;
-	XMFLOAT4X4 project;
-	XMFLOAT3   camaraPos;
+	XMFLOAT4X4  world;
+	XMFLOAT4X4  view;
+	XMFLOAT4X4  project;
+	XMFLOAT3    camaraPos;
 	float       padding;
 };
 
@@ -63,11 +63,17 @@ public:
 
 		//environment, skybox
 		environment_ = this->GetSceneMgr().GetEnvironment();
-		environment_->SetEnvmaps("../res/skybox/sky1/domeDiffuseHDR.dds", "../res/skybox/sky1/domeSpecularHDR.dds", "../res/skybox/sky1/domeBrdf.dds");
+		environment_->SetEnvmaps(
+			"../res/skybox/sky1/domeDiffuseHDR.dds",
+			"../res/skybox/sky1/domeSpecularHDR.dds",
+			"../res/skybox/sky1/domeBrdf.dds");
+		skybox_.Create(dev, environment_);
+
 
 		//model
 		pistol_ = mgr->CreateModelFromFile("pbr_model/pistol/pistol.fbx");
 
+		//shader
 		Null_Return_Void((
 			skyVertex_ = mgr->CreateVertexShaderAndInputLayout(
 			"skybox.hlsl", "VS_FillBuffer", "vs_5_0",
@@ -82,6 +88,9 @@ public:
 		));
 		Null_Return_Void((modelPixel_ = mgr->CreatePixelShader("main.hlsl", "PS_FillBuffer", "ps_5_0")));
 		Null_Return_Void((perframeBuffer_ = mgr->CreateConstantBuffer(sizeof(CB_PerFrame))));
+
+		Null_Return_Void(mgr->CreateVertexShader("../res/shader/present_hdr_format.hlsl", "VS_FullScreenProcess", "vs_5_0"));
+		Null_Return_Void(mgr->CreatePixelShader("../res/shader/present_hdr_format.hlsl", "PS_present_hdr", "ps_5_0"));
 
 		D3D11_SAMPLER_DESC SamDesc;
 		SamDesc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_MIP_POINT;
@@ -128,7 +137,6 @@ public:
 		XMStoreFloat4x4(&world_, XMMatrixIdentity());
 		pCamara_->SetProject(BaseCamara::eCamara_Perspective, XM_PI / 4, aspect, 0.1f, 1000.0f);
 
-		int a = 0;
 	};
 
 
@@ -145,11 +153,10 @@ public:
 		rotMatrix = XMMatrixTranspose(rotMatrix);
 		XMStoreFloat4x4(&world_, rotMatrix);
 
-		
-		XMFLOAT4X4 tv = pCamara_->GetTransposeViewMatrix();
-		XMFLOAT4X4 tp = pCamara_->GetTransposeProjectMatrix();
-		XMFLOAT4X4 p =	pCamara_->GetProjectMatrix();
-		XMFLOAT4X4 v =  pCamara_->GetViewMatrix();
+		XMFLOAT4X4 tv =  pCamara_->GetTransposeViewMatrix();
+		XMFLOAT4X4 tp =  pCamara_->GetTransposeProjectMatrix();
+		XMFLOAT4X4 p =	 pCamara_->GetProjectMatrix();
+		XMFLOAT4X4 v =   pCamara_->GetViewMatrix();
 		XMFLOAT4   pos = pCamara_->GetEyePos();
 
 		XMVECTOR det;
@@ -180,11 +187,11 @@ public:
 		ID3D11DepthStencilView* mainDSV = this->GetMainDSV();
 
 		////sky box
-		//context->OMSetRenderTargets(1, &mainRT, nullptr);
-		//context->VSSetShader(skyVertex_, nullptr, 0);
-		//context->PSSetShader(skyPixel_, nullptr, 0);
-		//context->VSSetConstantBuffers(0, 1, &perframeBuffer_);
-		//skybox_.Render(context);
+		context->OMSetRenderTargets(1, &mainRT, nullptr);
+		context->VSSetShader(skyVertex_, nullptr, 0);
+		context->PSSetShader(skyPixel_, nullptr, 0);
+		context->VSSetConstantBuffers(0, 1, &perframeBuffer_);
+		skybox_.Render(context);
 
 		//obj
 		context->OMSetRenderTargets(1, &mainRT, mainDSV);
@@ -223,6 +230,9 @@ private:
 	ID3D11PixelShader*   skyPixel_;
 	ID3D11VertexShader*  modelVertex_;
 	ID3D11PixelShader*   modelPixel_;
+	ID3D11VertexShader*  hdrPresentVs_;
+	ID3D11PixelShader*   hdrPresentPs_;
+
 	ID3D11InputLayout*   xyznuvtbwwiii_;
 	ID3D11InputLayout*   xyznuv_;
 	ID3D11Buffer*        perframeBuffer_;
@@ -234,14 +244,14 @@ private:
 
 	ID3D11RasterizerState* resterState_;
 
-	SkyBox                skybox_;
+	
 	Renderable*           pistol_;
-
+	SkyBox                skybox_;
 	Environmentable*      environment_;
 	FirstPersonController camaraController_;
 	BaseCamara*           pCamara_;
-	XMFLOAT4X4 world_, view_, project_;
-	float aspect;
+	XMFLOAT4X4			  world_, view_, project_;
+	float				  aspect;
 	
 	int                   uiLevel_;
 	int                   uiAnim_;
@@ -257,8 +267,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 {
 	//ul::SetBreakPointAtMemoryLeak(505);
 	ul::OpenConsoleAndDebugLeak();
-	
-	
+
 	Log_Info("hello");
 	//Utils::SetBreakPointAtMemoryLeak(154);
 	Lession1_Frame  *app = new Lession1_Frame;

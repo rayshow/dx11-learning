@@ -73,6 +73,11 @@ namespace ul
 	};  //BaseCamara
 
 
+	class CamaraController
+	{
+
+	};
+
 	class FirstPersonController
 	{
 	public:
