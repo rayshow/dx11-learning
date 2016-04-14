@@ -24,16 +24,20 @@ namespace ul
 	protected:
 		XMFLOAT4X4			view_;
 		XMFLOAT4X4			project_;
+		XMFLOAT4X4          viewProject_;
+
 		XMFLOAT4			position_;
 		XMFLOAT4			rotate_;
 		XMFLOAT4			lookDirection_;
+
 		ulFloat			    yaw_;
 		ulFloat			    pitch_;
+
 		ECamaraProjectType  projectType_;
 		ulFloat             near_;
 		ulFloat             far_;
 		ulFloat             projParam_[2];
-		ulBit               mainCamara;
+		bool               mainCamara;
 
 	public:
 		inline XMFLOAT4X4  GetTransposeViewMatrix()
@@ -42,8 +46,16 @@ namespace ul
 		}
 		inline XMFLOAT4X4  GetTransposeProjectMatrix()
 		{
-			return TransposeMatrix(&project_);
+			return TransposeMatrix(&viewProject_);
 		}
+
+		inline void UpdateViewMatrix(const XMMATRIX& view)
+		{
+			XMStoreFloat4x4(&view_, view);
+			XMMATRIX project = XMLoadFloat4x4(&project_);
+			XMStoreFloat4x4(&viewProject_, XMMatrixMultiply(view, project));
+		}
+		
 
 		inline XMFLOAT4X4& GetViewMatrix()
 		{
@@ -125,6 +137,7 @@ namespace ul
 	public:
 		void Update(ulFloat elapsedTime);
 		void ProcessMessage(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+
 	}; // FirstPersonCamara
 
 

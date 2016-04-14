@@ -9,9 +9,10 @@
 #include<renderable.h>
 #include<common_model_loader.h>
 #include<environmentable.h>
-#include<D3DX10Math.h>
 #include<AntTweakBar.h>
 #include<postprocess.h>
+
+#include<xnamath.h>
 
 using namespace ul;
 
@@ -63,34 +64,14 @@ public:
 
 		//environment, skybox
 		environment_ = this->GetSceneMgr().GetEnvironment();
-		environment_->SetEnvmaps(
-			"../res/skybox/sky1/domeDiffuseHDR.dds",
-			"../res/skybox/sky1/domeSpecularHDR.dds",
-			"../res/skybox/sky1/domeBrdf.dds");
+		environment_->LoadFromFile("skybox/sky1/dome1.env");
 		skybox_.Create(dev, environment_);
 
 
 		//model
 		pistol_ = mgr->CreateModelFromFile("pbr_model/pistol/pistol.fbx");
-
-		//shader
-		Null_Return_Void((
-			skyVertex_ = mgr->CreateVertexShaderAndInputLayout(
-			"skybox.hlsl", "VS_FillBuffer", "vs_5_0",
-			G_Layout_VertexXyznuv, ARRAYSIZE(G_Layout_VertexXyznuv), &xyznuv_)
-			));
-		Null_Return_Void((skyPixel_ = mgr->CreatePixelShader("skybox.hlsl", "PS_FillBuffer", "ps_5_0")));
-
-		Null_Return_Void((
-			modelVertex_ = mgr->CreateVertexShaderAndInputLayout(
-			"main.hlsl", "VS_FillBuffer", "vs_5_0",
-			G_Layout_VertexXyznuvtbiiiww, ARRAYSIZE(G_Layout_VertexXyznuvtbiiiww), &xyznuvtbwwiii_)
-		));
-		Null_Return_Void((modelPixel_ = mgr->CreatePixelShader("main.hlsl", "PS_FillBuffer", "ps_5_0")));
 		Null_Return_Void((perframeBuffer_ = mgr->CreateConstantBuffer(sizeof(CB_PerFrame))));
 
-		Null_Return_Void(mgr->CreateVertexShader("../res/shader/present_hdr_format.hlsl", "VS_FullScreenProcess", "vs_5_0"));
-		Null_Return_Void(mgr->CreatePixelShader("../res/shader/present_hdr_format.hlsl", "PS_present_hdr", "ps_5_0"));
 
 		D3D11_SAMPLER_DESC SamDesc;
 		SamDesc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_MIP_POINT;
@@ -137,6 +118,9 @@ public:
 		XMStoreFloat4x4(&world_, XMMatrixIdentity());
 		pCamara_->SetProject(BaseCamara::eCamara_Perspective, XM_PI / 4, aspect, 0.1f, 1000.0f);
 
+		postProcessChain_.Create(width, height);
+		//postProcessChain_.AddPostProcess(PostProcessChain::ePostProcess_PresentHDR);
+
 	};
 
 
@@ -165,18 +149,14 @@ public:
 		invProj = XMMatrixTranspose(invProj);
 		invView = XMMatrixTranspose(invView);
 
-		//mvp
-		D3D11_MAPPED_SUBRESOURCE MappedResource;
-		memset(&MappedResource, 0, sizeof(D3D11_MAPPED_SUBRESOURCE));
-		Fail_Return_Void(context->Map(perframeBuffer_, 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedResource));
+		
+		CB_PerFrame perFrame;
+		perFrame.world = world_;
+		perFrame.view = tv;
+		perFrame.project = tp;
+		perFrame.camaraPos = XMFLOAT3(pos.x, pos.y, pos.z);
+		ResourceMgr::GetSingletonPtr()->MappingBufferWriteOnly(perframeBuffer_, &perFrame, sizeof(CB_PerFrame));
 
-		CB_PerFrame* pConstants = (CB_PerFrame*)MappedResource.pData;		
-
-		pConstants->world = world_;
-		pConstants->view =  tv;
-		pConstants->project = tp;
-		pConstants->camaraPos = XMFLOAT3(pos.x, pos.y, pos.z);
-		context->Unmap(perframeBuffer_, 0);
 	}
 
 	virtual void RenderFrame(ID3D11Device *dev,
@@ -187,17 +167,20 @@ public:
 		ID3D11DepthStencilView* mainDSV = this->GetMainDSV();
 
 		////sky box
-		context->OMSetRenderTargets(1, &mainRT, nullptr);
-		context->VSSetShader(skyVertex_, nullptr, 0);
-		context->PSSetShader(skyPixel_, nullptr, 0);
+		//context->OMSetRenderTargets(1, &mainRT, nullptr);
+
+		postProcessChain_.BindAsRenderTarget(context, nullptr);
 		context->VSSetConstantBuffers(0, 1, &perframeBuffer_);
 		skybox_.Render(context);
 
 		//obj
-		context->OMSetRenderTargets(1, &mainRT, mainDSV);
+		postProcessChain_.BindAsRenderTarget(context, mainDSV);
 		context->VSSetConstantBuffers(0, 1, &perframeBuffer_);
 		context->PSSetConstantBuffers(0, 1, &perframeBuffer_);
 		pistol_->Render(context);
+
+		//postProcessChain_.Process(context);
+		postProcessChain_.Present(context, mainRT);
 
 		//ui
 		TwDraw();
@@ -244,7 +227,7 @@ private:
 
 	ID3D11RasterizerState* resterState_;
 
-	
+	PostProcessChain      postProcessChain_;
 	Renderable*           pistol_;
 	SkyBox                skybox_;
 	Environmentable*      environment_;
@@ -260,6 +243,8 @@ private:
 	float                 uiCamaraDistance_;
 	XMFLOAT4              uiLightColor_;
 };
+
+
 
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,

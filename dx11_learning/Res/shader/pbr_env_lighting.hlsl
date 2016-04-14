@@ -18,7 +18,6 @@ TextureCube        g_DiffuseIBL            : register(t3);
 TextureCube        g_SpecularIBL           : register(t4);
 Texture2D          g_SpecularInterger      : register(t5);
 
-
 // ¶¥µã²ÎÊý
 struct VS_VertexLayout
 {

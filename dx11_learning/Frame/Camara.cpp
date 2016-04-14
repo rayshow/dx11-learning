@@ -212,8 +212,9 @@ void FirstPersonController::Update(float elapsedTime)
 
 	XMVECTOR lookAt = eyePos + worldForward;
 	XMMATRIX view = XMMatrixLookAtLH(eyePos, lookAt, worldUp);
-	XMStoreFloat4x4(&pCamara_->view_, view);
+	pCamara_->UpdateViewMatrix(view);
 	XMStoreFloat4(&pCamara_->position_, eyePos);
+
 	
 	moveDirection_ = XMFLOAT4(0, 0, 0, 0);
 }

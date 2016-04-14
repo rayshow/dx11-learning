@@ -172,7 +172,7 @@ bool D3D::Initialize(
 	Log_Info("D3D device and context initialized.");
 
 	resourceMgr_ = new ResourceMgr();
-	resourceMgr_->init(device_);
+	resourceMgr_->init(device_, deviceContext_);
 	return true;
 }
 

@@ -77,7 +77,9 @@ namespace ul
 	///////////////////////////////////////////////////////////////////////////////////////
 	// 调试和一些比较方便的宏
 #define Null(p)  (nullptr == (p))
+#define Not_Null(p) (nullptr!=(p))
 #define False(p) (false == (p))
+#define True(p) (true==(p))
 #define Zero(p) (0==(p))
 #define Fail(p) ( 0 > (p))
 

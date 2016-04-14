@@ -41,7 +41,6 @@ bool BaseModel::Create(
 	ID3D11Device* dev,
 	SModelData& data)
 {
-	HRESULT hr;
 	D3D11_BUFFER_DESC vbd;
 	D3D11_BUFFER_DESC ibd;
 	D3D11_SUBRESOURCE_DATA vdata, idata;
@@ -87,7 +86,7 @@ bool BaseModel::Create(
 		if (pMaterial->texCount > 0)
 		{
 			pParameter->srvs_ = new ID3D11ShaderResourceView*[pMaterial->texCount];
-			for (int j = 0; j < pMaterial->texCount; ++j)
+			for (ulUint j = 0; j < pMaterial->texCount; ++j)
 			{
 				pParameter->srvs_[j] = mgr->CreateTextureFromFile(pMaterial->texturePath[j]);
 			}
@@ -145,6 +144,7 @@ bool BaseModel::Create(
 void BaseModel::Render(ID3D11DeviceContext* context)
 {
 	assert(context != 0);
+	this->SetShaderParameter(context);
 	context->IASetVertexBuffers(0, 1, &vb_, &stride_, &offset_);
 	context->IASetIndexBuffer(ib_, DXGI_FORMAT_R16_UINT, 0);
 	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);

@@ -6,7 +6,6 @@
 
 #include<vector>
 #include"tools.h"
-//#include"../scene_mgr.h"
 
 namespace ul{
 	using namespace std;
@@ -216,6 +215,7 @@ namespace ul{
 		bool Create(ID3D11Device* pd3dDevice,
 			SModelData& data);
 
+		virtual void SetShaderParameter(ID3D11DeviceContext* context){}
 		virtual void Render(ID3D11DeviceContext* mD3dImmediateContext) override;
 
 		void Release()

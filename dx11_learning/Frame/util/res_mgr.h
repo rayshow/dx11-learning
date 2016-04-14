@@ -41,6 +41,11 @@ using std::unique_ptr;
 
 namespace ul
 {
+
+	
+
+
+
 	//回收集
 	class ResourceMgr : public Singletonable<ResourceMgr>
 	{
@@ -151,8 +156,6 @@ namespace ul
 			dwShaderFlags |= D3DCOMPILE_DEBUG | D3DCOMPILE_PREFER_FLOW_CONTROL | D3DCOMPILE_SKIP_OPTIMIZATION;
 #endif
 			AutoReleasePtr<ID3DBlob> ErrorBlobPtr;
-			ID3DBlob* msg;
-
 			HRESULT hr =D3DX11CompileFromFileA(szFileName, nullptr, nullptr, szEntryPoint, szShaderModel,
 				dwShaderFlags, 0, nullptr, ppBlobOut, ErrorBlobPtr.GetPtr(), nullptr);
 			if (Fail(hr))
@@ -193,8 +196,6 @@ namespace ul
 				return layout;
 			}
 
-
-
 		//创建片元着色器
 		inline ID3D11PixelShader*
 			createPixelShader(ID3DBlob * blob)
@@ -231,8 +232,9 @@ namespace ul
 		
 		//初始化
 		inline void
-			init(ID3D11Device* dev){
+			init(ID3D11Device* dev, ID3D11DeviceContext* context){
 			m_device = dev;
+			m_context = context;
 			Log_Info("resource manager initialized.");
 		}
 
@@ -257,6 +259,23 @@ namespace ul
 
 			if (!endWithSeperate)
 				resourceBasePath_ = resourceBasePath_ + "/";
+		}
+
+		inline string GetResourceBasePath() const 
+		{
+			return resourceBasePath_;
+		}
+
+		//mapping constant buffer
+		inline bool MappingBufferWriteOnly(ID3D11Buffer* constBuffer, void* buffer, ulUint bufferSize)
+		{
+			D3D11_MAPPED_SUBRESOURCE MappedResource;
+			memset(&MappedResource, 0, sizeof(D3D11_MAPPED_SUBRESOURCE));
+			Fail_Return_False(m_context->Map(constBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedResource));
+			memcpy(MappedResource.pData, buffer, bufferSize);
+			m_context->Unmap(constBuffer, 0);
+
+			return true;
 		}
 
 		
@@ -470,6 +489,29 @@ namespace ul
 				return vs;
 			}
 
+		//编译和创建顶点着色器
+		inline ID3D11VertexShader*
+			CreateVertexShaderFromResourceBasePath(
+			const char* reletiveName,
+			const char* functionName,
+			const char*  v)
+		{
+			ID3D11VertexShader *vs = nullptr;
+			AutoReleasePtr<ID3DBlob> blobPtr;
+			string fullPathName = resourceBasePath_ + reletiveName;
+
+			False_Return_Null_With_Msg(
+				CompileShaderFromFile(fullPathName.c_str(), functionName, v, blobPtr.GetPtr()),
+				"compile vertex shader %s, %s error.", fullPathName.c_str(), functionName
+				);
+			Null_Return_Null_With_Msg(
+				(vs = this->createVertexShader(blobPtr.Get())),
+				"compile  vertex shader %s function %s error", fullPathName.c_str(), functionName
+				);
+			return vs;
+		}
+
+
 		//编译和创建有顶点格式的顶点着色器
 		inline ID3D11VertexShader*
 			CreateVertexShaderAndInputLayout(
@@ -496,7 +538,38 @@ namespace ul
 					"create shader file %s ,function %s vertex layout error", fileName, functionName
 					);
 				return vs;
-			}
+		}
+
+		//编译和创建有顶点格式的顶点着色器
+		inline ID3D11VertexShader*
+			CreateVertexShaderAndInputlayoutFromResourceBasePath(
+			const char* reletivePath,
+			const char* functionName,
+			const char* v,
+			const D3D11_INPUT_ELEMENT_DESC* loDesc,
+			int descSize,
+			ID3D11InputLayout** layout
+			)
+		{
+			ID3D11VertexShader *vs = nullptr;
+			AutoReleasePtr<ID3DBlob> blobPtr;
+			string fullPathName = resourceBasePath_ + reletivePath;
+
+			False_Return_Null_With_Msg(
+				CompileShaderFromFile(fullPathName.c_str(), functionName, v, blobPtr.GetPtr()),
+				"compile shader file %s ,function %s error", fullPathName.c_str(), functionName
+				);
+			Null_Return_Null_With_Msg(
+				(vs = this->createVertexShader(blobPtr.Get())),
+				"create shader file %s ,function %s error", fullPathName.c_str(), functionName
+				);
+			Null_Return_Null_With_Msg(
+				(*layout = this->createInputLayout(loDesc, descSize, blobPtr.Get())),
+				"create shader file %s ,function %s vertex layout error", fullPathName.c_str(), functionName
+				);
+			return vs;
+		}
+
 
 		inline ID3D11PixelShader*
 			CreatePixelShader(
@@ -504,19 +577,40 @@ namespace ul
 			const char* functionName,
 			const char* v)
 		{
-				ID3D11PixelShader *ps = nullptr;
-				AutoReleasePtr<ID3DBlob> blobPtr;
-				False_Return_Null_With_Msg(
-					CompileShaderFromFile(fileName, functionName, v, blobPtr.GetPtr()),
-					"compile  shader file %s ,pixel function %s error", fileName, functionName
-					);
-				Null_Return_Null_With_Msg(
-					((ps = this->createPixelShader(blobPtr.Get()))),
-					"create  shader file %s ,pixel function %s error", fileName, functionName
-					);
-				return ps;
-			}
+			ID3D11PixelShader *ps = nullptr;
+			AutoReleasePtr<ID3DBlob> blobPtr;
+			False_Return_Null_With_Msg(
+				CompileShaderFromFile(fileName, functionName, v, blobPtr.GetPtr()),
+				"compile  shader file %s ,pixel function %s error", fileName, functionName
+				);
+			Null_Return_Null_With_Msg(
+				((ps = this->createPixelShader(blobPtr.Get()))),
+				"create  shader file %s ,pixel function %s error", fileName, functionName
+				);
+			return ps;
+		}
 
+		inline ID3D11PixelShader*
+			CreatePixelShaderFromResourceBasePath(
+			const char* reletivePath,
+			const char* functionName,
+			const char* v)
+		{
+			ID3D11PixelShader *ps = nullptr;
+			AutoReleasePtr<ID3DBlob> blobPtr;
+			string fullPathName = resourceBasePath_ + reletivePath;
+
+			False_Return_Null_With_Msg(
+				CompileShaderFromFile(fullPathName.c_str(), functionName, v, blobPtr.GetPtr()),
+				"compile  shader file %s ,pixel function %s error", fullPathName.c_str(), functionName
+				);
+			Null_Return_Null_With_Msg(
+				((ps = this->createPixelShader(blobPtr.Get()))),
+				"create  shader file %s ,pixel function %s error", fullPathName.c_str(), functionName
+				);
+			return ps;
+
+		}
 
 		inline ID3D11GeometryShader*
 			CreateGeometryShader(

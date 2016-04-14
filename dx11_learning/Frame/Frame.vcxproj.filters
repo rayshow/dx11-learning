@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="shader">
+      <UniqueIdentifier>{fda45c06-1d42-4af4-a066-edb08969d9dd}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="application.cpp">
@@ -33,8 +36,14 @@
     <ClCompile Include="util\common_model_loader.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="util\environmentbale.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
     <ClCompile Include="util\ty_model_loader.cpp">
-      <Filter>头文件</Filter>
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="util\postprocess.cpp">
+      <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -83,5 +92,28 @@
     <ClInclude Include="scene_mgr.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="util\postprocess.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\Res\shader\base_define.hlsli">
+      <Filter>shader</Filter>
+    </None>
+    <None Include="..\Res\shader\full_screen_process.hlsli">
+      <Filter>shader</Filter>
+    </None>
+    <None Include="..\Res\shader\tone_mapping.hlsli">
+      <Filter>shader</Filter>
+    </None>
+    <None Include="..\Res\shader\pbr_env_lighting.hlsl">
+      <Filter>shader</Filter>
+    </None>
+    <None Include="..\Res\shader\render_sh.hlsl">
+      <Filter>shader</Filter>
+    </None>
+    <None Include="..\Res\shader\skybox.hlsl">
+      <Filter>shader</Filter>
+    </None>
   </ItemGroup>
 </Project>

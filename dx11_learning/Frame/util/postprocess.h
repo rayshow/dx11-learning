@@ -2,11 +2,10 @@
 #define UL_POSTPROCESS_HEADER__
 
 #include<string>
-
+#include<vector>
 #include<d3d11.h>
 #include<D3DX11tex.h>
-#include"res_mgr.h"
-
+#include"renderable.h"
 
 namespace ul
 {
@@ -19,84 +18,189 @@ namespace ul
 			float  mipLevel;
 			float  padding[3];
 		};
-
 	private:
 		ID3D11RenderTargetView*		renderTarget_;
-		ID3D11ShaderResourceView*   shaderResource_;
+		ID3D11ShaderResourceView*   needProcessSRV_;
+		ID3D11ShaderResourceView*   nextStepProcessSRV_;
 		ID3D11VertexShader*         fullScreenVs_;
 		ID3D11PixelShader*          fullScreenPs_;
 		ID3D11Texture2D*            srvOwnerTexture_;
+		ID3D11Buffer*               parameterBuffer_;
 		ulUint                      width_;
 		ulUint                      height_;
-
 		DXGI_FORMAT                 format_;
-		SPostProcess_Parameter      parameter_;
+
 	public:
-		PostProcess(){}
+		PostProcess() : renderTarget_(nullptr), needProcessSRV_(nullptr), nextStepProcessSRV_(nullptr),fullScreenVs_(nullptr),
+			fullScreenPs_(nullptr), srvOwnerTexture_(nullptr), parameterBuffer_(nullptr){}
 		~PostProcess(){}
 	public:
 		void SetShaderResourceView(ID3D11ShaderResourceView* shaderResourceView)
 		{
-			this->shaderResource_ = shaderResourceView;
+			this->needProcessSRV_ = shaderResourceView;
 		}
 
-		bool Create(const string& fileName,
-			const string& psFunction,
-			DXGI_FORMAT& format,
-			ulUint width, ulUint height, 
-			ID3D11Texture2D *owner = nullptr,
-			ulUint mipLevel = 0)
+		ID3D11ShaderResourceView* GetNextStepShaderResource()
 		{
-			ResourceMgr* mgr = ResourceMgr::GetSingletonPtr();
+			return nextStepProcessSRV_;
+		}
 
-			width_  = width;
-			height_ = height;
-			format_ = format;
-			parameter_.mipLevel = mipLevel;
-			srvOwnerTexture_ = owner_;
+		bool PostProcess::Create(
+			const string& fileName,
+			const string& psFunction,
+			DXGI_FORMAT format,
+			ulUint width, ulUint height,
+			ID3D11Texture2D *owner ,
+			ulUint mipLevel );
 
-			//from a exists texture2d
-			if (!Null(owner))
+		void Process(ID3D11DeviceContext* context) 
+		{
+			context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+			context->VSSetShader(fullScreenVs_, nullptr, 0);
+			context->PSSetShader(fullScreenPs_, nullptr, 0);
+			context->PSSetConstantBuffers(0, 1, &parameterBuffer_);
+			context->OMSetRenderTargets(0, &renderTarget_, nullptr);
+			context->PSSetShaderResources(0, 1, &needProcessSRV_);
+			context->Draw(3, 0);
+		}
+	};
+
+
+	class PostPresent
+	{
+	private:
+		ID3D11ShaderResourceView*  needPresent_;
+		ID3D11VertexShader*        fullScreenVs_;
+		ID3D11PixelShader*         fullScreenPs_;
+		ulUint                     width_;
+		ulUint                     height_;
+	public:
+		PostPresent() :needPresent_(nullptr), 
+			fullScreenVs_(nullptr),
+			fullScreenPs_(nullptr),
+			width_(0), height_(0){}
+		~PostPresent(){}
+	public:
+		bool Create();
+
+		void SetNeedPresentTexture(ID3D11ShaderResourceView* view)
+		{
+			this->needPresent_ = view;
+		}
+		void Present(ID3D11DeviceContext* context, ID3D11RenderTargetView* mainRT)
+		{
+			context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+			context->VSSetShader(fullScreenVs_, nullptr, 0);
+			context->PSSetShader(fullScreenPs_, nullptr, 0);
+			context->OMSetRenderTargets(1, &mainRT, nullptr);
+			context->PSSetShaderResources(0, 1, &needPresent_);
+			context->Draw(3, 0);
+		}
+	};
+
+
+	class HdrPresentProcess : public PostProcess
+	{
+	public:
+		~HdrPresentProcess(){}
+	public:
+		bool Create(ulUint width, ulUint height);
+	};
+
+	class PostProcessChain
+	{
+	public:
+		enum EPostProcessType{
+			ePostProcess_PresentHDR = 0,
+			ePostProcess_FXAA,
+		};
+	private:
+		std::vector<PostProcess*> processes_;
+		PostPresent               present_;
+		ID3D11RenderTargetView*   srcRenderTarget_;
+		ID3D11ShaderResourceView* srcResourceView_;
+		ID3D11Texture2D*          srcTexture_;
+		ulUint                    width_;
+		ulUint                    height_;
+	public:
+		PostProcessChain()
+		{
+
+		}
+		~PostProcessChain()
+		{
+			this->RemoveAllProcess();
+		}
+		void RemoveAllProcess()
+		{
+			for (ulUint i = 0; i < processes_.size(); ++i)
 			{
-				D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
-				srvDesc.Texture2D.MipLevels = -1;
-				srvDesc.Texture2D.MostDetailedMip = 0;
-				srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-				srvDesc.Format = format;
-				Null_Return_False_With_Msg(
-					(shaderResource_ = mgr->CreateShaderResourceView(owner, &srvDesc, ResourceMgr::eRecyclePerSwapChain)),
-					"create postprocess from shader %s : %s error",
-					fileName.c_str(),
-					psFunction.c_str()
-				);
+				Safe_Delete(processes_.at(i));
+			}
+			processes_.erase(processes_.begin(), processes_.end());
+		}
+		bool Create(ulUint width, ulUint height);
 
+	public:
+		void BindAsRenderTarget(ID3D11DeviceContext* context, ID3D11DepthStencilView* depthView)
+		{
+			context->OMSetRenderTargets(1, &srcRenderTarget_, depthView);
+		}
+
+		void AddPostProcess(PostProcess* process)
+		{
+			assert(process != nullptr);
+			if (processes_.size() == 0)
+			{
+				process->SetShaderResourceView(srcResourceView_);
 			}
 			else{
-				//entirely single texture2d
-				D3D11_TEXTURE2D_DESC texDesc;
-				texDesc.Width = width;
-				texDesc.Height = height;
-				texDesc.MipLevels = 0;
-				texDesc.ArraySize = 1;
-				texDesc.Format = format;
-				texDesc.SampleDesc.Count = 1;
-				texDesc.SampleDesc.Quality = 0;
-				texDesc.Usage = D3D11_USAGE_DEFAULT;
-				texDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
-				texDesc.CPUAccessFlags = 0;
-				texDesc.MiscFlags = 0;
-
-				mgr->Create
-
+				process->SetShaderResourceView(processes_.at(processes_.size() - 1)->GetNextStepShaderResource());
+				
 			}
-			
-
-
-			//mgr->CreateShaderResourceView()
+			processes_.push_back(process);
+			present_.SetNeedPresentTexture(process->GetNextStepShaderResource());
 		}
-	
 
+		void Process(ID3D11DeviceContext* context)
+		{
+			for (ulUint i = 0; i < processes_.size(); ++i)
+			{
+				processes_.at(i)->Process(context);
+			}
+		}
+
+		void Present(ID3D11DeviceContext* context, ID3D11RenderTargetView* mainRT)
+		{
+			present_.Present(context, mainRT);
+		}
+
+		void AddPostProcess(EPostProcessType type)
+		{
+			HdrPresentProcess *process = nullptr;
+
+			switch (type)
+			{
+			//hdr present
+			case ePostProcess_PresentHDR:
+				process = Ul_New HdrPresentProcess();
+				process->Create(width_, height_);
+				if (Null(process))
+				{
+					Log_Err("out of memory.");
+				}
+				this->AddPostProcess(process);
+				break;
+
+			case ul::PostProcessChain::ePostProcess_FXAA:
+				break;
+			default:
+				break;
+			}
+		}
 	};
+
+
 };
 
 
