@@ -4,20 +4,20 @@
 #include<Windows.h>
 #include<string>
 
-#include"util/singletonable.h"
-#include"graphics.h"
-#include"input.h"
-#include"util/timer.h"
-#include"scene_mgr.h"
+#include"design_frame/Singleton.h"
+#include"util/UlHelper.h"
+#include"util/Timer.h"
+#include"scene/SceneManager.h"
+#include"D3D11GraphicContext.h"
+
 
 using std::string;
-
 
 namespace ul
 {
 	const static float BLACK_COLOR[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
 
-	class Application :public Singletonable<Application>
+	class Application :public Singleton<Application>
 	{
 	private:
 		int       width_;
@@ -28,9 +28,8 @@ namespace ul
 		HINSTANCE hInstance_;
 		Timer     timer_;
 		bool      initialized_;
-		
-		Input	  input_;
-		Graphics  graphics_;
+
+		D3D11GraphicsContext       graphicsContext_;
 		SceneMgr  sceneMgr_;
 	public:
 		Application() :
@@ -71,13 +70,11 @@ namespace ul
 			//init window
 			fullscreen_ = false;
 			this->initializeWindow(width, height);
-			input_.Initialize();
 			
 			//init graphics
 			RECT rect;
 			GetClientRect(hWnd_, &rect);
-			graphics_.Initialize(rect.right, rect.bottom, hWnd_, true, fullscreen_);
-
+			graphicsContext_.Initialize(hWnd_, width, height, true, fullscreen_);
 
 			//call InitResource 
 			this->InitResource( GetDevicePtr(), GetDeviceContextPtr() );
@@ -126,13 +123,13 @@ namespace ul
 
 		void Shutdown()
 		{
-			graphics_.Shutdown();
+			graphicsContext_.Shutdown();
 			this->Exit();
 		}
 
 		void OnResize(int width, int height)
 		{
-			graphics_.GetD3D().Resize(width, height);
+			graphicsContext_.Resize(width, height);
 			this->WindowResize(width, height, GetDevicePtr(), GetDeviceContextPtr());
 		}
 
@@ -171,28 +168,28 @@ namespace ul
 			timer_.Frame();
 			this->UpdateScene(timer_.GetElapsedSeconds());
 
-			graphics_.BeginRender();
+			graphicsContext_.BeginScene();
 			this->RenderFrame(GetDevicePtr(), GetDeviceContextPtr());
-			graphics_.EndRender();
+			graphicsContext_.EndScene();
 
 			return true; 
 		};
 		ID3D11Device* GetDevicePtr()
 		{
-			return graphics_.GetD3D().GetDevicePtr();
+			return graphicsContext_.GetDevicePtr();
 		}
 		ID3D11DeviceContext* GetDeviceContextPtr()
 		{
-			return graphics_.GetD3D().GetDeviceContextPtr();
+			return graphicsContext_.GetDeviceContextPtr();
 		}
 		ID3D11RenderTargetView* GetMainRT() 
 		{
-			return graphics_.GetD3D().GetMainRenderTargetPtr();
+			return graphicsContext_.GetMainRenderTargetPtr();
 		}
 
 		ID3D11DepthStencilView* GetMainDSV()
 		{
-			return graphics_.GetD3D().GetMainDepthStencilViewPtr();
+			return graphicsContext_.GetMainDepthStencilViewPtr();
 		}
 
 		void ClearRenderTarget(ID3D11RenderTargetView* rt)

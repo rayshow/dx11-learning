@@ -20,6 +20,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="main.hlsl" />
+    <None Include="..\Res\shader\ty_tree.hlsl" />
   </ItemGroup>
 </Project>

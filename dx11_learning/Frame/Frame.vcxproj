@@ -11,51 +11,36 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="application.cpp" />
-    <ClCompile Include="camara.cpp" />
-    <ClCompile Include="d3d.cpp" />
-    <ClCompile Include="util\environmentbale.cpp" />
-    <ClCompile Include="util\logger.cpp" />
-    <ClCompile Include="util\common_model_loader.cpp" />
-    <ClCompile Include="util\postprocess.cpp" />
-    <ClCompile Include="util\renderable.cpp" />
-    <ClCompile Include="util\ty_model_loader.cpp" />
+    <ClInclude Include="Application.h" />
+    <ClInclude Include="base\BaseDefine.h" />
+    <ClInclude Include="D3D11GraphicContext.h" />
+    <ClInclude Include="design_frame\Singleton.h" />
+    <ClInclude Include="Frame.h" />
+    <ClInclude Include="render\Environment.h" />
+    <ClInclude Include="render\Material.h" />
+    <ClInclude Include="render\MeshRender.h" />
+    <ClInclude Include="render\PostProcess.h" />
+    <ClInclude Include="render\VertexFormat.h" />
+    <ClInclude Include="resource\CommonModelLoader.h" />
+    <ClInclude Include="resource\ResourceMgr.h" />
+    <ClInclude Include="resource\TyModelLoader.h" />
+    <ClInclude Include="scene\Camara.h" />
+    <ClInclude Include="scene\SceneManager.h" />
+    <ClInclude Include="util\UlHelper.h" />
+    <ClInclude Include="util\Logger.h" />
+    <ClInclude Include="util\Timer.h" />
+    <ClInclude Include="util\Ultil.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="application.h" />
-    <ClInclude Include="camara.h" />
-    <ClInclude Include="d3d.h" />
-    <ClInclude Include="graphics.h" />
-    <ClInclude Include="input.h" />
-    <ClInclude Include="scene_mgr.h" />
-    <ClInclude Include="util\environmentable.h" />
-    <ClInclude Include="util\logger.h" />
-    <ClInclude Include="util\common_model_loader.h" />
-    <ClInclude Include="util\postprocess.h" />
-    <ClInclude Include="util\renderable.h" />
-    <ClInclude Include="util\res_mgr.h" />
-    <ClInclude Include="util\singletonable.h" />
-    <ClInclude Include="util\timer.h" />
-    <ClInclude Include="util\tools.h" />
-    <ClInclude Include="util\ty_model_loader.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\Res\shader\base_define.hlsli" />
-    <None Include="..\Res\shader\full_screen_process.hlsli" />
-    <None Include="..\Res\shader\tone_mapping.hlsli" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\Res\shader\pbr_env_lighting.hlsl">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="..\Res\shader\render_sh.hlsl">
-      <FileType>Document</FileType>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\Res\shader\skybox.hlsl">
-      <FileType>Document</FileType>
-    </None>
+    <ClCompile Include="Application.cpp" />
+    <ClCompile Include="D3D11GraphicContext.cpp" />
+    <ClCompile Include="render\Environment.cpp" />
+    <ClCompile Include="render\MeshRender.cpp" />
+    <ClCompile Include="render\PostProcess.cpp" />
+    <ClCompile Include="resource\CommonModelLoader.cpp" />
+    <ClCompile Include="resource\TyModelLoader.cpp" />
+    <ClCompile Include="scene\Camara.cpp" />
+    <ClCompile Include="util\Logger.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{7C78DFA1-7446-4D2E-9153-34FF7711A00F}</ProjectGuid>

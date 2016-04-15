@@ -20,10 +20,8 @@ using namespace ul;
 struct CB_PerFrame
 {
 	XMFLOAT4X4  world;
-	XMFLOAT4X4  view;
-	XMFLOAT4X4  project;
-	XMFLOAT3    camaraPos;
-	float       padding;
+	XMFLOAT4X4  worldViewProject;
+	XMFLOAT4    camaraPos;
 };
 
 class Lession1_Frame :public Application
@@ -137,24 +135,14 @@ public:
 		rotMatrix = XMMatrixTranspose(rotMatrix);
 		XMStoreFloat4x4(&world_, rotMatrix);
 
-		XMFLOAT4X4 tv =  pCamara_->GetTransposeViewMatrix();
-		XMFLOAT4X4 tp =  pCamara_->GetTransposeProjectMatrix();
-		XMFLOAT4X4 p =	 pCamara_->GetProjectMatrix();
-		XMFLOAT4X4 v =   pCamara_->GetViewMatrix();
-		XMFLOAT4   pos = pCamara_->GetEyePos();
+		XMMATRIX viewProject = pCamara_->GetViewProjectMatrix();
+		XMMATRIX world = XMLoadFloat4x4(&world_);
+		XMMATRIX worldViewProject = XMMatrixMultiplyTranspose(world, viewProject);
 
-		XMVECTOR det;
-		XMMATRIX invProj = XMMatrixInverse(&det, XMLoadFloat4x4(&p) );
-		XMMATRIX invView = XMMatrixInverse(&det, XMLoadFloat4x4(&v) );
-		invProj = XMMatrixTranspose(invProj);
-		invView = XMMatrixTranspose(invView);
-
-		
 		CB_PerFrame perFrame;
 		perFrame.world = world_;
-		perFrame.view = tv;
-		perFrame.project = tp;
-		perFrame.camaraPos = XMFLOAT3(pos.x, pos.y, pos.z);
+		XMStoreFloat4x4(&perFrame.worldViewProject, worldViewProject);
+		perFrame.camaraPos = pCamara_->GetEyePosStoreType();
 		ResourceMgr::GetSingletonPtr()->MappingBufferWriteOnly(perframeBuffer_, &perFrame, sizeof(CB_PerFrame));
 
 	}
@@ -167,20 +155,21 @@ public:
 		ID3D11DepthStencilView* mainDSV = this->GetMainDSV();
 
 		////sky box
-		//context->OMSetRenderTargets(1, &mainRT, nullptr);
+		context->OMSetRenderTargets(1, &mainRT, nullptr);
 
-		postProcessChain_.BindAsRenderTarget(context, nullptr);
-		context->VSSetConstantBuffers(0, 1, &perframeBuffer_);
+		//postProcessChain_.ClearBackground(context);
+		//postProcessChain_.BindAsRenderTarget(context, nullptr);
 		skybox_.Render(context);
 
 		//obj
-		postProcessChain_.BindAsRenderTarget(context, mainDSV);
+		//postProcessChain_.BindAsRenderTarget(context, mainDSV);
+		context->OMSetRenderTargets(1, &mainRT, mainDSV);
 		context->VSSetConstantBuffers(0, 1, &perframeBuffer_);
 		context->PSSetConstantBuffers(0, 1, &perframeBuffer_);
 		pistol_->Render(context);
 
 		//postProcessChain_.Process(context);
-		postProcessChain_.Present(context, mainRT);
+		//postProcessChain_.Present(context, mainRT);
 
 		//ui
 		TwDraw();

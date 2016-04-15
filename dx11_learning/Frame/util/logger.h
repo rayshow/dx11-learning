@@ -37,6 +37,10 @@ namespace ul
 		static char buffer_[1024];
 	};
 
+	#define Log_Err(msg, ...)    Logger::error(__FILE__, __LINE__, msg,  __VA_ARGS__)
+	#define Log_Info(msg, ...)   Logger::info( msg,   __VA_ARGS__)
+	#define Log_Warn(msg,  ...)  Logger::warn(__FILE__,  __LINE__, msg,  __VA_ARGS__)
+	#define Log_Fatal(msg, ...)  Logger::fatal(__FILE__, __LINE__, msg,  __VA_ARGS__)
 };
 
 #endif

@@ -1,10 +1,8 @@
 cbuffer cbPerFrame : register(b0)
 {
-	float4x4 g_f4x4World;
-	float4x4 g_f4x4View;
-	float4x4 g_f4x4Project;
-	float3   g_camaraPos;
-	float    g_padding;
+	float4x4 world;
+	float4x4 worldViewProject;
+	float4   camaraWorldPos;
 }
 
 const float		   g_fTextureGamma = 2.0;
@@ -99,14 +97,13 @@ PS_TranslateInput VS_FillBuffer(VS_VertexLayout I)
 {
 	PS_TranslateInput O;
 	float4 posMS = float4(I.f3Position, 1);
-	float4 posWS = mul(posMS, g_f4x4World);
-	float4 posVS = mul(posWS, g_f4x4View);
+	float4 posWS = mul(posMS, world);
 
-	O.f3WorldPos = posWS.rgb;
+	O.f3WorldPos = posWS.xyz;
 	//ndcŒª÷√
-	O.f4Position = mul(posVS, g_f4x4Project);
+	O.f4Position = mul(posMS, worldViewProject);
 	//normal 
-	O.f3Normal =   normalize( mul(I.f3Normal, (float3x3)g_f4x4World) );
+	O.f3Normal =   normalize( mul(I.f3Normal, (float3x3)world) );
 	//coord
 	O.f2TexCoord = I.f2TexCoord;
 
@@ -119,7 +116,7 @@ PS_SingleOutput PS_FillBuffer(PS_TranslateInput I)
 	PS_SingleOutput O;
 	float2 coord = I.f2TexCoord;
 	float4 albedo = g_Albedo.SampleLevel(g_SampleLinear, coord, 0);
-	//albedo = resovleAlbedo(albedo, 1.8);
+	
 	float3 normalWarp = resolveNormal(I);
 	float3 RMB = g_Specular.SampleLevel(g_SampleLinear, coord, 0);
 
@@ -129,7 +126,7 @@ PS_SingleOutput PS_FillBuffer(PS_TranslateInput I)
 
 	float4 diffuseIBL = g_DiffuseIBL.SampleLevel(g_SampleLinear, normalWarp, 0) / 3.14159;
 	
-	float3 view = normalize(g_camaraPos - I.f3WorldPos);
+	float3 view = normalize(camaraWorldPos - I.f3WorldPos);
 	float3 refl = normalize(reflect(-view, normalize(normalWarp)));
 	float VoN = dot(view, normalWarp);
 	float2 brdfTerm = g_SpecularInterger.SampleLevel(g_SampleLinear, float2(VoN, glossness), 0).xy;

@@ -3,11 +3,11 @@
 
 cbuffer cbPerFrame : register(b0)
 {
-	float4x4 viewProject;
+	float4x4 rotateProject;
 }
 
-SamplerState     sampleLinear            : register(s0);
-TextureCube      g_Specular              : register(t0);
+SamplerState     sampleLinear             : register(s0);
+TextureCube      specularEnv              : register(t0);
 
 //普通模型的PS参数
 struct PS_TranslateInput
@@ -23,12 +23,12 @@ PS_TranslateInput VS_FillBuffer(VS_Input_Xyznuv I)
 {
 	PS_TranslateInput O;
 
-	float3 posPS = mul(I.f3Position, (float3x3)viewProject);
+	float4 posPS = mul(float4(I.f3Position, 1), rotateProject);
 
 	O.f3Dir = normalize(I.f3Position);
 
 	//ndc位置
-	O.f4Position = float4(posPS, 1);
+	O.f4Position = posPS;
 
 	//normal 
 	O.f3Normal = I.f3Normal;
@@ -42,6 +42,6 @@ PS_TranslateInput VS_FillBuffer(VS_Input_Xyznuv I)
 PS_Output_Single PS_FillBuffer(PS_TranslateInput I)
 {
 	PS_Output_Single O;
-	O.color0 = g_Specular.SampleLevel(sampleLinear, I.f3Dir, 0);
+	O.color0 = specularEnv.SampleLevel(sampleLinear, I.f3Dir, 0);
 	return O;
 }

@@ -20,7 +20,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="main.hlsl" />
-    <None Include="skybox.hlsl" />
+    <None Include="..\Res\shader\skybox.hlsl" />
   </ItemGroup>
 </Project>

@@ -1,119 +1,104 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="源文件">
-      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
-      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
-    </Filter>
-    <Filter Include="头文件">
-      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
-      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
-    </Filter>
-    <Filter Include="资源文件">
-      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
-    </Filter>
     <Filter Include="shader">
       <UniqueIdentifier>{fda45c06-1d42-4af4-a066-edb08969d9dd}</UniqueIdentifier>
     </Filter>
+    <Filter Include="design_frame">
+      <UniqueIdentifier>{16fddf66-0adf-42b6-8f30-593810d89065}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="render">
+      <UniqueIdentifier>{07856a7f-7f7c-4061-be04-642415865d93}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="scene">
+      <UniqueIdentifier>{57600869-68f8-4fa0-b046-16fbaaf82311}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="resource">
+      <UniqueIdentifier>{1bb794cf-4652-4d3e-8d68-10aa0909a917}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="util">
+      <UniqueIdentifier>{0f4d38e4-ea25-4ecd-a5b1-4324243542c5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="base">
+      <UniqueIdentifier>{861c7df3-6aa6-427e-96a1-143f5f5065b2}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="application.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="camara.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="d3d.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="util\logger.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="util\renderable.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="util\common_model_loader.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="util\environmentbale.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="util\ty_model_loader.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="util\postprocess.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="application.h">
-      <Filter>头文件</Filter>
+    <ClInclude Include="render\Environment.h">
+      <Filter>render</Filter>
     </ClInclude>
-    <ClInclude Include="camara.h">
-      <Filter>头文件</Filter>
+    <ClInclude Include="scene\Camara.h">
+      <Filter>scene</Filter>
     </ClInclude>
-    <ClInclude Include="d3d.h">
-      <Filter>头文件</Filter>
+    <ClInclude Include="scene\SceneManager.h">
+      <Filter>scene</Filter>
     </ClInclude>
-    <ClInclude Include="graphics.h">
-      <Filter>头文件</Filter>
+    <ClInclude Include="Application.h" />
+    <ClInclude Include="D3D11GraphicContext.h" />
+    <ClInclude Include="util\Logger.h">
+      <Filter>util</Filter>
     </ClInclude>
-    <ClInclude Include="input.h">
-      <Filter>头文件</Filter>
+    <ClInclude Include="util\Timer.h">
+      <Filter>util</Filter>
     </ClInclude>
-    <ClInclude Include="util\environmentable.h">
-      <Filter>头文件</Filter>
+    <ClInclude Include="util\UlHelper.h">
+      <Filter>util</Filter>
     </ClInclude>
-    <ClInclude Include="util\logger.h">
-      <Filter>头文件</Filter>
+    <ClInclude Include="base\BaseDefine.h">
+      <Filter>base</Filter>
     </ClInclude>
-    <ClInclude Include="util\renderable.h">
-      <Filter>头文件</Filter>
+    <ClInclude Include="util\Ultil.h">
+      <Filter>util</Filter>
     </ClInclude>
-    <ClInclude Include="util\res_mgr.h">
-      <Filter>头文件</Filter>
+    <ClInclude Include="Frame.h" />
+    <ClInclude Include="render\VertexFormat.h">
+      <Filter>render</Filter>
     </ClInclude>
-    <ClInclude Include="util\singletonable.h">
-      <Filter>头文件</Filter>
+    <ClInclude Include="render\Material.h">
+      <Filter>render</Filter>
     </ClInclude>
-    <ClInclude Include="util\timer.h">
-      <Filter>头文件</Filter>
+    <ClInclude Include="resource\ResourceMgr.h">
+      <Filter>resource</Filter>
     </ClInclude>
-    <ClInclude Include="util\tools.h">
-      <Filter>头文件</Filter>
+    <ClInclude Include="resource\CommonModelLoader.h">
+      <Filter>resource</Filter>
     </ClInclude>
-    <ClInclude Include="util\common_model_loader.h">
-      <Filter>头文件</Filter>
+    <ClInclude Include="resource\TyModelLoader.h">
+      <Filter>resource</Filter>
     </ClInclude>
-    <ClInclude Include="util\ty_model_loader.h">
-      <Filter>头文件</Filter>
+    <ClInclude Include="render\MeshRender.h">
+      <Filter>render</Filter>
     </ClInclude>
-    <ClInclude Include="scene_mgr.h">
-      <Filter>头文件</Filter>
+    <ClInclude Include="design_frame\Singleton.h">
+      <Filter>design_frame</Filter>
     </ClInclude>
-    <ClInclude Include="util\postprocess.h">
-      <Filter>头文件</Filter>
+    <ClInclude Include="render\PostProcess.h">
+      <Filter>render</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\Res\shader\base_define.hlsli">
-      <Filter>shader</Filter>
-    </None>
-    <None Include="..\Res\shader\full_screen_process.hlsli">
-      <Filter>shader</Filter>
-    </None>
-    <None Include="..\Res\shader\tone_mapping.hlsli">
-      <Filter>shader</Filter>
-    </None>
-    <None Include="..\Res\shader\pbr_env_lighting.hlsl">
-      <Filter>shader</Filter>
-    </None>
-    <None Include="..\Res\shader\render_sh.hlsl">
-      <Filter>shader</Filter>
-    </None>
-    <None Include="..\Res\shader\skybox.hlsl">
-      <Filter>shader</Filter>
-    </None>
+    <ClCompile Include="render\Environment.cpp">
+      <Filter>render</Filter>
+    </ClCompile>
+    <ClCompile Include="scene\Camara.cpp">
+      <Filter>scene</Filter>
+    </ClCompile>
+    <ClCompile Include="Application.cpp" />
+    <ClCompile Include="D3D11GraphicContext.cpp" />
+    <ClCompile Include="util\Logger.cpp">
+      <Filter>util</Filter>
+    </ClCompile>
+    <ClCompile Include="resource\CommonModelLoader.cpp">
+      <Filter>resource</Filter>
+    </ClCompile>
+    <ClCompile Include="resource\TyModelLoader.cpp">
+      <Filter>resource</Filter>
+    </ClCompile>
+    <ClCompile Include="render\MeshRender.cpp">
+      <Filter>render</Filter>
+    </ClCompile>
+    <ClCompile Include="render\PostProcess.cpp">
+      <Filter>render</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

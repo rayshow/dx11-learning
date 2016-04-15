@@ -31,14 +31,19 @@ public:
 		ID3D11DeviceContext* context)
 	{
 		ResourceMgr *mgr = ResourceMgr::GetSingletonPtr();
-
+		mgr->SetResourceBasePath("../res/");
+		
+		pCamara_ = SceneMgr::GetSingletonPtr()->GetMainCamara();
 		pCamara_->LookAt(XMFLOAT4(0, 0, 0, 0), XMFLOAT4(0, 0, 1, 0));
+		camaraController_.SetCamara(pCamara_);
 
-		ModelReader reader;
+		TyModelReader reader;
 		SModelData data;
 		reader.Load("../res/ty_model/", "../res/ty_model/slj_zwshu0060_wb.model", true, true, data);
 		tree_.Create(dev, data);
 		ModelData_Free(data);
+
+
 
 		Null_Return_Void((
 			modelVertex_ = mgr->CreateVertexShaderAndInputLayout(
@@ -90,16 +95,8 @@ public:
 		context->RSSetState(resterState_);
 		context->PSSetSamplers(0, 1, &LinerSampler_);
 	
-		XMFLOAT4X4 tv = pCamara_->GetTransposeViewMatrix();
-		XMFLOAT4X4 tp = pCamara_->GetTransposeProjectMatrix();
-		XMFLOAT4X4 p =	pCamara_->GetProjectMatrix();
-		XMFLOAT4X4 v =	pCamara_->GetViewMatrix();
-
-		XMVECTOR det;
-		XMMATRIX invProj = XMMatrixInverse(&det, XMLoadFloat4x4(&p) );
-		XMMATRIX invView = XMMatrixInverse(&det, XMLoadFloat4x4(&v) );
-		invProj = XMMatrixTranspose(invProj);
-		invView = XMMatrixTranspose(invView);
+		XMFLOAT4X4 view = pCamara_->GetViewStoreType();
+		XMFLOAT4X4 proj = pCamara_->GetProjectStoreType();
 
 		//mvp
 		D3D11_MAPPED_SUBRESOURCE MappedResource;
@@ -109,8 +106,8 @@ public:
 		CB_PerFrame* pConstants = (CB_PerFrame*)MappedResource.pData;
 		
 		pConstants->world = world_;
-		pConstants->view =  tv;
-		pConstants->project = tp;
+		pConstants->view =  view;
+		pConstants->project = proj;
 		context->Unmap(perframeBuffer_, 0);
 
 	}
@@ -125,7 +122,6 @@ public:
 		context->VSSetShader(modelVertex_, nullptr, 0);
 		context->PSSetShader(modelPixel_, nullptr, 0);
 		context->VSSetConstantBuffers(0, 1, &perframeBuffer_);
-		
 		tree_.Render(context);
 
 		ID3D11ShaderResourceView*    pSRV[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
@@ -174,7 +170,6 @@ private:
 	ID3D11RasterizerState* resterState_;
 
 	BaseModel             tree_;
-	SkyBox                skybox_;
 	Environmentable*      environment_;
 	FirstPersonController camaraController_;
 	BaseCamara*           pCamara_;
