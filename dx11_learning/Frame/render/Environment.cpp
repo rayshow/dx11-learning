@@ -39,6 +39,19 @@ bool Environmentable::setEnvmap(
 }
 
 
+void Environmentable::ApplyEnvironment(ID3D11DeviceContext* context)
+{
+	if (Null(samplers_[0]))
+	{
+		samplers_[0] = ResourceMgr::GetSingleton().CreateTrilinearSamplerState();
+		samplers_[1] = ResourceMgr::GetSingleton().CreateTrilinearSamplerState();
+		samplers_[2] = ResourceMgr::GetSingleton().CreateLinearSamplerState();
+	}
+	context->PSSetSamplers(eSampler_Irridiance, 3, samplers_);
+	context->PSSetShaderResources(eShaderResource_Irridiance, 3, environmentMaps_);
+}
+
+
 bool Environmentable::LoadFromFile(const string& fileName)
 {
 	stringstream buffer;
@@ -141,6 +154,7 @@ bool SkyBox::createRenderData(ID3D11Device* device)
 	SRenderGroupInfo *pGroup = new SRenderGroupInfo;
 	pGroup->indexCount_ = data.primtives_.indiceNum_;
 	pGroup->indexOffset_ = 0;
+	pGroup->materialID = 0;
 	data.groups_.push_back(pGroup);
 
 	SMaterialData* materialData = new SMaterialData;
@@ -148,47 +162,25 @@ bool SkyBox::createRenderData(ID3D11Device* device)
 	materialData->shaderFile = "shader/skybox.hlsl";
 	materialData->vsEnterPoint = "VS_FillBuffer";
 	materialData->psEnterPoint = "PS_FillBuffer";
-	for (int i = 0; i < CONST_MAX_SHADER_RESOURCE_NUM; ++i)
-	{
-		materialData->texturePath[i] = "";
-	}
+	MaterialData_ClearTexturePath(materialData);
+	data.materials_.push_back(materialData);
 
-	BaseModel::Create(device, data);
+	model_.Create(device, data);
 	ModelData_Free(data);
 
-	//render material
-	SRenderParameter* pParameter = new SRenderParameter();
-	pParameter->srvs_[eShaderResource_SpecularLukup] = environment_->GetEnvironmentmaps()[1];
-	renderParameters_.push_back(pParameter);
+	Null_Return_False((constBuffer_ = mgr->CreateConstantBuffer(sizeof(SSkeyBox_Parameter))));
+	model_.SetConstBuffer(constBuffer_);
 
-	D3D11_INPUT_ELEMENT_DESC desc[CONST_MAX_INPUT_ELEMENT_COUNT];
-	ulUint count;
-	Vertex_GetInputDescByType(eVertex_XYZNUV, desc, &count);
-
-	Null_Return_False(
-		(pParameter->vsEnterPoint_ = mgr->CreateVertexShaderAndInputlayoutFromResourceBasePath(
-		"", "VS_FillBuffer", "vs_5_0",
-		desc, count, &pParameter->vertexLayout_))
-	);
-	Null_Return_False(
-		(pParameter->psEnterPoint_ = mgr->CreatePixelShaderFromResourceBasePath("shader/skybox.hlsl", "PS_FillBuffer", "ps_5_0"))
-	);
-	this->children_[0].SetParameter(pParameter);
-
-
-	Null_Return_False(
-		(parameterBuffer_ = mgr->CreateConstantBuffer(sizeof(SSkeyBox_Parameter)))
-	);	
+	return true;
 }
 
 
-void SkyBox::SetShaderParameter(ID3D11DeviceContext* context)
+
+void SkyBox::updateBuffer()
 {
+	assert(constBuffer_ != nullptr);
 	BaseCamara *pCamara = SceneMgr::GetSingletonPtr()->GetMainCamara();
 	ResourceMgr *resourceMgr = ResourceMgr::GetSingletonPtr();
-	SSkeyBox_Parameter parameter;
-	memset(&parameter, 0, sizeof(parameter));
-	parameter.rotateProject = pCamara->GetRotateProjectStoreType();
-	ResourceMgr::GetSingletonPtr()->MappingBufferWriteOnly(parameterBuffer_, &parameter, sizeof(parameter));
-	context->VSSetConstantBuffers(0, 1, &parameterBuffer_);
+	parameter_.rotateProject = pCamara->GetRotateProjectStoreType();
+	ResourceMgr::GetSingletonPtr()->MappingBufferWriteOnly(constBuffer_, &parameter_, sizeof(parameter_));
 }

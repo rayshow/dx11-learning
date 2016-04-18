@@ -23,7 +23,7 @@ namespace ul
 		std::string name;
 	};
 
-	const STexturePosNamePair CONST_ALL_TEXTURE_POS_NAMES[CONST_MAX_SHADER_RESOURCE_NUM] =
+	const STexturePosNamePair CONST_ALL_TEXTURE_POS_NAMES[CONST_MAX_TEXTURE_NUM] =
 	{
 		{ eShaderResource_Albedo,   "albedoMap"   },
 		{ eShaderResource_Normal,   "normalMap"   },

@@ -6,8 +6,7 @@ cbuffer cbPerFrame : register(b0)
 	float4x4 rotateProject;
 }
 
-SamplerState     sampleLinear             : register(s0);
-TextureCube      specularEnv              : register(t0);
+
 
 //普通模型的PS参数
 struct PS_TranslateInput
@@ -42,6 +41,6 @@ PS_TranslateInput VS_FillBuffer(VS_Input_Xyznuv I)
 PS_Output_Single PS_FillBuffer(PS_TranslateInput I)
 {
 	PS_Output_Single O;
-	O.color0 = specularEnv.SampleLevel(sampleLinear, I.f3Dir, 0);
+	O.color0 = SpecularLukup.SampleLevel(SpecularLukupSampler, I.f3Dir, 0); //float4(0.2, 0, 0, 1);// 
 	return O;
 }

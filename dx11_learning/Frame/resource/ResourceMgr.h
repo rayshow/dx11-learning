@@ -666,6 +666,43 @@ namespace ul
 				return samplerState;
 		}
 
+		//三线性采样
+		inline ID3D11SamplerState*
+			CreateTrilinearSamplerState()
+		{
+			D3D11_SAMPLER_DESC SamDesc;
+			SamDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+			SamDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+			SamDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+			SamDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+			SamDesc.MipLODBias = 0.0f;
+			SamDesc.MaxAnisotropy = 1;
+			SamDesc.ComparisonFunc = D3D11_COMPARISON_LESS_EQUAL;
+			SamDesc.BorderColor[0] = SamDesc.BorderColor[1] = SamDesc.BorderColor[2] = SamDesc.BorderColor[3] = 0.0;
+			SamDesc.MinLOD = 0;
+			SamDesc.MaxLOD = D3D11_FLOAT32_MAX;
+			SamDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
+			return this->CreateSamplerState(SamDesc);
+		}
+
+		inline ID3D11SamplerState* 
+			CreateLinearSamplerState()
+		{
+			D3D11_SAMPLER_DESC SamDesc;
+			SamDesc.Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
+			SamDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+			SamDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+			SamDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+			SamDesc.MipLODBias = 0.0f;
+			SamDesc.MaxAnisotropy = 1;
+			SamDesc.ComparisonFunc = D3D11_COMPARISON_LESS_EQUAL;
+			SamDesc.BorderColor[0] = SamDesc.BorderColor[1] = SamDesc.BorderColor[2] = SamDesc.BorderColor[3] = 0.0;
+			SamDesc.MinLOD = 0;
+			SamDesc.MaxLOD = D3D11_FLOAT32_MAX;
+			SamDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
+			return this->CreateSamplerState(SamDesc);
+		}
+
 		//创建混合状态
 		inline ID3D11BlendState*
 			CreateBlendState(D3D11_BLEND_DESC &desc)

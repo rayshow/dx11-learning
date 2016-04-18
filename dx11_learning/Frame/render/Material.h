@@ -7,12 +7,13 @@
 
 namespace ul
 {
+	const unsigned CONST_MAX_TEXTURE_NUM = 16;
 	struct SMaterialData{
 		std::string				 identifer;
 		std::string              shaderFile;
 		std::string              vsEnterPoint;
 		std::string              psEnterPoint;
-		std::string              texturePath[CONST_MAX_SHADER_RESOURCE_NUM];
+		std::string              texturePath[CONST_MAX_TEXTURE_NUM];
 	};
 
 	struct SGroupInfo
@@ -63,9 +64,9 @@ namespace ul
 
 	inline void MaterialData_ClearTexturePath(SMaterialData* data)
 	{
-		for (int i = 0; i < CONST_MAX_SHADER_RESOURCE_NUM; ++i)
+		for (int i = 0; i < CONST_MAX_TEXTURE_NUM; ++i)
 		{
-			
+			data->texturePath[i] = "";
 		}
 	}
 

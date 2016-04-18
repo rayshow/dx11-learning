@@ -20,7 +20,7 @@ void SubBatch::Render(ID3D11DeviceContext* context)
 	context->PSSetShader(refParameter_->psEnterPoint_, nullptr, 0);
 	context->VSSetConstantBuffers(0, 1, &constBuffer_);
 	context->PSSetConstantBuffers(0, 1, &constBuffer_);
-	context->PSSetShaderResources(0, CONST_MAX_SHADER_RESOURCE_NUM, refParameter_->srvs_);
+	context->PSSetShaderResources(0, eShaderResource_Irridiance, refParameter_->srvs_);
 	context->DrawIndexed(indexCount_, indexOffset_, 0);
 }
 
@@ -44,7 +44,6 @@ bool BaseModel::Create(
 	vbd.StructureByteStride = 0;
 	ZeroMemory(&vdata, sizeof(vdata));
 	vdata.pSysMem = &data.primtives_.verticeBuffer_[0];
-
 	Null_Return_False((vb_ = mgr->CreateBuffer(vbd, &vdata)));
 
 	//ib
@@ -53,34 +52,23 @@ bool BaseModel::Create(
 	ibd.BindFlags = D3D11_BIND_INDEX_BUFFER;
 	ZeroMemory(&idata, sizeof(idata));
 	idata.pSysMem = &data.primtives_.indices_[0];
-
 	Null_Return_False((ib_ = mgr->CreateBuffer(ibd, &idata)));
-
-	//material 
-	renderParameters_.reserve(data.materials_.size());
 
 	//vertex layout
 	D3D11_INPUT_ELEMENT_DESC desc[CONST_MAX_INPUT_ELEMENT_COUNT];
 	ulUint count;
 	Vertex_GetInputDescByType(data.primtives_.type_, desc, &count);
-	if (data.materials_.size() > 0 && data.materials_[0]->shaderFile!="" 
-		&& data.materials_[0]->vsEnterPoint != ""
-		&& data.materials_[0]->psEnterPoint != "")
-	{
-		renderParameters_.at(0)->vsEnterPoint_ = mgr->CreateVertexShaderAndInputLayout(data.materials_[0]->shaderFile.c_str(),
-			data.materials_[0]->vsEnterPoint.c_str() , "vs_5_0", desc, count, &this->vertexLayout_);
-		renderParameters_.at(0)->psEnterPoint_ = mgr->CreatePixelShader(data.materials_[0]->shaderFile.c_str(),
-			data.materials_[0]->psEnterPoint.c_str(), "ps_5_0");
-	}
 
 	
+	//render parameters
+	renderParameters_.reserve(data.materials_.size());
 	for (ulUint i = 0; i < data.materials_.size(); ++i)
 	{
 		SMaterialData *pMaterial = data.materials_[i];
 		SRenderParameter* pParameter = new SRenderParameter();
 
 		//texture
-		for (int i = 0; i < CONST_MAX_SHADER_RESOURCE_NUM; ++i)
+		for (int i = 0; i < CONST_MAX_TEXTURE_NUM; ++i)
 		{
 			if (pMaterial->texturePath[i] != "")
 			{
@@ -92,11 +80,20 @@ bool BaseModel::Create(
 		}
 		
 		//shader
+		if (i == 0 && data.materials_[0]->shaderFile != ""
+			&& data.materials_[0]->vsEnterPoint != ""
+			&& data.materials_[0]->psEnterPoint != "")
+		{
+			pParameter->vsEnterPoint_ = mgr->CreateVertexShaderAndInputlayoutFromResourceBasePath(data.materials_[0]->shaderFile.c_str(),
+				data.materials_[0]->vsEnterPoint.c_str(), "vs_5_0", desc, count, &this->vertexLayout_);
+			pParameter->psEnterPoint_ = mgr->CreatePixelShaderFromResourceBasePath(data.materials_[0]->shaderFile.c_str(),
+				data.materials_[0]->psEnterPoint.c_str(), "ps_5_0");
+		}
 		if (i != 0)
 		{
-			pParameter->vsEnterPoint_ = mgr->CreateVertexShader(pMaterial->shaderFile.c_str(),
+			pParameter->vsEnterPoint_ = mgr->CreateVertexShaderFromResourceBasePath(pMaterial->shaderFile.c_str(),
 				pMaterial->vsEnterPoint.c_str(), "ps_5_0");
-			pParameter->psEnterPoint_ = mgr->CreatePixelShader(pMaterial->shaderFile.c_str(),
+			pParameter->psEnterPoint_ = mgr->CreatePixelShaderFromResourceBasePath(pMaterial->shaderFile.c_str(),
 				pMaterial->psEnterPoint.c_str(), "ps_5_0");
 			if (Null(pParameter->vsEnterPoint_) || Null(pParameter->psEnterPoint_))
 			{
@@ -120,7 +117,6 @@ bool BaseModel::Create(
 		{
 			batch.SetParameter(renderParameters_[ pGI->materialID] );
 		}
-			
 		children_.push_back(batch);
 	}
 
@@ -142,8 +138,6 @@ void BaseModel::Render(ID3D11DeviceContext* context)
 
 	for (ulUint i = 0; i < childCount_; ++i)
 	{
-		this->SetShaderParameter(context);
-		children_[i].ApplyMaterial(context);
 		children_[i].Render(context);
 	}
 	int a = 0;

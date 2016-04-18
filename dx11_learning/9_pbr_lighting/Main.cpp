@@ -133,50 +133,17 @@ public:
 		pCamara_->LookAt(XMFLOAT4(0, 0, -100, 0), XMFLOAT4(0, 0, 0, 0));
 		camaraController_.SetCamara(pCamara_);
 
-		//environment, skybox
-		environment_ = this->GetSceneMgr().GetEnvironment();
-		environment_->LoadFromFile("skybox/sky1/dome1.env");
-		skybox_.Create(dev, environment_);
+		//skybox
+		skybox_.Create(dev, "skybox/sky1/dome1.env");
 
 		//model
 		pistol_ = mgr->CreateModelFromFile("pbr_model/pistol/pistol.fbx");
 		Null_Return_Void((perframeBuffer_ = mgr->CreateConstantBuffer(sizeof(CB_PerFrame))));
 
-
 		//sample
-		D3D11_SAMPLER_DESC SamDesc;
-		SamDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
-		SamDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-		SamDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-		SamDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-		SamDesc.MipLODBias = 0.0f;
-		SamDesc.MaxAnisotropy = 1;
-		SamDesc.ComparisonFunc = D3D11_COMPARISON_LESS_EQUAL;
-		SamDesc.BorderColor[0] = SamDesc.BorderColor[1] = SamDesc.BorderColor[2] = SamDesc.BorderColor[3] = 0.0;
-		SamDesc.MinLOD = 0;
-		SamDesc.MaxLOD = D3D11_FLOAT32_MAX;
-		SamDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
-		Null_Return_Void((samplers_[0] = mgr->CreateSamplerState(SamDesc)));
-
-		SamDesc.Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
-		Null_Return_Void((samplers_[1] = mgr->CreateSamplerState(SamDesc)));
-		SamDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-		Null_Return_Void((samplers_[2] = mgr->CreateSamplerState(SamDesc)));
+		Null_Return_Void((samplers_[0] = mgr->CreateLinearSamplerState()));
+		samplers_[1] = samplers_[2] = samplers_[0];
 	
-
-		D3D11_RASTERIZER_DESC rester;
-		memset(&rester, 0, sizeof(rester));
-		rester.CullMode = D3D11_CULL_NONE;
-		rester.AntialiasedLineEnable = true;
-		rester.DepthBias = 0;
-		rester.DepthBiasClamp = 0;
-		rester.DepthClipEnable = true;
-		rester.SlopeScaledDepthBias = 0;
-		rester.FillMode = D3D11_FILL_SOLID;
-		rester.FrontCounterClockwise = false;
-		rester.MultisampleEnable = false;
-		rester.ScissorEnable = false;
-		Null_Return_Void((resterState_ = mgr->CreateRasterState(rester)));
 	};
 
 	virtual void WindowResize(int width, int height,
@@ -190,6 +157,7 @@ public:
 		XMStoreFloat4x4(&world_, XMMatrixIdentity());
 		pCamara_->SetProject(BaseCamara::eCamara_Perspective, XM_PI / 4, aspect, 0.1f, 1000.0f);
 
+		skybox_.ApplySkyBox(context);
 		postProcessChain_.Create(width, height);
 		//postProcessChain_.AddPostProcess(PostProcessChain::ePostProcess_PresentHDR);
 
@@ -199,8 +167,6 @@ public:
 	void SetParameter(ID3D11Device *dev,
 		ID3D11DeviceContext* context)
 	{
-		context->IASetInputLayout(xyznuvtbwwiii_);
-		context->RSSetState(resterState_);
 		context->PSSetSamplers(0, 3, samplers_);
 
 		XMVECTOR rotQuaternion = XMLoadFloat4(&uiRotate_);
@@ -240,8 +206,8 @@ public:
 		//obj
 		//postProcessChain_.BindAsRenderTarget(context, mainDSV);
 		context->OMSetRenderTargets(1, &mainRT, mainDSV);
-		context->VSSetConstantBuffers(0, 1, &perframeBuffer_);
-		context->PSSetConstantBuffers(0, 1, &perframeBuffer_);
+
+		pistol_->SetConstBuffer(perframeBuffer_);
 		pistol_->Render(context);
 
 		//postProcessChain_.Process(context);
@@ -250,8 +216,8 @@ public:
 		//ui
 		TwDraw();
 
-		ID3D11ShaderResourceView*    pSRV[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
-		context->PSSetShaderResources(0, 8, pSRV);
+		ID3D11ShaderResourceView*    pSRV[eShaderResource_Irridiance] = { 0, 0, 0, 0};
+		context->PSSetShaderResources(0, eShaderResource_Irridiance, pSRV);
 	};
 
 	virtual int MsgProcess(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
@@ -274,35 +240,16 @@ public:
 		TwTerminate();
 	};
 private:
-	ID3D11VertexShader*  skyVertex_;
-	ID3D11PixelShader*   skyPixel_;
-	ID3D11VertexShader*  modelVertex_;
-	ID3D11PixelShader*   modelPixel_;
-	ID3D11VertexShader*  hdrPresentVs_;
-	ID3D11PixelShader*   hdrPresentPs_;
-
-	ID3D11InputLayout*   xyznuvtbwwiii_;
-	ID3D11InputLayout*   xyznuv_;
 	ID3D11Buffer*        perframeBuffer_;
-	ID3D11Buffer*        envmapBuffer_;
-
-	ID3D11SamplerState   *TriLinerSampler_;
-	ID3D11SamplerState   *LinerSampler_;
-	ID3D11SamplerState   *PointSampler_;
-
 	ID3D11SamplerState*   samplers_[3];
 
-	ID3D11RasterizerState* resterState_;
-
 	PostProcessChain      postProcessChain_;
-	Renderable*           pistol_;
+	BaseModel*            pistol_;
 	SkyBox                skybox_;
-	Environmentable*      environment_;
 	FirstPersonController camaraController_;
 	BaseCamara*           pCamara_;
 	XMFLOAT4X4			  world_, view_, project_;
 	float				  aspect;
-	
 	
 	XMFLOAT4              uiRotate_;
 	unsigned              uiSpecularType_;

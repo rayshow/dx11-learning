@@ -1,31 +1,11 @@
-#include"common.hlsl"
+#include"base_define.hlsli"
 
-cbuffer cbPerObject : register(b0)
+cbuffer cbPerFrame : register(b0)
 {
-	float4x4 g_f4x4World;
-	float4x4 g_f4x4View;
-	float4x4 g_f4x4Project;
-	float4x4 colorConvent[3];
+	float4x4 World;
+	float4x4 WorldViewProject;
+	float4   coeffs[9];
 }
-
-cbuffer cbEnvMap: register(b1)
-{
-	float4x4 g_invView;
-	float4x4 g_invProj;
-	float4   g_camaraEye;
-};
-
-SamplerState samPoint
-{
-	Filter = MIN_MAG_MIP_POINT;
-	AddressU = CLAMP;
-	AddressV = CLAMP;
-};
-
-SamplerState                g_SampleTrilinear      : register(s0);
-TextureCube					env :					 register(t0);
-Texture2D                   colorBuffer :                  register(t1);
-Texture2D                   depthBuffer :                  register(t2);
 
 struct Coeffs
 {
@@ -41,18 +21,6 @@ struct VS_NormalVertexLayout
 };
 
 
-// 单片元单输出
-struct PS_SingleOutput
-{
-	float4 rt0    : SV_Target0;
-};
-
-// 单片元单输出
-struct PS_DoubleOutput
-{
-	float4 rt0    : SV_Target0;
-	float4 rt1    : SV_Target1;
-};
 
 //普通模型的PS参数
 struct PS_TranslateInput
@@ -63,62 +31,12 @@ struct PS_TranslateInput
 };
 
 
-
-
-//顶点着色，普通模型
-PS_TranslateInput VS_RenderCommonMesh(VS_NormalVertexLayout I)
-{
-	PS_TranslateInput O;
-	float4 posMS = float4(I.f3Position, 1);
-	float4 posWS = mul(posMS, g_f4x4World);
-	float4 posVS = mul(posWS, g_f4x4View);
-
-	//ndc位置
-	O.f4Position = mul(posVS, g_f4x4Project);
-	//normal 
-	O.f3Normal = I.f3Normal;
-	//coord
-	O.f2TexCoord = I.f2TexCoord;
-
-	return O;
-}
-
-//全屏处理公共顶点着色器
-PS_TranslateInput VS_FullScreenProcess(uint VertexID: SV_VertexID)
-{
-	PS_TranslateInput O;
-	O.f2TexCoord = float2((VertexID << 1) & 2, VertexID & 2);
-	O.f4Position = float4(O.f2TexCoord * float2(2.0f, -2.0f) + float2(-1.0f, 1.0f), 0.0f, 1.0f);
-	return O;
-}
-
-PS_SingleOutput PS_Display(PS_TranslateInput I)
-{
-	PS_SingleOutput O;
-	float2 coord = I.f2TexCoord;
-	float  depth = depthBuffer.SampleLevel(g_SampleTrilinear, coord, 0).r;
-	float3 color = colorBuffer.SampleLevel(g_SampleTrilinear, coord, 0);
-
-	if (depth == 0)
-	{
-		float3 posView = screenToCamara(coord, 1, g_invProj);
-		float3 posWorld = mul(posView, (float3x3)g_invView);
-		float3 eyeToPoint = normalize(g_camaraEye - posWorld);
-		eyeToPoint.y = -eyeToPoint.y;
-		color = env.SampleLevel(g_SampleTrilinear, eyeToPoint, 0);
-	}
-
-	O.rt0.rgb = color;
-	return O;
-}
-
-
 void SH_Y2(float3 n, inout float sh[9])
 {
 	sh[0] = 0.282094791774f;
 	sh[1] = -0.488602511903f * n.y;
 	sh[2] = 0.488602511903f * n.z;
-	sh[3] =- 0.488602511903f * n.x;
+	sh[3] = -0.488602511903f * n.x;
 	sh[4] = 1.09254843059f * n.x * n.y;
 	sh[5] = -1.09254843059f * n.y * n.z;
 	sh[6] = 0.315391565253f * (3 * n.z * n.z - 1);
@@ -153,6 +71,19 @@ void SHResult_uffizi_cross(inout Coeffs c)
 }
 
 
+void SHResult_Factory(inout Coeffs c)
+{
+	c.val[0] = float3(3.920526, 3.521996, 3.527317);
+	c.val[1] = float3(-3.154146, -2.871190, -3.751800);
+	c.val[2] = float3(-1.224890, -1.019450, -0.808956);
+	c.val[3] = float3(-0.816781, -0.804980, -0.916924);
+	c.val[4] = float3(0.733419, 0.849995, 1.229593);
+	c.val[5] = float3(0.489887, 0.541333, 0.576702);
+	c.val[6] = float3(0.987436, 0.842928, 0.379635);
+	c.val[7] = float3(1.439018, 1.238045, 1.059133);
+	c.val[8] = float3(-1.424433, -1.445791, -2.356059);
+}
+
 void SHResult_rnl_cross(inout Coeffs c)
 {
 	c.val[0] = float3(3.793014, 4.273633, 4.521361);
@@ -166,8 +97,6 @@ void SHResult_rnl_cross(inout Coeffs c)
 	c.val[8] = float3(0.208647, -0.038505, -0.446823);
 }
 
-
-
 float3 convolve(float sh[9], Coeffs result)
 {
 	float3 color = 0;
@@ -179,36 +108,43 @@ float3 convolve(float sh[9], Coeffs result)
 	return color;
 }
 
-//结果显示
-PS_DoubleOutput PS_FillBufferPass(PS_TranslateInput I)
-{
-	PS_DoubleOutput O;
-	float4 normal = float4(normalize(I.f3Normal), 1);
-	float2 coord = I.f2TexCoord;
-	float sh[9];
-	Coeffs result;
-	SH_Y2(normal.xyz, sh);
-	SHResult_stpeters_cross(result);
-	float3 color = convolve(sh, result);
 
-	O.rt0.rgb = color / (1 + color);
-	O.rt1.r = I.f4Position.z / I.f4Position.w;
+//顶点着色，普通模型
+PS_TranslateInput VS_RenderCommonMesh(VS_NormalVertexLayout I)
+{
+	PS_TranslateInput O;
+
+	//ndc位置
+	O.f4Position = mul(float4(I.f3Position, 1), WorldViewProject);
+	//normal 
+	O.f3Normal = normalize(mul(I.f3Normal, (float3x3)World));
+	//coord
+	O.f2TexCoord = I.f2TexCoord;
 
 	return O;
 }
 
 
 
-
-float3 filmicToneMapping(float3 color)
+//结果显示
+PS_Output_Single PS_FillBufferPass(PS_TranslateInput I)
 {
-	//color = filmicToneMapping(color);
-	//color = pow(color, 1 / 2.2);
-	//if (color.x >1 || color.y > 1 || color.z > 1)
-	//	color = float3(1, 0, 0);
-	color = max(0, color - 0.004);
-	color = (color * (6.2 * color + .5)) / (color * (6.2 * color + 1.7) + 0.06);
-	return color;
+	PS_Output_Single O;
+
+	
+	float3 normal = normalize(I.f3Normal);
+	float2 coord = I.f2TexCoord;
+	float sh[9];
+	Coeffs result;
+	SH_Y2(normal, sh);
+	SHResult_Factory(result);
+	float3 color = convolve(sh, result);
+		O.color0.rgb = color;// / (1 + color);
+	
+
+	return O;
 }
+
+
 
 

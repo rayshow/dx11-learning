@@ -13,8 +13,6 @@ using namespace std;
 
 namespace ul{
 
-	const unsigned CONST_MAX_SHADER_RESOURCE_NUM = 16;
-
 	enum EShaderResource_Type
 	{
 		eShaderResource_Albedo = 0,
@@ -23,13 +21,30 @@ namespace ul{
 		eShaderResource_Emit,
 		eShaderResource_Irridiance,
 		eShaderResource_SpecularLukup,
-		eShaderResource_EnvCubemap,
 		eShaderResource_IntergeLukup,
+		eShaderResource_EnvCubemap,
 		eShaderResource_Tex1,
 		eShaderResource_Tex2,
 		eShaderResource_Tex3,
 		eShaderResource_Cubemap1,
 		eShaderResource_Cubemap2,
+	};
+
+	enum ESampler_Type
+	{
+		eSampler_Albedo = 0,
+		eSampler_Normal,
+		eSampler_Specular,
+		eSampler_Emit,
+		eSampler_Irridiance,
+		eSampler_SpecularLukup,
+		eSampler_EnvCubemap,
+		eSampler_IntergeLukup,
+		eSampler_Tex1,
+		eSampler_Tex2,
+		eSampler_Tex3,
+		eSampler_Cubemap1,
+		eSampler_Cubemap2,
 	};
 
 
@@ -38,7 +53,7 @@ namespace ul{
 	{
 		ID3D11VertexShader*         vsEnterPoint_;
 		ID3D11PixelShader*          psEnterPoint_;
-		ID3D11ShaderResourceView*   srvs_[CONST_MAX_SHADER_RESOURCE_NUM];
+		ID3D11ShaderResourceView*   srvs_[CONST_MAX_TEXTURE_NUM];
 	};
 
 	class SceneMgr;
@@ -56,8 +71,8 @@ namespace ul{
 		SubBatch();
 		virtual ~SubBatch() {}
 
-		void ApplyMaterial(ID3D11DeviceContext* context);
 		void Render(ID3D11DeviceContext* context);
+
 		void SetConstBuffer(ID3D11Buffer* constBuffer)
 		{
 			this->constBuffer_ = constBuffer;
@@ -105,12 +120,24 @@ namespace ul{
 			}
 		}
 
-		void SetShaderResource(ID3D11ShaderResourceView** views)
+		void SetShaderResource(EShaderResource_Type target, ID3D11ShaderResourceView* view)
 		{
 			for (int i = 0; i < renderParameters_.size(); ++i)
 			{
 				SRenderParameter* pParameter = renderParameters_.at(i);
-				memcpy(pParameter->srvs_, views, sizeof(ID3D11ShaderResourceView*)*CONST_MAX_SHADER_RESOURCE_NUM);
+				pParameter->srvs_[target] = view;
+			}
+		}
+
+		void SetShaderResources(EShaderResource_Type startPos, EShaderResource_Type end, ID3D11ShaderResourceView** view)
+		{
+			assert(end > startPos);
+			assert(view != nullptr);
+
+			for (int i = 0; i < renderParameters_.size(); ++i)
+			{
+				SRenderParameter* pParameter = renderParameters_.at(i);
+				memcpy(&pParameter->srvs_[startPos], view, sizeof(ID3D11ShaderResourceView*)*(end - startPos + 1));
 			}
 		}
 

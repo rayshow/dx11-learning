@@ -20,16 +20,6 @@ cbuffer cbCoeffs : register(b1)
 
 static const float TextureGamma = 2.0;
 
-SamplerState       samplePoint              : register(s0);
-SamplerState	   sampleLinear             : register(s1);
-SamplerState	   sampleTrilinear          : register(s2);
-
-Texture2D          Albedomap                : register(t0);
-Texture2D		   Normalmap                : register(t1);
-Texture2D		   Specularmap              : register(t2);
-TextureCube        IrridianceCubemap        : register(t3);
-TextureCube        SpecularIBLCubemap       : register(t4);
-Texture2D          IntergerLukupmap         : register(t5);
 
 #define eSpecular_Ibl  0
 #define eSpecular_Realtime_Imp 1
@@ -98,7 +88,7 @@ resolveNormal(PS_TranslateInput I)
 	// Tangent basis from screen space derivatves. 
 	normal = I.f3Normal;
 	float3x3 tbnTransform;
-	float4 texNormal = Normalmap.SampleLevel(sampleLinear, I.f2TexCoord, 0);
+	float4 texNormal = Normalmap.SampleLevel(NormalSampler, I.f2TexCoord, 0);
 	texNormal.xyz = normalize((2.0f * texNormal.xyz) - 1.0f);
 
 	float3 dp1 = ddx_fine(I.f3WorldPos.xyz);
@@ -153,9 +143,9 @@ PS_SingleOutput PS_FillBuffer(PS_TranslateInput I)
 	PS_SingleOutput O;
 
 	float2 coord = I.f2TexCoord;
-	float4 albedo = Albedomap.SampleLevel(sampleLinear, coord, 0);
+	float4 albedo = Albedomap.SampleLevel(AlbedoSampler, coord, 0);
 	float3 normalWarp = resolveNormal(I);
-	float3 RMB = Specularmap.SampleLevel(sampleLinear, coord, 0);
+	float3 RMB = Specularmap.SampleLevel(SpecularSampler, coord, 0);
 
 	float roughness = RMB.x;
 	float glossness = 1.0f - roughness;
@@ -168,7 +158,7 @@ PS_SingleOutput PS_FillBuffer(PS_TranslateInput I)
 
 
 	//environment
-	float2 brdfTerm = IntergerLukupmap.SampleLevel(sampleTrilinear, float2(VoN, glossness), 0).xy;
+	float2 brdfTerm = IntergeLukupmap.SampleLevel(IntergeSampler, float2(VoN, glossness), 0).xy;
 	float3 specularIBL = 0;
 	float3 irridiance = 0;
 	if (irridianceType == eIrridiance_Sh)
@@ -176,7 +166,7 @@ PS_SingleOutput PS_FillBuffer(PS_TranslateInput I)
 		irridiance = ShConvolve(normalWarp, coeffs) / PI;
 	}
 	else{
-		irridiance = IrridianceCubemap.SampleLevel(sampleLinear, normalWarp, 0) / PI;
+		irridiance = Irridiancemap.SampleLevel(IrridianceSampler, normalWarp, 0) / PI;
 	}
 
 	if (specularType == eSpecular_Realtime_Imp)
@@ -185,11 +175,11 @@ PS_SingleOutput PS_FillBuffer(PS_TranslateInput I)
 			roughness,
 			refl,
 			16,
-			SpecularIBLCubemap,
-			sampleTrilinear);
+			SpecularLukup,
+			SpecularSampler);
 	}
 	else{
-		specularIBL = SpecularIBLCubemap.SampleLevel(sampleTrilinear, refl, glossness * 9).rgb;
+		specularIBL = SpecularLukup.SampleLevel(SpecularSampler, refl, glossness * 9).rgb;
 	}
 
 	float3 dielectricColor = float3(0.04, 0.04, 0.04);

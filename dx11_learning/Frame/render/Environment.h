@@ -13,11 +13,13 @@ namespace ul
 	{
 	protected:
 		ID3D11ShaderResourceView*  environmentMaps_[3];
+		ID3D11SamplerState*        samplers_[3];
 		ulFloat                    exposure_;
 	public:
 		Environmentable()
 		{
 			memset(environmentMaps_, 0, sizeof(ID3D11ShaderResourceView*) * 3);
+			memset(samplers_, 0, sizeof(ID3D11SamplerState*) * 3);
 		}
 
 		bool SetEnvmaps(
@@ -33,11 +35,12 @@ namespace ul
 
 		virtual ~Environmentable(){}
 	public:
-	
 		 ID3D11ShaderResourceView** GetEnvironmentmaps()
 		 {
 			 return environmentMaps_;
 		 }
+
+		 void ApplyEnvironment(ID3D11DeviceContext* context);
 
 	protected:
 		bool setEnvmap(
@@ -47,7 +50,7 @@ namespace ul
 
 	};
 
-	class SkyBox : public BaseModel
+	class SkyBox
 	{
 	public:
 		struct SSkeyBox_Parameter
@@ -55,30 +58,35 @@ namespace ul
 			XMFLOAT4X4 rotateProject;
 		};
 	private:
-		Environmentable* environment_;
-		ID3D11Buffer*    parameterBuffer_;
+		Environmentable  environment_;
+		BaseModel        model_;
+		ID3D11Buffer*    constBuffer_;
+		SSkeyBox_Parameter parameter_;
 	public:
-		SkyBox(){}
+		SkyBox():constBuffer_(nullptr) {}
 		~SkyBox(){}
 		bool Create(
 			ID3D11Device*    device,
-			Environmentable* environment
-		)
+			std::string      fileName)
 		{
-			this->setEnvironment(environment);
+			False_Return_False( environment_.LoadFromFile(fileName));
 			False_Return_False( this->createRenderData(device) );
 			return true;
 		}
-	private:
-		inline void setEnvironment(Environmentable* environment)
+
+		void ApplySkyBox(ID3D11DeviceContext* context)
 		{
-			this->environment_ = environment;
+			environment_.ApplyEnvironment(context);
 		}
 		
+		void Render(ID3D11DeviceContext* context)
+		{
+			this->updateBuffer();
+			model_.Render(context);
+		}
+	private:
 		bool createRenderData(ID3D11Device* device);
-
-		virtual void SetShaderParameter(ID3D11DeviceContext* context) override;
-
+		void updateBuffer();
 	}; //skybox
 
 

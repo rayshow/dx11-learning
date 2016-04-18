@@ -100,22 +100,25 @@ bool TyModelReader::Load(
 				{
 					SMaterialData* materialData = data.materials_[i];
 
-					for (unsigned int j = 0; j < materialData->texCount; ++j)
+					for (unsigned int j = 0; j < CONST_MAX_TEXTURE_NUM; ++j)
 					{
 						texPath = materialData->texturePath[j];
-
-						if (useDDSTexture)
+						if (texPath != "")
 						{
-							int lastDot = texPath.find_last_of('.');
-							texPath = texPath.substr(0, lastDot) + ".dds";
-						}
+							if (useDDSTexture)
+							{
+								int lastDot = texPath.find_last_of('.');
+								texPath = texPath.substr(0, lastDot) + ".dds";
+							}
 
-						if (loadAsSingleModel)
-						{
-							int lastSeperate = texPath.find_last_of('/');
-							texPath = dir + texPath.substr(lastSeperate + 1);
+							if (loadAsSingleModel)
+							{
+								int lastSeperate = texPath.find_last_of('/');
+								texPath = dir + texPath.substr(lastSeperate + 1);
+							}
+							materialData->texturePath[j] = texPath;
 						}
-						materialData->texturePath[j] = texPath;
+						
 					}
 				}
 
@@ -601,11 +604,11 @@ bool TyModelReader::LoadMaterialFile(
 							continue;
 						}
 						string texturePath = texture->value();
-						pMaterial->texturePath.push_back(texturePath);
+						//pMaterial->texturePath.push_back(texturePath);
 			
 					}//for_property
 
-					pMaterial->texCount = pMaterial->texturePath.size();
+					//pMaterial->texCount = pMaterial->texturePath.size();
 
 				}//if_material
 			}//for_primitive_group

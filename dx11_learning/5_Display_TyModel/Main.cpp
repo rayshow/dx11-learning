@@ -1,14 +1,8 @@
 #include<Windows.h>
 #include<memory>
 
-#include"util/tools.h"
-#include"Application.h"
-#include"res_mgr.h"
-
-#include<ty_model_loader.h>
-#include<renderable.h>
-#include<common_model_loader.h>
-#include<environmentable.h>
+#include<Application.h>
+#include<resource/TyModelLoader.h>
 #include<D3DX10Math.h>
 
 using namespace ul;
@@ -43,73 +37,23 @@ public:
 		tree_.Create(dev, data);
 		ModelData_Free(data);
 
-
-
-		Null_Return_Void((
-			modelVertex_ = mgr->CreateVertexShaderAndInputLayout(
-			"main.hlsl", "VS_FillBuffer", "vs_5_0",
-			G_Layout_VertexXyznuvtbiiiww, ARRAYSIZE(G_Layout_VertexXyznuvtbiiiww), &xyznuvtbwwiii_)
-		));
-		Null_Return_Void((modelPixel_ = mgr->CreatePixelShader("main.hlsl", "PS_FillBuffer", "ps_5_0")));
-		Null_Return_Void((perframeBuffer_ = mgr->CreateConstantBuffer(sizeof(CB_PerFrame))));
-
-		D3D11_SAMPLER_DESC SamDesc;
-		SamDesc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_MIP_POINT;
-		SamDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-		SamDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-		SamDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-		SamDesc.MipLODBias = 0.0f;
-		SamDesc.MaxAnisotropy = 1;
-		SamDesc.ComparisonFunc = D3D11_COMPARISON_LESS_EQUAL;
-		SamDesc.BorderColor[0] = SamDesc.BorderColor[1] = SamDesc.BorderColor[2] = SamDesc.BorderColor[3] = 0.0;
-		SamDesc.MinLOD = 0;
-		SamDesc.MaxLOD = D3D11_FLOAT32_MAX;
-		SamDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-		SamDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
-		Null_Return_Void((TriLinerSampler_ = mgr->CreateSamplerState(SamDesc)));
-		SamDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
-		Null_Return_Void((PointSampler_ = mgr->CreateSamplerState(SamDesc)));
-		SamDesc.Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
-		Null_Return_Void((LinerSampler_ = mgr->CreateSamplerState(SamDesc)));
-
-		D3D11_RASTERIZER_DESC rester;
-		memset(&rester, 0, sizeof(rester));
-		rester.CullMode = D3D11_CULL_NONE;
-		rester.AntialiasedLineEnable = true;
-		rester.DepthBias = 0;
-		rester.DepthBiasClamp = 0;
-		rester.DepthClipEnable = true;
-		rester.SlopeScaledDepthBias = 0;
-		rester.FillMode = D3D11_FILL_SOLID;
-		rester.FrontCounterClockwise = false;
-		rester.MultisampleEnable = false;
-		rester.ScissorEnable = false;
-		Null_Return_Void((resterState_ = mgr->CreateRasterState(rester)));
+		Null_Return_Void((samplers_[0] = mgr->CreateLinearSamplerState()));
+		samplers_[1] = samplers_[2] = samplers_[0];
 	};
 
 
 	void SetParameter(ID3D11Device *dev,
 		ID3D11DeviceContext* context)
 	{
-		context->IASetInputLayout(xyznuvtbwwiii_);
-		context->RSSetState(resterState_);
-		context->PSSetSamplers(0, 1, &LinerSampler_);
+		context->PSSetSamplers(0, 3, samplers_);
 	
 		XMFLOAT4X4 view = pCamara_->GetViewStoreType();
 		XMFLOAT4X4 proj = pCamara_->GetProjectStoreType();
 
-		//mvp
-		D3D11_MAPPED_SUBRESOURCE MappedResource;
-		memset(&MappedResource, 0, sizeof(D3D11_MAPPED_SUBRESOURCE));
-		Fail_Return_Void(context->Map(perframeBuffer_, 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedResource));
-
-		CB_PerFrame* pConstants = (CB_PerFrame*)MappedResource.pData;
-		
-		pConstants->world = world_;
-		pConstants->view =  view;
-		pConstants->project = proj;
-		context->Unmap(perframeBuffer_, 0);
-
+		perFrame_.world = world_;
+		perFrame_.view = view;
+		perFrame_.project = proj;
+		ResourceMgr::GetSingleton().MappingBufferWriteOnly(perframeBuffer_, &perFrame_, sizeof(CB_PerFrame));
 	}
 
 	virtual void RenderFrame(ID3D11Device *dev,
@@ -119,13 +63,9 @@ public:
 		ID3D11RenderTargetView* mainRT = this->GetMainRT();
 		ID3D11DepthStencilView* mainDSV = this->GetMainDSV();
 		context->OMSetRenderTargets(1, &mainRT, mainDSV);
-		context->VSSetShader(modelVertex_, nullptr, 0);
-		context->PSSetShader(modelPixel_, nullptr, 0);
-		context->VSSetConstantBuffers(0, 1, &perframeBuffer_);
-		tree_.Render(context);
 
-		ID3D11ShaderResourceView*    pSRV[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
-		context->PSSetShaderResources(0, 8, pSRV);
+		tree_.SetConstBuffer(perframeBuffer_);
+		tree_.Render(context);
 	};
 
 	virtual void WindowResize(int width, int height,
@@ -163,17 +103,11 @@ private:
 	ID3D11Buffer*        perframeBuffer_;
 	ID3D11Buffer*        envmapBuffer_;
 
-	ID3D11SamplerState   *TriLinerSampler_;
-	ID3D11SamplerState   *LinerSampler_;
-	ID3D11SamplerState   *PointSampler_;
-
-	ID3D11RasterizerState* resterState_;
-
+	ID3D11SamplerState   *samplers_[3];
+	CB_PerFrame           perFrame_;
 	BaseModel             tree_;
-	Environmentable*      environment_;
 	FirstPersonController camaraController_;
 	BaseCamara*           pCamara_;
-
 	XMFLOAT4X4 world_, view_, project_;
 	float aspect;
 };

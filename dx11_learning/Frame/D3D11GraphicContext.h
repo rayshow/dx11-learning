@@ -35,6 +35,7 @@ namespace ul
 		ResourceMgr*             resourceMgr_;
 		D3D11_VIEWPORT           viewport_;
 		DXGI_SWAP_CHAIN_DESC     swapChainDesc_;
+
 	public:
 		D3D11GraphicsContext() :
 			enableVsyn_(true),

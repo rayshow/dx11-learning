@@ -186,7 +186,6 @@ bool CommonModelLoader::loadMaterial(
 		for (; material != nullptr; material = material->next_sibling("material"))
 		{
 			SMaterialData* materialData = new SMaterialData;
-			materialData->texCount = 0;
 
 			xml_node<> *shaderNode = material->first_node("shader");
 			xml_node<> *fileNameNode = shaderNode->first_node("fileName");
@@ -215,7 +214,7 @@ bool CommonModelLoader::loadMaterial(
 			buffer >> materialData->identifer;
 			buffer.clear();
 
-			for (int i = 0; i < CONST_MAX_SHADER_RESOURCE_NUM; ++i)
+			for (int i = 0; i < CONST_MAX_TEXTURE_NUM; ++i)
 			{
 				if (CONST_ALL_TEXTURE_POS_NAMES[i].name != "")
 				{
@@ -223,7 +222,8 @@ bool CommonModelLoader::loadMaterial(
 					if (Not_Null(node))
 					{
 						buffer<<node->value();
-						buffer >> materialData->texturePath[ CONST_ALL_TEXTURE_POS_NAMES[i].index ];
+						buffer >> mapName;
+						materialData->texturePath[CONST_ALL_TEXTURE_POS_NAMES[i].index] = resourcePath + mapName;
 						buffer.clear();
 					}
 					else{

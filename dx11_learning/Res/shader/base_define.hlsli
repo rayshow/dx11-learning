@@ -27,4 +27,29 @@ struct PS_Output_Single
 };
 
 
+Texture2D                   Albedomap :                  register(t0);
+Texture2D                   Normalmap :                  register(t1);
+Texture2D                   Specularmap :                register(t2);
+Texture2D                   Emitmap :					 register(t3);
+TextureCube                 Irridiancemap :              register(t4);
+TextureCube                 SpecularLukup:               register(t5);
+Texture2D                   IntergeLukupmap:             register(t6);
+TextureCube                 EnvCubemap:					 register(t7);
+Texture2D                   Texture0:				     register(t8);
+Texture2D                   Texture1:					 register(t9);
+Texture2D                   Texture2:					 register(t10);
+Texture2D                   Cubemap1:					 register(t11);
+Texture2D                   Cubemap2:					 register(t12);
+
+SamplerState                AlbedoSampler:               register(s0);
+SamplerState                NormalSampler:               register(s1);
+SamplerState                SpecularSampler:             register(s2);
+SamplerState                EmitSampler:				 register(s3);
+SamplerState                IrridianceSampler:           register(s4);
+SamplerState                SpecularLukupSampler:        register(s5);
+SamplerState                IntergeSampler:              register(s6);
+SamplerState                EnvCubeSampler:              register(s7);
+
+
+
 #endif

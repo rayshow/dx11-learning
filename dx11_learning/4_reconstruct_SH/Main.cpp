@@ -10,6 +10,7 @@ struct CB_PerFrame
 {
 	XMFLOAT4X4 world;
 	XMFLOAT4X4 worldViewProject;
+	XMFLOAT4   coeffs[9];
 };
 
 
@@ -33,20 +34,11 @@ public:
 
 		pCamara_->LookAt(XMFLOAT4(0, 0, 0, 0), XMFLOAT4(0, 0, 1, 0));
 
-		
 		Null_Return_Void((envTexture_ = mgr->CreateTextureFromFile("../Res/skybox/sky1/domeSpecularHDR.dds")));
-		Null_Return_Void((
-			commonInputVertexPass_ = mgr->CreateVertexShaderAndInputLayout(
-			"main.hlsl", "VS_RenderCommonMesh", "vs_5_0",
-			G_Layout_VertexXyznuv, ARRAYSIZE(G_Layout_VertexXyznuv), &commonInputLayout_)
-		));
-		Null_Return_Void((commonInputPixelPass_ = mgr->CreatePixelShader("main.hlsl", "PS_FillBufferPass", "ps_5_0")));
 		Null_Return_Void((perframeBuffer_ = mgr->CreateConstantBuffer(sizeof(CB_PerFrame))));
 		Null_Return_Void((ball_ = mgr->CreateModelFromFile("../res/mesh/sphere.x")));
-		ball_->SetShader(commonInputVertexPass_, commonInputPixelPass_);
 
 		D3D11_SAMPLER_DESC SamDesc;
-		SamDesc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_MIP_POINT;
 		SamDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
 		SamDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
 		SamDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
@@ -61,6 +53,8 @@ public:
 		Null_Return_Void((TriLinerSampler_ = mgr->CreateSamplerState(SamDesc)));
 		SamDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
 		Null_Return_Void((PointSampler_ = mgr->CreateSamplerState(SamDesc)));
+
+		context->PSSetSamplers(eSampler_EnvCubemap, 1, &TriLinerSampler_);
 
 		D3D11_RASTERIZER_DESC rester;
 		memset(&rester, 0, sizeof(rester));
@@ -120,9 +114,9 @@ public:
 		ID3D11DepthStencilView* mainDSV = this->GetMainDSV();
 
 		context->OMSetRenderTargets(1, &mainRT, mainDSV);
-		context->VSSetConstantBuffers(0, 1, &perframeBuffer_);
-		context->PSSetConstantBuffers(0, 1, &perframeBuffer_);
-		context->PSSetShaderResources(0, 1, &envTexture_);
+
+		ball_->SetConstBuffer(perframeBuffer_);
+		ball_->SetShaderResource(eShaderResource_EnvCubemap, envTexture_);
 		ball_->Render(context);
 
 		ID3D11ShaderResourceView*    pSRV[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
