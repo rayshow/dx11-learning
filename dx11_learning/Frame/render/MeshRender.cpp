@@ -6,33 +6,21 @@
 
 using namespace ul;
 
-SubBatch::SubBatch() :refParameter_(nullptr), texCount_(0), indexOffset_(0), indexCount_(0), refSceneMgr_(nullptr)
+SubBatch::SubBatch() :refParameter_(nullptr), texCount_(0), indexOffset_(0), indexCount_(0), refSceneMgr_(nullptr), constBuffer_(nullptr)
 {
 	refSceneMgr_ = SceneMgr::GetSingletonPtr();
 	assert(refSceneMgr_ != nullptr);
 }
 
 
-void SubBatch::ApplyMaterial(ID3D11DeviceContext* context)
-{
-	context->IASetInputLayout(refParameter_->vertexLayout_);
-	context->VSSetShader(refParameter_->vsEnterPoint_, nullptr, 0);
-	context->PSSetShader(refParameter_->psEnterPoint_, nullptr, 0);
-	context->PSSetShaderResources(refParameter_->srvCount_, 3,
-		refSceneMgr_->GetEnvironment()->GetEnvironmentmaps());
-
-	if (refParameter_->srvCount_>0)
-	{
-		context->PSSetShaderResources(0, refParameter_->srvCount_, refParameter_->srvs_);
-	}
-	else{
-		static ID3D11ShaderResourceView*    pSRV[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
-		context->PSSetShaderResources(0, 8, pSRV);
-	}
-}
 
 void SubBatch::Render(ID3D11DeviceContext* context)
 {
+	context->VSSetShader(refParameter_->vsEnterPoint_, nullptr, 0);
+	context->PSSetShader(refParameter_->psEnterPoint_, nullptr, 0);
+	context->VSSetConstantBuffers(0, 1, &constBuffer_);
+	context->PSSetConstantBuffers(0, 1, &constBuffer_);
+	context->PSSetShaderResources(0, CONST_MAX_SHADER_RESOURCE_NUM, refParameter_->srvs_);
 	context->DrawIndexed(indexCount_, indexOffset_, 0);
 }
 
@@ -75,48 +63,47 @@ bool BaseModel::Create(
 	D3D11_INPUT_ELEMENT_DESC desc[CONST_MAX_INPUT_ELEMENT_COUNT];
 	ulUint count;
 	Vertex_GetInputDescByType(data.primtives_.type_, desc, &count);
-	
+	if (data.materials_.size() > 0 && data.materials_[0]->shaderFile!="" 
+		&& data.materials_[0]->vsEnterPoint != ""
+		&& data.materials_[0]->psEnterPoint != "")
+	{
+		renderParameters_.at(0)->vsEnterPoint_ = mgr->CreateVertexShaderAndInputLayout(data.materials_[0]->shaderFile.c_str(),
+			data.materials_[0]->vsEnterPoint.c_str() , "vs_5_0", desc, count, &this->vertexLayout_);
+		renderParameters_.at(0)->psEnterPoint_ = mgr->CreatePixelShader(data.materials_[0]->shaderFile.c_str(),
+			data.materials_[0]->psEnterPoint.c_str(), "ps_5_0");
+	}
 
+	
 	for (ulUint i = 0; i < data.materials_.size(); ++i)
 	{
 		SMaterialData *pMaterial = data.materials_[i];
 		SRenderParameter* pParameter = new SRenderParameter();
 
 		//texture
-		pParameter->srvCount_ = pMaterial->texCount;
-		if (pMaterial->texCount > 0)
+		for (int i = 0; i < CONST_MAX_SHADER_RESOURCE_NUM; ++i)
 		{
-			pParameter->srvs_ = new ID3D11ShaderResourceView*[pMaterial->texCount];
-			for (ulUint j = 0; j < pMaterial->texCount; ++j)
+			if (pMaterial->texturePath[i] != "")
 			{
-				pParameter->srvs_[j] = mgr->CreateTextureFromFile(pMaterial->texturePath[j]);
+				pParameter->srvs_[i] = mgr->CreateTextureFromFile(pMaterial->texturePath[i]);
 			}
-		}
-		else{
-			pParameter->srvs_ = nullptr;
+			else{
+				pParameter->srvs_[i] = nullptr;
+			}
 		}
 		
 		//shader
-		pParameter->vsEnterPoint_ = mgr->CreateVertexShaderAndInputLayout(pMaterial->shaderFile.c_str(),
-			pMaterial->vsEnterPoint.c_str(), "vs_5_0", desc, count, &pParameter->vertexLayout_);
-		if ( Null(pParameter->vsEnterPoint_) || Null(pParameter->vertexLayout_))
+		if (i != 0)
 		{
-			Log_Err("create vertex shader error from file:%s function: %s", pMaterial->shaderFile.c_str(),
-				pMaterial->vsEnterPoint.c_str());
-			Safe_Delete(pParameter);
-			return false;
+			pParameter->vsEnterPoint_ = mgr->CreateVertexShader(pMaterial->shaderFile.c_str(),
+				pMaterial->vsEnterPoint.c_str(), "ps_5_0");
+			pParameter->psEnterPoint_ = mgr->CreatePixelShader(pMaterial->shaderFile.c_str(),
+				pMaterial->psEnterPoint.c_str(), "ps_5_0");
+			if (Null(pParameter->vsEnterPoint_) || Null(pParameter->psEnterPoint_))
+			{
+				Log_Err("load material from file %s, batch %d error.", data.sourceFile_.c_str(), i);
+				return false;
+			}
 		}
-
-		pParameter->psEnterPoint_ = mgr->CreatePixelShader(pMaterial->shaderFile.c_str(),
-			pMaterial->psEnterPoint.c_str(), "ps_5_0");
-		if (Null(pParameter->psEnterPoint_))
-		{
-			Log_Err("create pixel shader error from file:%s function: %s", pMaterial->shaderFile.c_str(),
-				pMaterial->psEnterPoint.c_str());
-			Safe_Delete(pParameter);
-			return false;
-		}
-
 		renderParameters_.push_back(pParameter);
 	}
 
@@ -142,12 +129,16 @@ bool BaseModel::Create(
 	offset_ = 0;
 	return true;
 }
+
+
+
 void BaseModel::Render(ID3D11DeviceContext* context)
 {
 	assert(context != 0);
 	context->IASetVertexBuffers(0, 1, &vb_, &stride_, &offset_);
 	context->IASetIndexBuffer(ib_, DXGI_FORMAT_R16_UINT, 0);
 	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	context->IASetInputLayout(vertexLayout_);
 
 	for (ulUint i = 0; i < childCount_; ++i)
 	{

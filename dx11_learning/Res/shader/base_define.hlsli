@@ -1,6 +1,8 @@
-#ifndef BASE_DEFINE
-#define BASE_DEFINE
+#ifndef BASE_DEFINE_HEADER__
+#define BASE_DEFINE_HEADER__
 
+#define PI     3.14159265358979323f
+#define INV_PI 0.31830988618379067f
 
 //后期处理PS参数
 struct PS_FullScreenInput

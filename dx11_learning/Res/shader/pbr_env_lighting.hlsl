@@ -1,20 +1,53 @@
+#include"ibl.hlsli"
+#include"base_define.hlsli"
+#include"sh_lighting.hlsli"
+
 cbuffer cbPerFrame : register(b0)
 {
 	float4x4 world;
 	float4x4 worldViewProject;
 	float4   camaraWorldPos;
+	uint     specularType;
+	uint     irridianceType;
+	uint     outputType;
+	uint     padding;
 }
 
-const float		   g_fTextureGamma = 2.0;
-SamplerState	   g_SampleLinear          : register(s0);
-SamplerState	   g_SampleTrilinear       : register(s1);
+cbuffer cbCoeffs : register(b1)
+{
+	Coeffs coeffs;
+}
 
-Texture2D          g_Albedo                : register(t0);
-Texture2D		   g_Normal                : register(t1);
-Texture2D		   g_Specular              : register(t2);
-TextureCube        g_DiffuseIBL            : register(t3);
-TextureCube        g_SpecularIBL           : register(t4);
-Texture2D          g_SpecularInterger      : register(t5);
+static const float TextureGamma = 2.0;
+
+SamplerState       samplePoint              : register(s0);
+SamplerState	   sampleLinear             : register(s1);
+SamplerState	   sampleTrilinear          : register(s2);
+
+Texture2D          Albedomap                : register(t0);
+Texture2D		   Normalmap                : register(t1);
+Texture2D		   Specularmap              : register(t2);
+TextureCube        IrridianceCubemap        : register(t3);
+TextureCube        SpecularIBLCubemap       : register(t4);
+Texture2D          IntergerLukupmap         : register(t5);
+
+#define eSpecular_Ibl  0
+#define eSpecular_Realtime_Imp 1
+
+#define eIrridiance_Ibl 0 
+#define eIrridiance_Sh  1
+
+#define eTonemapping_Avg_Lumin  0
+#define eTonemapping_Filmic 1
+
+#define eOutput_All 0
+#define eOutput_Irridiance 1
+#define eOutput_Specular 2
+#define eOutput_Ao 3
+#define eOutput_Roughness 4
+#define eOutput_Matelness 5
+#define eOutput_Lukup 6
+
 
 // 顶点参数
 struct VS_VertexLayout
@@ -65,7 +98,7 @@ resolveNormal(PS_TranslateInput I)
 	// Tangent basis from screen space derivatves. 
 	normal = I.f3Normal;
 	float3x3 tbnTransform;
-	float4 texNormal = g_Normal.SampleLevel(g_SampleLinear, I.f2TexCoord, 0);
+	float4 texNormal = Normalmap.SampleLevel(sampleLinear, I.f2TexCoord, 0);
 	texNormal.xyz = normalize((2.0f * texNormal.xyz) - 1.0f);
 
 	float3 dp1 = ddx_fine(I.f3WorldPos.xyz);
@@ -92,6 +125,7 @@ float4 resovleAlbedo(float4 albedo, float gamma)
 }
 
 
+
 //顶点着色，普通模型
 PS_TranslateInput VS_FillBuffer(VS_VertexLayout I)
 {
@@ -110,33 +144,82 @@ PS_TranslateInput VS_FillBuffer(VS_VertexLayout I)
 	return O;
 }
 
+
+
+
 //片元，普通模型
 PS_SingleOutput PS_FillBuffer(PS_TranslateInput I)
 {
 	PS_SingleOutput O;
-	float2 coord = I.f2TexCoord;
-	float4 albedo = g_Albedo.SampleLevel(g_SampleLinear, coord, 0);
-	
-	float3 normalWarp = resolveNormal(I);
-	float3 RMB = g_Specular.SampleLevel(g_SampleLinear, coord, 0);
 
-	float glossness = 1.0f - RMB.x;
+	float2 coord = I.f2TexCoord;
+	float4 albedo = Albedomap.SampleLevel(sampleLinear, coord, 0);
+	float3 normalWarp = resolveNormal(I);
+	float3 RMB = Specularmap.SampleLevel(sampleLinear, coord, 0);
+
+	float roughness = RMB.x;
+	float glossness = 1.0f - roughness;
 	float matelness = RMB.y;
 	float bakedAO = RMB.z;
 
-	float4 diffuseIBL = g_DiffuseIBL.SampleLevel(g_SampleLinear, normalWarp, 0) / 3.14159;
-	
 	float3 view = normalize(camaraWorldPos - I.f3WorldPos);
 	float3 refl = normalize(reflect(-view, normalize(normalWarp)));
 	float VoN = dot(view, normalWarp);
-	float2 brdfTerm = g_SpecularInterger.SampleLevel(g_SampleLinear, float2(VoN, glossness), 0).xy;
-	float4 specularIBL = g_SpecularIBL.SampleLevel(g_SampleTrilinear, refl, glossness*9);
+
+
+	//environment
+	float2 brdfTerm = IntergerLukupmap.SampleLevel(sampleTrilinear, float2(VoN, glossness), 0).xy;
+	float3 specularIBL = 0;
+	float3 irridiance = 0;
+	if (irridianceType == eIrridiance_Sh)
+	{
+		irridiance = ShConvolve(normalWarp, coeffs) / PI;
+	}
+	else{
+		irridiance = IrridianceCubemap.SampleLevel(sampleLinear, normalWarp, 0) / PI;
+	}
+
+	if (specularType == eSpecular_Realtime_Imp)
+	{
+		specularIBL = PrefilterSpecularMap(
+			roughness,
+			refl,
+			16,
+			SpecularIBLCubemap,
+			sampleTrilinear);
+	}
+	else{
+		specularIBL = SpecularIBLCubemap.SampleLevel(sampleTrilinear, refl, glossness * 9).rgb;
+	}
 
 	float3 dielectricColor = float3(0.04, 0.04, 0.04);
 	float3 specular = lerp(dielectricColor, albedo.rgb, matelness);
-
-	float3 litColor = diffuseIBL.rgb * albedo + (specularIBL*(specular*brdfTerm.x + brdfTerm.y));
+	float3 litColor = irridiance * albedo + (specularIBL*(specular*brdfTerm.x + brdfTerm.y));
 	litColor = litColor * bakedAO;
+
+
+	switch (outputType)
+	{
+	case eOutput_Irridiance:
+		litColor = irridiance.rgb;
+		break;
+	case eOutput_Specular:
+		litColor = specularIBL.rgb;
+		break;
+	case eOutput_Ao:
+		litColor = bakedAO;
+		break;
+	case eOutput_Roughness:
+		litColor = roughness;
+		break;
+	case eOutput_Matelness:
+		litColor = matelness;
+		break;
+	case eOutput_Lukup:
+		litColor = float3(brdfTerm, 0);
+		break;
+	}
+
 
 	O.rt0.rgb = litColor;
 	return O;

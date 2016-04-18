@@ -80,6 +80,15 @@
       <Project>{7c78dfa1-7446-4d2e-9153-34ff7711a00f}</Project>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\Res\shader\base_define.hlsli" />
+    <None Include="..\Res\shader\brdf.hlsli" />
+    <None Include="..\Res\shader\ibl.hlsli" />
+    <None Include="..\Res\shader\pbr_env_lighting.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="..\Res\shader\sh_lighting.hlsli" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

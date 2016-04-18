@@ -84,11 +84,6 @@
       <Project>{7c78dfa1-7446-4d2e-9153-34ff7711a00f}</Project>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup>
-    <None Include="common.hlsl">
-      <FileType>Document</FileType>
-    </None>
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

@@ -1,12 +1,7 @@
 #include<Windows.h>
 #include<memory>
 
-
-
-#include"util/tools.h"
-#include<common_model_loader.h>
-#include"util/res_mgr.h"
-#include"application.h"
+#include<Application.h>
 #include<D3DX10Math.h>
 using namespace ul;
 
@@ -14,17 +9,9 @@ using namespace ul;
 struct CB_PerFrame
 {
 	XMFLOAT4X4 world;
-	XMFLOAT4X4 view;
-	XMFLOAT4X4 project;
-	XMFLOAT4X4 colorConvent[3];
+	XMFLOAT4X4 worldViewProject;
 };
 
-struct CB_EnvMap
-{
-	XMFLOAT4X4 invView;
-	XMFLOAT4X4 invProj;
-	XMFLOAT4   eyePos;
-};
 
 class Lession1_Frame :public Application
 {
@@ -42,23 +29,21 @@ public:
 		pCamara_ = this->GetSceneMgr().GetMainCamara();
 		pCamara_->LookAt(XMFLOAT4(0, 0, -100, 0), XMFLOAT4(0, 0, 0, 0));
 		camaraController_.SetCamara(pCamara_);
+		camaraController_.SetRotateAndMoveScaler(1, 20);
 
 		pCamara_->LookAt(XMFLOAT4(0, 0, 0, 0), XMFLOAT4(0, 0, 1, 0));
 
 		
-		Null_Return_Void((ball_ = mgr->CreateModelFromFile("../res/mesh/sphere.x")));
-		Null_Return_Void((envTexture_ = mgr->CreateTextureFromFile("../res/stpeters_cross.dds")));
+		Null_Return_Void((envTexture_ = mgr->CreateTextureFromFile("../Res/skybox/sky1/domeSpecularHDR.dds")));
 		Null_Return_Void((
 			commonInputVertexPass_ = mgr->CreateVertexShaderAndInputLayout(
 			"main.hlsl", "VS_RenderCommonMesh", "vs_5_0",
 			G_Layout_VertexXyznuv, ARRAYSIZE(G_Layout_VertexXyznuv), &commonInputLayout_)
 		));
 		Null_Return_Void((commonInputPixelPass_ = mgr->CreatePixelShader("main.hlsl", "PS_FillBufferPass", "ps_5_0")));
-		Null_Return_Void((fullScreenVertex_ = mgr->CreateVertexShader("main.hlsl", "VS_FullScreenProcess", "vs_5_0")));
-		Null_Return_Void((fullScreenPixel_ = mgr->CreatePixelShader("main.hlsl", "PS_Display", "ps_5_0")));
-
 		Null_Return_Void((perframeBuffer_ = mgr->CreateConstantBuffer(sizeof(CB_PerFrame))));
-		Null_Return_Void((envmapBuffer_ = mgr->CreateConstantBuffer(sizeof(CB_EnvMap))));
+		Null_Return_Void((ball_ = mgr->CreateModelFromFile("../res/mesh/sphere.x")));
+		ball_->SetShader(commonInputVertexPass_, commonInputPixelPass_);
 
 		D3D11_SAMPLER_DESC SamDesc;
 		SamDesc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_MIP_POINT;
@@ -103,40 +88,7 @@ public:
 		aspect = (float)width / (float)height;
 		XMStoreFloat4x4(&world_, XMMatrixIdentity());
 		pCamara_->SetProject(BaseCamara::eCamara_Perspective, XM_PI / 4, aspect, 0.1f, 1000.0f);
-
-		//one texture
-		D3D11_TEXTURE2D_DESC rgba_nomips_Desc;
-		rgba_nomips_Desc.Width = UINT(width);
-		rgba_nomips_Desc.Height = UINT(height);
-		rgba_nomips_Desc.MipLevels = 0;
-		rgba_nomips_Desc.ArraySize = 1;
-		rgba_nomips_Desc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
-		rgba_nomips_Desc.SampleDesc.Count = 1;
-		rgba_nomips_Desc.SampleDesc.Quality = 0;
-		rgba_nomips_Desc.Usage = D3D11_USAGE_DEFAULT;
-		rgba_nomips_Desc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
-		rgba_nomips_Desc.CPUAccessFlags = 0;
-		rgba_nomips_Desc.MiscFlags = 0;
-		AutoReleasePtr<ID3D11Texture2D> colorTex;
-		AutoReleasePtr<ID3D11Texture2D> depthTex;
-		Fail_Return_Void(dev->CreateTexture2D(&rgba_nomips_Desc, nullptr, colorTex.GetPtr()));
-		Fail_Return_Void(dev->CreateTexture2D(&rgba_nomips_Desc, nullptr, depthTex.GetPtr()));
-		
-		D3D11_SHADER_RESOURCE_VIEW_DESC allMipmap;
-		allMipmap.Format = rgba_nomips_Desc.Format;
-		allMipmap.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-		allMipmap.Texture2D.MipLevels = 0;
-		allMipmap.Texture2D.MostDetailedMip = 0;
-		Fail_Return_Void((colorSRV_ = mgr->CreateShaderResourceView(colorTex.Get(), nullptr, ResourceMgr::eRecyclePerSwapChain)));
-		Fail_Return_Void((depthSRV_ = mgr->CreateShaderResourceView(depthTex.Get(), nullptr, ResourceMgr::eRecyclePerSwapChain)));
-
-		D3D11_RENDER_TARGET_VIEW_DESC RTDesc;
-		RTDesc.Format = rgba_nomips_Desc.Format;
-		RTDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
-		RTDesc.Texture2D.MipSlice = 0;
-		Fail_Return_Void((colorRT_ = mgr->CreateRenderTargetView(colorTex.Get(), nullptr, ResourceMgr::eRecyclePerSwapChain)));
-		Fail_Return_Void((depthRT_ = mgr->CreateRenderTargetView(depthTex.Get(), nullptr, ResourceMgr::eRecyclePerSwapChain)));
-	};
+	}
 
 	void SetParameter(ID3D11Device *dev,
 		ID3D11DeviceContext* context)
@@ -144,17 +96,6 @@ public:
 		context->IASetInputLayout(commonInputLayout_);
 		context->RSSetState(resterState_);
 		context->PSSetSamplers(0, 1, &TriLinerSampler_);
-
-		XMFLOAT4X4 tv = pCamara_->GetTransposeViewMatrix();
-		XMFLOAT4X4 tp = pCamara_->GetTransposeProjectMatrix();
-		XMFLOAT4X4 p =  pCamara_->GetProjectMatrix();
-		XMFLOAT4X4 v =  pCamara_->GetViewMatrix();
-
-		XMVECTOR det;
-		XMMATRIX invProj = XMMatrixInverse(&det, XMLoadFloat4x4(&p) );
-		XMMATRIX invView = XMMatrixInverse(&det, XMLoadFloat4x4(&v) );
-		invProj = XMMatrixTranspose(invProj);
-		invView = XMMatrixTranspose(invView);
 
 		//mvp
 		D3D11_MAPPED_SUBRESOURCE MappedResource;
@@ -164,20 +105,11 @@ public:
 		CB_PerFrame* pConstants = (CB_PerFrame*)MappedResource.pData;
 		
 		pConstants->world = world_;
-		pConstants->view =  tv;
-		pConstants->project = tp;
+		pConstants->worldViewProject = pCamara_->GetViewProjectStoreType();
 		
 		context->Unmap(perframeBuffer_, 0);
 
-		//envmap
-		Fail_Return_Void(context->Map(envmapBuffer_, 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedResource));
-		CB_EnvMap* envmap = (CB_EnvMap*)MappedResource.pData;
-		XMStoreFloat4x4(&envmap->invProj, invProj);
-		XMStoreFloat4x4(&envmap->invView, invView);
-
-		envmap->eyePos = pCamara_->GetEyePos();
-
-		context->Unmap(envmapBuffer_, 0);
+	
 	}
 
 	virtual void RenderFrame(ID3D11Device *dev,
@@ -187,26 +119,11 @@ public:
 		ID3D11RenderTargetView* mainRT = this->GetMainRT();
 		ID3D11DepthStencilView* mainDSV = this->GetMainDSV();
 
-		ID3D11RenderTargetView* gbuffer[2] = { colorRT_, depthRT_ };
-		ClearRenderTargets(2, gbuffer);
-
-		context->OMSetRenderTargets(2, gbuffer, mainDSV);
+		context->OMSetRenderTargets(1, &mainRT, mainDSV);
 		context->VSSetConstantBuffers(0, 1, &perframeBuffer_);
 		context->PSSetConstantBuffers(0, 1, &perframeBuffer_);
-		context->PSSetShaderResources(0, 1, &envTexture_);		
-		context->VSSetShader(commonInputVertexPass_, nullptr, 0);
-		context->PSSetShader(commonInputPixelPass_, nullptr, 0);
+		context->PSSetShaderResources(0, 1, &envTexture_);
 		ball_->Render(context);
-
-		context->OMSetRenderTargets(1, &mainRT, nullptr);
-		ID3D11ShaderResourceView* two[3] = { envTexture_, colorSRV_, depthSRV_ };
-		context->PSSetShaderResources(0, 3, two);
-		context->VSSetConstantBuffers(1, 1, &envmapBuffer_);
-		context->PSSetConstantBuffers(1, 1, &envmapBuffer_);
-		context->VSSetShader(fullScreenVertex_, nullptr, 0);
-		context->PSSetShader(fullScreenPixel_, nullptr, 0);
-		context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		context->Draw(3, 0);
 
 		ID3D11ShaderResourceView*    pSRV[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 		context->PSSetShaderResources(0, 8, pSRV);
@@ -225,7 +142,7 @@ public:
 
 	virtual void Exit()
 	{
-		//ResourceMgr::GetSingleton().ReleaseLoadedResourceOnExit();
+		
 	};
 private:
 	ID3D11VertexShader*  fullScreenVertex_;
@@ -241,7 +158,7 @@ private:
 	ID3D11SamplerState   *TriLinerSampler_;
 	ID3D11SamplerState   *PointSampler_;
 	ID3D11RasterizerState* resterState_;
-	Renderable           * ball_;
+	BaseModel           * ball_;
 
 	ID3D11RenderTargetView*  colorRT_;
 	ID3D11ShaderResourceView *colorSRV_;

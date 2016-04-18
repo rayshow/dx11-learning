@@ -33,6 +33,9 @@ bool CommonModelLoader::LoadFile(const std::string resourcePath, const std::stri
 		return false;
 	}
 
+
+	//vertex type
+	data.sourceFile_ = meshFileName;
 	data.primtives_.type_ = eVertex_UNKNOW;
 	if (pScene->mMeshes[0]->HasPositions() && pScene->mMeshes[0]->HasNormals() &&
 		pScene->mMeshes[0]->HasTextureCoords(0))
@@ -66,6 +69,7 @@ bool CommonModelLoader::LoadFile(const std::string resourcePath, const std::stri
 	data.primtives_.verticeBuffer_.resize(data.primtives_.verticeNum_*data.primtives_.stride_);
 	data.primtives_.indices_.resize(data.primtives_.indiceNum_);
 
+	//load group
 	ulUint bufferOffset = 0;
 	ulUint indexOffset = 0;
 	for (unsigned int i = 0; i < pScene->mNumMeshes; ++i)
@@ -188,67 +192,45 @@ bool CommonModelLoader::loadMaterial(
 			xml_node<> *fileNameNode = shaderNode->first_node("fileName");
 			xml_node<> *vsEnterPointNode = shaderNode->first_node("vsEnterPoint");
 			xml_node<> *psEnterPointNode = shaderNode->first_node("psEnterPoint");
-			xml_node<> *albedoMapNode = material->first_node("albedoMap");
-			xml_node<> *normalMapNode = material->first_node("normalMap");
-			xml_node<> *specularMapNode = material->first_node("specularMap");
-			if (Null(shaderNode) || Null(fileNameNode) || Null(vsEnterPointNode) ||
-				Null(psEnterPointNode) )
+			if (Null(shaderNode) || Null(fileNameNode) || Null(vsEnterPointNode) || Null(psEnterPointNode))
 			{
-				Log_Err("material node not find in file %s.", materialFileName.c_str());
-				Safe_Delete(materialData);
+				Log_Err("load material shader error, file %s, batch %d", materialFileName.c_str(), index);
 				return false;
 			}
 
-			//shader file
 			buffer << fileNameNode->value();
-			buffer >> mapName;
-			materialData->shaderFile = resourcePath + mapName;
+			buffer >> materialData->shaderFile;
 			buffer.clear();
 
-			//vs
 			buffer << vsEnterPointNode->value();
 			buffer >> materialData->vsEnterPoint;
 			buffer.clear();
-				
-			//ps
+
 			buffer << psEnterPointNode->value();
 			buffer >> materialData->psEnterPoint;
 			buffer.clear();
 
-
-			if (albedoMapNode)
-			{
-				//albedoMap
-				buffer << albedoMapNode->value();
-				buffer >> mapName;
-				materialData->texturePath.push_back(resourcePath + mapName);
-				buffer.clear();
-				materialData->texCount++;
-			}
-		
-			if (normalMapNode)
-			{
-				//normalMap
-				buffer << normalMapNode->value();
-				buffer >> mapName;
-				materialData->texturePath.push_back(resourcePath + mapName);
-				buffer.clear();
-				materialData->texCount++;
-			}
 			
-			if (specularMapNode)
-			{
-				//specular
-				buffer << specularMapNode->value();
-				buffer >> mapName;
-				materialData->texturePath.push_back(resourcePath + mapName);
-				buffer.clear();
-				materialData->texCount++;
-			}
-		
-			index++;
 			buffer << index;
 			buffer >> materialData->identifer;
+			buffer.clear();
+
+			for (int i = 0; i < CONST_MAX_SHADER_RESOURCE_NUM; ++i)
+			{
+				if (CONST_ALL_TEXTURE_POS_NAMES[i].name != "")
+				{
+					xml_node<> *node = material->first_node(CONST_ALL_TEXTURE_POS_NAMES[i].name.c_str());
+					if (Not_Null(node))
+					{
+						buffer<<node->value();
+						buffer >> materialData->texturePath[ CONST_ALL_TEXTURE_POS_NAMES[i].index ];
+						buffer.clear();
+					}
+					else{
+						materialData->texturePath[CONST_ALL_TEXTURE_POS_NAMES[i].index] = "";
+					}
+				}
+			}
 			
 			materialGroup.push_back(materialData);
 		}

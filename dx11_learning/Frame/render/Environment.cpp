@@ -142,14 +142,23 @@ bool SkyBox::createRenderData(ID3D11Device* device)
 	pGroup->indexCount_ = data.primtives_.indiceNum_;
 	pGroup->indexOffset_ = 0;
 	data.groups_.push_back(pGroup);
+
+	SMaterialData* materialData = new SMaterialData;
+	materialData->identifer = "skybox";
+	materialData->shaderFile = "shader/skybox.hlsl";
+	materialData->vsEnterPoint = "VS_FillBuffer";
+	materialData->psEnterPoint = "PS_FillBuffer";
+	for (int i = 0; i < CONST_MAX_SHADER_RESOURCE_NUM; ++i)
+	{
+		materialData->texturePath[i] = "";
+	}
+
 	BaseModel::Create(device, data);
 	ModelData_Free(data);
 
 	//render material
 	SRenderParameter* pParameter = new SRenderParameter();
-	pParameter->srvCount_ = 1;
-	pParameter->srvs_ = new ID3D11ShaderResourceView*[1];
-	pParameter->srvs_[0] = environment_->GetEnvironmentmaps()[1];
+	pParameter->srvs_[eShaderResource_SpecularLukup] = environment_->GetEnvironmentmaps()[1];
 	renderParameters_.push_back(pParameter);
 
 	D3D11_INPUT_ELEMENT_DESC desc[CONST_MAX_INPUT_ELEMENT_COUNT];
@@ -158,7 +167,7 @@ bool SkyBox::createRenderData(ID3D11Device* device)
 
 	Null_Return_False(
 		(pParameter->vsEnterPoint_ = mgr->CreateVertexShaderAndInputlayoutFromResourceBasePath(
-		"shader/skybox.hlsl", "VS_FillBuffer", "vs_5_0",
+		"", "VS_FillBuffer", "vs_5_0",
 		desc, count, &pParameter->vertexLayout_))
 	);
 	Null_Return_False(

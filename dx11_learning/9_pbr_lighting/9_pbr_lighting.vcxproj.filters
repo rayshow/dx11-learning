@@ -3,4 +3,11 @@
   <ItemGroup>
     <ClCompile Include="Main.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\Res\shader\pbr_env_lighting.hlsl" />
+    <None Include="..\Res\shader\ibl.hlsli" />
+    <None Include="..\Res\shader\base_define.hlsli" />
+    <None Include="..\Res\shader\brdf.hlsli" />
+    <None Include="..\Res\shader\sh_lighting.hlsli" />
+  </ItemGroup>
 </Project>

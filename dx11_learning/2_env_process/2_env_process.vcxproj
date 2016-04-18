@@ -13,6 +13,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{B7A592F6-76DB-4F37-901C-2EB0661AD346}</ProjectGuid>
     <RootNamespace>My1_HelloFrame</RootNamespace>
+    <ProjectName>2_prefilterCubemap</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

@@ -13,6 +13,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{3224E6F7-728B-416C-974C-1004A4EBF14A}</ProjectGuid>
     <RootNamespace>My1_HelloFrame</RootNamespace>
+    <ProjectName>3_sh_process</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -75,7 +76,7 @@
     <ClCompile Include="Main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="main.hlsl">
+    <None Include="cubemap_to_sh.hlsl">
       <FileType>Document</FileType>
     </None>
   </ItemGroup>
@@ -83,11 +84,6 @@
     <ProjectReference Include="..\Frame\Frame.vcxproj">
       <Project>{7c78dfa1-7446-4d2e-9153-34ff7711a00f}</Project>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="cs_test.hlsl">
-      <FileType>Document</FileType>
-    </None>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -3,10 +3,7 @@
 
 #include<xnamath.h>
 
-#include"util/tools.h"
-#include"Application.h"
-#include"res_mgr.h"
-#include<renderable.h>
+#include<Application.h>
 
 using namespace ul;
 
@@ -27,6 +24,8 @@ struct CB_ComputeResolution
 
 #define THREAD_DIMENSION 4
 #define RESOLUTION 1024
+
+
 class Lession1_Frame :public Application
 {
 public:
@@ -44,7 +43,7 @@ public:
 	{
 		ResourceMgr *mgr = ResourceMgr::GetSingletonPtr();
 
-		envTexture_ = mgr->CreateTextureFromFile("../res/uffizi_cross.dds");
+		envTexture_ = mgr->CreateTextureFromFile("../Res/skybox/sky1/domeSpecularHDR.dds");
 
 		float r[9], g[9], b[9];
 		
@@ -53,13 +52,13 @@ public:
 		envTexture_->GetResource(&texture);
 		((ID3D11Texture2D*)texture)->GetDesc(&desc);
 		ENV_MAP_WIDTH = desc.Width;
+	
 		D3DX11SHProjectCubeMap(context, 3, (ID3D11Texture2D*)texture, r, g, b);
 		for (int i = 0; i < 9; ++i)
 		{
 			Log_Info("c.val[%d] = float3(%f, %f, %f);",i, r[i], g[i], b[i]);
 		}
 
-		// 环境贴图查找表
 		D3D11_TEXTURE2D_DESC lukupDesc;
 		lukupDesc.Width = ENV_MAP_WIDTH;
 		lukupDesc.Height = ENV_MAP_WIDTH;
@@ -116,7 +115,6 @@ public:
 			BufferWidth = BufferWidth / 2;
 		}
 
-
 		//cpu buffer
 		int CpuBufferResolution = THREAD_DIMENSION;
 		D3D11_BUFFER_DESC cpu_buffer_desc;
@@ -145,23 +143,12 @@ public:
 		SamDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
 		Null_Return_Void((trilinear = mgr->CreateSamplerState(SamDesc)));  //三线性
 		Null_Return_Void((ShCpuValue = mgr->CreateBuffer(cpu_buffer_desc, nullptr)));
-		Null_Return_Void((SHvalueFirstPass = mgr->CreateComputeShader("main.hlsl", "FirstPass", "cs_5_0")));
-		Null_Return_Void((SHvalueNextPass =  mgr->CreateComputeShader("main.hlsl", "NextPass", "cs_5_0")));
-		Null_Return_Void((cs_testPass = mgr->CreateComputeShader("cs_test.hlsl", "copy", "cs_5_0")));
+		Null_Return_Void((SHvalueFirstPass = mgr->CreateComputeShader("cubemap_to_sh.hlsl", "FirstPass", "cs_5_0")));
+		Null_Return_Void((SHvalueNextPass =  mgr->CreateComputeShader("cubemap_to_sh.hlsl", "NextPass", "cs_5_0")));
 		
 		resolutionBuffer_ = mgr->CreateConstantBuffer(sizeof(CB_ComputeResolution));
 	};
 
-
-	void TestComputerShader(ID3D11DeviceContext* context)
-	{
-		context->CSSetSamplers(0, 1, &trilinear);
-		context->CSSetShaderResources(0, 1, &envTexture_);
-		context->CSSetUnorderedAccessViews(0, 1, &processedUAV, nullptr);
-		context->CSSetConstantBuffers(0, 1, &resolutionBuffer_);
-		context->CSSetShader(cs_testPass, nullptr, 0);
-		context->Dispatch(ENV_MAP_WIDTH / THREAD_DIMENSION, ENV_MAP_WIDTH / THREAD_DIMENSION, 1);
-	}
 
 	void ShValueFirstCompute(ID3D11DeviceContext* context, int dispatchDimension, int curResolution, int face)
 	{
@@ -223,20 +210,6 @@ public:
 		ID3D11DeviceContext* context)
 	{
 		this->SetParameter(dev, context);
-
-
-		if (!CS_test)
-		{
-			TestComputerShader(context);
-
-			if (FAILED(D3DX11SaveTextureToFile(context, processedTexture, D3DX11_IFF_DDS, "5.dds")))
-			{
-				printf("save texture  error .\n");
-			}
-			else{
-				CS_test = true;
-			}
-		}
 
 		if (!ShCached)
 		{
@@ -305,11 +278,11 @@ public:
 	};
 
 	
-	virtual void MsgProcess (
+	virtual int MsgProcess (
 		HWND hwnd, UINT msg,
 		WPARAM wparam, LPARAM lparam) override
 	{
-
+		return 0;
 	}
 
 	virtual void Exit() override
@@ -335,9 +308,9 @@ private:
 	ID3D11ShaderResourceView			  *SHConvolutionSrcSRV = nullptr;
 	ID3D11UnorderedAccessView			  *ShInValueUAV = nullptr;
 	ID3D11UnorderedAccessView			  *ShOutValueUAV = nullptr;
-	vector<ID3D11UnorderedAccessView*>    ShUnorderedStructs;
-	vector<ID3D11Buffer*>			      ShBufferVec;
-	int                                   ENV_MAP_WIDTH;
+	vector<ID3D11UnorderedAccessView*>     ShUnorderedStructs;
+	vector<ID3D11Buffer*>			       ShBufferVec;
+	int                                    ENV_MAP_WIDTH;
 	bool ShCached = false;
 	bool CS_test = false;
 };

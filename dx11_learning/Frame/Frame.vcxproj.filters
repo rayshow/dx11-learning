@@ -22,6 +22,9 @@
     <Filter Include="base">
       <UniqueIdentifier>{861c7df3-6aa6-427e-96a1-143f5f5065b2}</UniqueIdentifier>
     </Filter>
+    <Filter Include="gui">
+      <UniqueIdentifier>{dfaded0d-7d58-4143-b1bd-fb7e849b72d2}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="render\Environment.h">
@@ -75,6 +78,30 @@
     <ClInclude Include="render\PostProcess.h">
       <Filter>render</Filter>
     </ClInclude>
+    <ClInclude Include="gui\imconfig.h">
+      <Filter>gui</Filter>
+    </ClInclude>
+    <ClInclude Include="gui\imgui.h">
+      <Filter>gui</Filter>
+    </ClInclude>
+    <ClInclude Include="gui\imgui_impl_dx11.h">
+      <Filter>gui</Filter>
+    </ClInclude>
+    <ClInclude Include="gui\imgui_internal.h">
+      <Filter>gui</Filter>
+    </ClInclude>
+    <ClInclude Include="gui\stb_rect_pack.h">
+      <Filter>gui</Filter>
+    </ClInclude>
+    <ClInclude Include="gui\stb_textedit.h">
+      <Filter>gui</Filter>
+    </ClInclude>
+    <ClInclude Include="gui\stb_truetype.h">
+      <Filter>gui</Filter>
+    </ClInclude>
+    <ClInclude Include="gui\AntTweakBar.h">
+      <Filter>gui</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="render\Environment.cpp">
@@ -99,6 +126,18 @@
     </ClCompile>
     <ClCompile Include="render\PostProcess.cpp">
       <Filter>render</Filter>
+    </ClCompile>
+    <ClCompile Include="gui\imgui.cpp">
+      <Filter>gui</Filter>
+    </ClCompile>
+    <ClCompile Include="gui\imgui_demo.cpp">
+      <Filter>gui</Filter>
+    </ClCompile>
+    <ClCompile Include="gui\imgui_draw.cpp">
+      <Filter>gui</Filter>
+    </ClCompile>
+    <ClCompile Include="gui\imgui_impl_dx11.cpp">
+      <Filter>gui</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

@@ -11,7 +11,6 @@
 #include"util/UlHelper.h"
 #include"resource/ResourceMgr.h"
 
-
 using std::string;
 
 namespace ul

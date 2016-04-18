@@ -9,11 +9,10 @@ namespace ul
 {
 	struct SMaterialData{
 		std::string				 identifer;
-		ulUint  				 texCount;
 		std::string              shaderFile;
 		std::string              vsEnterPoint;
 		std::string              psEnterPoint;
-		std::vector<std::string> texturePath;
+		std::string              texturePath[CONST_MAX_SHADER_RESOURCE_NUM];
 	};
 
 	struct SGroupInfo
@@ -43,9 +42,11 @@ namespace ul
 
 	struct SModelData
 	{
+		std::string                                sourceFile_;
 		PrimitiveData							   primtives_;
 		std::vector<SMaterialData*>                materials_;
 		std::vector<SRenderGroupInfo*>             groups_;
+
 	};
 
 	inline void ModelData_Free(SModelData& data)
@@ -59,6 +60,14 @@ namespace ul
 			Safe_Delete(data.materials_[i]);
 		}
 	};
+
+	inline void MaterialData_ClearTexturePath(SMaterialData* data)
+	{
+		for (int i = 0; i < CONST_MAX_SHADER_RESOURCE_NUM; ++i)
+		{
+			
+		}
+	}
 
 };
 

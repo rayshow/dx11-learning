@@ -16,6 +16,14 @@
     <ClInclude Include="D3D11GraphicContext.h" />
     <ClInclude Include="design_frame\Singleton.h" />
     <ClInclude Include="Frame.h" />
+    <ClInclude Include="gui\AntTweakBar.h" />
+    <ClInclude Include="gui\imconfig.h" />
+    <ClInclude Include="gui\imgui.h" />
+    <ClInclude Include="gui\imgui_impl_dx11.h" />
+    <ClInclude Include="gui\imgui_internal.h" />
+    <ClInclude Include="gui\stb_rect_pack.h" />
+    <ClInclude Include="gui\stb_textedit.h" />
+    <ClInclude Include="gui\stb_truetype.h" />
     <ClInclude Include="render\Environment.h" />
     <ClInclude Include="render\Material.h" />
     <ClInclude Include="render\MeshRender.h" />
@@ -34,6 +42,10 @@
   <ItemGroup>
     <ClCompile Include="Application.cpp" />
     <ClCompile Include="D3D11GraphicContext.cpp" />
+    <ClCompile Include="gui\imgui.cpp" />
+    <ClCompile Include="gui\imgui_demo.cpp" />
+    <ClCompile Include="gui\imgui_draw.cpp" />
+    <ClCompile Include="gui\imgui_impl_dx11.cpp" />
     <ClCompile Include="render\Environment.cpp" />
     <ClCompile Include="render\MeshRender.cpp" />
     <ClCompile Include="render\PostProcess.cpp" />

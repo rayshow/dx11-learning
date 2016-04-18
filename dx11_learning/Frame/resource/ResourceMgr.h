@@ -65,7 +65,7 @@ namespace ul
 		typedef vector<ID3D11Buffer*>                         BufferVector;
 
 		typedef map< string, ID3D11ShaderResourceView*>      ShaderResourceFilePool;
-		typedef map< string, Renderable*>					 ModelPool;
+		typedef map< string, BaseModel*>					 ModelPool;
 
 		//view iter
 		typedef ShaderResViewVector::iterator      ShaderResViewVectorIter;
@@ -372,7 +372,7 @@ namespace ul
 				return rt;
 			}
 
-		inline Renderable* CreateModelFromFile(const string& fileName)
+		inline BaseModel* CreateModelFromFile(const string& fileName)
 		{
 			ModelPoolIter find = m_sResReleaseOnExit.modelPool.find(fileName);
 			//exists

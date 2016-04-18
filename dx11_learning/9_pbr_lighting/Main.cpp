@@ -1,16 +1,10 @@
 #include<Windows.h>
 #include<memory>
 
-#include"util/tools.h"
-#include"Application.h"
-#include"res_mgr.h"
+#include<gui/AntTweakBar.h>
+#include<Application.h>
 
-#include<ty_model_loader.h>
-#include<renderable.h>
-#include<common_model_loader.h>
-#include<environmentable.h>
-#include<AntTweakBar.h>
-#include<postprocess.h>
+#include<render/PostProcess.h>
 
 #include<xnamath.h>
 
@@ -22,7 +16,78 @@ struct CB_PerFrame
 	XMFLOAT4X4  world;
 	XMFLOAT4X4  worldViewProject;
 	XMFLOAT4    camaraPos;
+	unsigned    specularType;
+	unsigned    irridianceType;
+	unsigned    outputType;
+	unsigned    padding;
 };
+
+struct CB_Coeffs
+{
+	XMFLOAT4   coeffs[9];
+};
+
+
+enum ESpecular_Type
+{
+	eSpecular_Ibl = 0,
+	eSpecular_Realtime_Imp,
+};
+
+enum EIrridiance_Type
+{
+	eIrridiance_Ibl =0,
+	eIrridiance_Sh,
+};
+
+enum EToneMapping_Type
+{
+	eTonemapping_Avg_Lumin =0,
+	eTonemapping_Filmic,
+};
+
+enum EOutput_Type
+{
+	eOutput_All,
+	eOutput_Irridiance,
+	eOutput_Specular,
+	eOutput_Ao,
+	eOutput_Roughness,
+	eOutput_Materness,
+	eOutput_Lukup,
+};
+
+TwEnumVal SpecularEnums[] =
+{
+	{ eSpecular_Ibl, "specular ibl map" },
+	{ eSpecular_Realtime_Imp, "importance sample reoughness" }
+};
+
+TwEnumVal IrridianceEnums[]=
+{
+	{ eIrridiance_Ibl, "specular ibl map" },
+	{ eIrridiance_Sh, "importance sample reoughness" }
+};
+
+TwEnumVal OutputEnums[] =
+{
+	{ eOutput_All, "output normal color" },
+	{ eOutput_Irridiance, "output irridiance color" },
+	{ eOutput_Specular, "output specular color" },
+	{ eOutput_Ao, "output ao color" },
+	{ eOutput_Roughness, "output roughness" },
+	{ eOutput_Materness, "output matelness" },
+	{ eOutput_Lukup, "output lukup " },
+};
+
+TwEnumVal TonemmappingEnums[] =
+{
+	{ eTonemapping_Avg_Lumin, "average luminance method" },
+	{ eTonemapping_Filmic, "filmic method" }
+};
+
+
+
 
 class Lession1_Frame :public Application
 {
@@ -36,7 +101,6 @@ public:
 		mgr->SetResourceBasePath("../res/");
 
 		uiRotate_.w = 1;
-		uiLightDir_.x = 1;
 		XMVECTOR axis = XMLoadFloat4(&XMFLOAT4(1, 0, 0, 0));
 		XMVECTOR rotate = XMQuaternionRotationAxis(axis, -XM_PI / 2);
 		XMStoreFloat4(&uiRotate_, rotate);
@@ -44,16 +108,25 @@ public:
 		//ui
 		TwInit(TW_DIRECT3D11, this->GetDevicePtr());
 		TwBar *bar = TwNewBar("TweakBar");
-		TwDefine(" GLOBAL help='This example shows how to integrate AntTweakBar into a DirectX11 application.' "); 
-		int barSize[2] = { 224, 320 };
-		TwSetParam(bar, NULL, "size", TW_PARAM_INT32, 2, barSize);
-		TwAddVarRW(bar, "Level", TW_TYPE_INT32, &uiLevel_, "min=0 max=100 group=Sponge keyincr=l keydecr=L");
-		TwAddVarRW(bar, "Animate", TW_TYPE_BOOLCPP, &uiAnim_, "group=Sponge key=o");
-		TwAddVarRW(bar, "Rotation", TW_TYPE_QUAT4F, &uiRotate_, "opened=true axisz=-z group=Sponge");
-		TwAddVarRW(bar, "Light direction", TW_TYPE_DIR3F, &uiLightDir_, "opened=true axisz=-z showval=false");
-		TwAddVarRW(bar, "Camera distance", TW_TYPE_FLOAT, &uiCamaraDistance_, "min=0 max=4 step=0.01 keyincr=PGUP keydecr=PGDOWN");
-		TwAddVarRW(bar, "Background", TW_TYPE_COLOR4F, &uiLightColor_, "colormode=hls");
+		TwDefine(" Main label='hello");
+		int barSize[2] = { 200, 400 };
 
+		uiSpecularType_ = eSpecular_Ibl;
+		uiIrridianceType_ = eIrridiance_Ibl;
+		uiTonemappingType_ = eTonemapping_Avg_Lumin;
+		uiOutputType_ = eOutput_All;
+
+		TwType specularTypes =    TwDefineEnum("SpecularType", SpecularEnums, 2);
+		TwType irrianceTypes =    TwDefineEnum("IrridianceType", IrridianceEnums, 2);
+		TwType outputTypes = TwDefineEnum("OutputType", OutputEnums, 7);
+		TwType tonemappingTypes = TwDefineEnum("ToneMappingType", TonemmappingEnums, 2);
+
+		TwSetParam(bar, nullptr, "size", TW_PARAM_INT32, 2, barSize);
+		TwAddVarRW(bar, "Rotation", TW_TYPE_QUAT4F, &uiRotate_, "opened=true axisz=-z group=object ");
+		TwAddVarRW(bar, "specular type", specularTypes, &uiSpecularType_, " group='render' ");
+		TwAddVarRW(bar, "irridiance type", irrianceTypes, &uiIrridianceType_, " group='render'");
+		TwAddVarRW(bar, "tonemapping type", tonemappingTypes, &uiTonemappingType_, " group='render'");
+		TwAddVarRW(bar, "output color", outputTypes, &uiOutputType_, " group='render'");
 
 		//camara
 		pCamara_ = this->GetSceneMgr().GetMainCamara();
@@ -65,14 +138,14 @@ public:
 		environment_->LoadFromFile("skybox/sky1/dome1.env");
 		skybox_.Create(dev, environment_);
 
-
 		//model
 		pistol_ = mgr->CreateModelFromFile("pbr_model/pistol/pistol.fbx");
 		Null_Return_Void((perframeBuffer_ = mgr->CreateConstantBuffer(sizeof(CB_PerFrame))));
 
 
+		//sample
 		D3D11_SAMPLER_DESC SamDesc;
-		SamDesc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_MIP_POINT;
+		SamDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
 		SamDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
 		SamDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
 		SamDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
@@ -82,13 +155,14 @@ public:
 		SamDesc.BorderColor[0] = SamDesc.BorderColor[1] = SamDesc.BorderColor[2] = SamDesc.BorderColor[3] = 0.0;
 		SamDesc.MinLOD = 0;
 		SamDesc.MaxLOD = D3D11_FLOAT32_MAX;
-		SamDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
 		SamDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
-		Null_Return_Void((TriLinerSampler_ = mgr->CreateSamplerState(SamDesc)));
-		SamDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
-		Null_Return_Void((PointSampler_ = mgr->CreateSamplerState(SamDesc)));
+		Null_Return_Void((samplers_[0] = mgr->CreateSamplerState(SamDesc)));
+
 		SamDesc.Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
-		Null_Return_Void((LinerSampler_ = mgr->CreateSamplerState(SamDesc)));
+		Null_Return_Void((samplers_[1] = mgr->CreateSamplerState(SamDesc)));
+		SamDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+		Null_Return_Void((samplers_[2] = mgr->CreateSamplerState(SamDesc)));
+	
 
 		D3D11_RASTERIZER_DESC rester;
 		memset(&rester, 0, sizeof(rester));
@@ -127,22 +201,24 @@ public:
 	{
 		context->IASetInputLayout(xyznuvtbwwiii_);
 		context->RSSetState(resterState_);
-		ID3D11SamplerState* state[2] = { LinerSampler_, TriLinerSampler_ };
-		context->PSSetSamplers(0, 2, state);
+		context->PSSetSamplers(0, 3, samplers_);
 
 		XMVECTOR rotQuaternion = XMLoadFloat4(&uiRotate_);
 		XMMATRIX rotMatrix = XMMatrixRotationQuaternion(rotQuaternion);
-		rotMatrix = XMMatrixTranspose(rotMatrix);
-		XMStoreFloat4x4(&world_, rotMatrix);
 
 		XMMATRIX viewProject = pCamara_->GetViewProjectMatrix();
-		XMMATRIX world = XMLoadFloat4x4(&world_);
-		XMMATRIX worldViewProject = XMMatrixMultiplyTranspose(world, viewProject);
+		XMMATRIX worldViewProject = XMMatrixMultiplyTranspose(rotMatrix, viewProject);
+		XMMATRIX worldStoreType = XMMatrixTranspose(rotMatrix);
 
 		CB_PerFrame perFrame;
-		perFrame.world = world_;
+		XMStoreFloat4x4(&perFrame.world, worldStoreType);
 		XMStoreFloat4x4(&perFrame.worldViewProject, worldViewProject);
 		perFrame.camaraPos = pCamara_->GetEyePosStoreType();
+		perFrame.specularType = uiSpecularType_;
+		perFrame.irridianceType = uiIrridianceType_;
+		perFrame.outputType = uiOutputType_;
+		Log_Info("specular type %d", uiSpecularType_);
+
 		ResourceMgr::GetSingletonPtr()->MappingBufferWriteOnly(perframeBuffer_, &perFrame, sizeof(CB_PerFrame));
 
 	}
@@ -214,6 +290,8 @@ private:
 	ID3D11SamplerState   *LinerSampler_;
 	ID3D11SamplerState   *PointSampler_;
 
+	ID3D11SamplerState*   samplers_[3];
+
 	ID3D11RasterizerState* resterState_;
 
 	PostProcessChain      postProcessChain_;
@@ -225,12 +303,12 @@ private:
 	XMFLOAT4X4			  world_, view_, project_;
 	float				  aspect;
 	
-	int                   uiLevel_;
-	int                   uiAnim_;
+	
 	XMFLOAT4              uiRotate_;
-	XMFLOAT4              uiLightDir_;
-	float                 uiCamaraDistance_;
-	XMFLOAT4              uiLightColor_;
+	unsigned              uiSpecularType_;
+	unsigned              uiIrridianceType_;
+	unsigned              uiTonemappingType_;
+	unsigned              uiOutputType_;
 };
 
 
