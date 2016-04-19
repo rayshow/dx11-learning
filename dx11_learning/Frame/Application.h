@@ -74,7 +74,7 @@ namespace ul
 			//init graphics
 			RECT rect;
 			GetClientRect(hWnd_, &rect);
-			graphicsContext_.Initialize(hWnd_, width, height, true, fullscreen_);
+			graphicsContext_.Initialize(hWnd_, rect.right-rect.left, rect.bottom-rect.top, true, fullscreen_);
 
 			//call InitResource 
 			this->InitResource( GetDevicePtr(), GetDeviceContextPtr() );

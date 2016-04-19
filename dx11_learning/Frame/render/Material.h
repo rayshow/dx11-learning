@@ -38,7 +38,7 @@ namespace ul
 		ulUint                           stride_;
 		ulUint                           indiceNum_;
 		std::vector<ulUbyte>             verticeBuffer_;
-		std::vector<ulUshort>            indices_;
+		std::vector<ulUint>              indices_;
 	};
 
 	struct SModelData

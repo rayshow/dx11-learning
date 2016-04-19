@@ -12,6 +12,7 @@ struct PS_FullScreenInput
 };
 
 
+
 // 普通模型的顶点参数
 struct VS_Input_Xyznuv
 {

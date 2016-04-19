@@ -48,7 +48,7 @@ bool BaseModel::Create(
 
 	//ib
 	ibd = vbd;
-	ibd.ByteWidth = sizeof(short)*data.primtives_.indices_.size();;
+	ibd.ByteWidth = sizeof(ulUint)*data.primtives_.indices_.size();;
 	ibd.BindFlags = D3D11_BIND_INDEX_BUFFER;
 	ZeroMemory(&idata, sizeof(idata));
 	idata.pSysMem = &data.primtives_.indices_[0];
@@ -132,7 +132,7 @@ void BaseModel::Render(ID3D11DeviceContext* context)
 {
 	assert(context != 0);
 	context->IASetVertexBuffers(0, 1, &vb_, &stride_, &offset_);
-	context->IASetIndexBuffer(ib_, DXGI_FORMAT_R16_UINT, 0);
+	context->IASetIndexBuffer(ib_, DXGI_FORMAT_R32_UINT, 0);
 	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	context->IASetInputLayout(vertexLayout_);
 

@@ -14,28 +14,42 @@ namespace ul
 
 	class PostProcess
 	{
-		struct SPostProcess_Parameter
-		{
-			float  mipLevel;
-			float  padding[3];
-		};
-	private:
+	protected:
 		ID3D11RenderTargetView*		renderTarget_;
 		ID3D11ShaderResourceView*   needProcessSRV_;
 		ID3D11ShaderResourceView*   nextStepProcessSRV_;
 		ID3D11VertexShader*         fullScreenVs_;
 		ID3D11PixelShader*          fullScreenPs_;
 		ID3D11Texture2D*            srvOwnerTexture_;
-		ID3D11Buffer*               parameterBuffer_;
+		ID3D11Buffer*               constBuffer_;
+		void*                       memBuffer_;
+		unsigned                    bufferSize_;
+		bool                        isBufferDirty_;
 		ulUint                      width_;
 		ulUint                      height_;
 		DXGI_FORMAT                 format_;
 
 	public:
 		PostProcess() : renderTarget_(nullptr), needProcessSRV_(nullptr), nextStepProcessSRV_(nullptr),fullScreenVs_(nullptr),
-			fullScreenPs_(nullptr), srvOwnerTexture_(nullptr), parameterBuffer_(nullptr){}
-		~PostProcess(){}
+			fullScreenPs_(nullptr), srvOwnerTexture_(nullptr), constBuffer_(nullptr), isBufferDirty_(true){}
+		~PostProcess(){
+			Safe_Delete(memBuffer_);
+		}
 	public:
+
+		bool CreateConstBuffer();
+
+		void UpdateConstBuffer();
+
+		bool PostProcess::Create(
+			const string& fileName,
+			const string& psFunction,
+			DXGI_FORMAT format,
+			ulUint width, ulUint height,
+			ID3D11Texture2D *owner,
+			ulUint mipLevel);
+
+
 		void SetShaderResourceView(ID3D11ShaderResourceView* shaderResourceView)
 		{
 			this->needProcessSRV_ = shaderResourceView;
@@ -46,21 +60,16 @@ namespace ul
 			return nextStepProcessSRV_;
 		}
 
-		bool PostProcess::Create(
-			const string& fileName,
-			const string& psFunction,
-			DXGI_FORMAT format,
-			ulUint width, ulUint height,
-			ID3D11Texture2D *owner ,
-			ulUint mipLevel );
+		
 
 		void Process(ID3D11DeviceContext* context) 
 		{
+			this->UpdateConstBuffer();
 			context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 			context->VSSetShader(fullScreenVs_, nullptr, 0);
 			context->PSSetShader(fullScreenPs_, nullptr, 0);
-			context->PSSetConstantBuffers(0, 1, &parameterBuffer_);
-			context->OMSetRenderTargets(0, &renderTarget_, nullptr);
+			context->PSSetConstantBuffers(0, 1, &constBuffer_);
+			context->OMSetRenderTargets(1, &renderTarget_, nullptr);
 			context->PSSetShaderResources(0, 1, &needProcessSRV_);
 			context->Draw(3, 0);
 		}
@@ -102,11 +111,37 @@ namespace ul
 
 	class HdrPresentProcess : public PostProcess
 	{
+	private:
+		float exposure_;
 	public:
+		struct SHDR_Parameter{
+			float exposure[4];
+		};
+	public:
+		HdrPresentProcess() :exposure_(2.0f)
+		{
+			bufferSize_ = sizeof(SHDR_Parameter);
+			memBuffer_ = new SHDR_Parameter();
+			memset(memBuffer_, 0, bufferSize_);
+
+			SHDR_Parameter* parameter = static_cast<SHDR_Parameter*>(memBuffer_);
+			parameter->exposure[0] = exposure_;
+		}
+
+		void SetExposure(float exposure)
+		{
+			isBufferDirty_ = true;
+			SHDR_Parameter* parameter = static_cast<SHDR_Parameter*>(memBuffer_);
+			parameter->exposure[0] = exposure;
+			exposure_ = exposure;
+		}
+
 		~HdrPresentProcess(){}
 	public:
 		bool Create(ulUint width, ulUint height);
+		
 	};
+
 
 	class PostProcessChain
 	{
@@ -181,29 +216,22 @@ namespace ul
 			present_.Present(context, mainRT);
 		}
 
-		void AddPostProcess(EPostProcessType type)
+
+		HdrPresentProcess* CreateHdrPresentProcess()
 		{
 			HdrPresentProcess *process = nullptr;
-
-			switch (type)
+			process = Ul_New HdrPresentProcess();
+			process->Create(width_, height_);
+			if (Null(process))
 			{
-			//hdr present
-			case ePostProcess_PresentHDR:
-				process = Ul_New HdrPresentProcess();
-				process->Create(width_, height_);
-				if (Null(process))
-				{
-					Log_Err("out of memory.");
-				}
-				this->AddPostProcess(process);
-				break;
-
-			case ul::PostProcessChain::ePostProcess_FXAA:
-				break;
-			default:
-				break;
+				Log_Err("out of memory.");
+				return nullptr;
 			}
+			this->AddPostProcess(process);
+			return process;
 		}
+
+
 	};
 
 

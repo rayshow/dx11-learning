@@ -2,10 +2,17 @@
 #define FULL_SCREEN_PROCESS
 
 #include"base_define.hlsli"
+#include"tone_mapping.hlsli"
 
 cbuffer cbParameter : register(b0)
 {
 	float4 mipLevel;
+}
+
+cbuffer HDR_Parameter : register(b0)
+{
+	float  Exposure;
+	float3 padding;
 }
 
 SamplerState     sampleLinear         	 	  : register(s0);
@@ -25,7 +32,9 @@ PS_FullScreenInput VS_FullScreenProcess(uint VertexID: SV_VertexID)
 PS_Output_Single PS_present_screen(PS_FullScreenInput I)
 {
 	PS_Output_Single O;
-	O.color0 = needProcessTex.SampleLevel(sampleLinear, I.f2TexCoord, 0);
+	float4 color = needProcessTex.SampleLevel(sampleLinear, I.f2TexCoord, 0);
+
+	O.color0 = color;
 	return O;
 }
 
@@ -34,8 +43,10 @@ PS_Output_Single PS_present_screen(PS_FullScreenInput I)
 PS_Output_Single PS_present_hdr(PS_FullScreenInput I)
 {
 	PS_Output_Single O;
-	O.color0 = float4(0.2, 0, 0, 1);
-
+	float4 inColor = needProcessTex.SampleLevel(sampleLinear, I.f2TexCoord, 0);
+	float3 color = ApplyFilmicToneMap(inColor.rgb, Exposure);
+	color = pow(color, 1.0f / 2.2f);
+	O.color0.rgb = color;
 	return O;
 }
 

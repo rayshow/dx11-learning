@@ -58,9 +58,9 @@ namespace ul
 			XMFLOAT4X4 rotateProject;
 		};
 	private:
-		Environmentable  environment_;
-		BaseModel        model_;
-		ID3D11Buffer*    constBuffer_;
+		Environmentable    environment_;
+		BaseModel          model_;
+		ID3D11Buffer*	   constBuffer_;
 		SSkeyBox_Parameter parameter_;
 	public:
 		SkyBox():constBuffer_(nullptr) {}

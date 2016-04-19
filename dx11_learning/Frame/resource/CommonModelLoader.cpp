@@ -16,7 +16,7 @@ bool CommonModelLoader::LoadFile(const std::string resourcePath, const std::stri
 
 	Assimp::Importer import;
 	const aiScene* pScene = import.ReadFile(meshFileName.c_str(),
-		aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs);
+		aiProcess_Triangulate | aiProcess_SortByPType| aiProcess_GenSmoothNormals | aiProcess_FlipUVs);
 
 	Null_Return_False_With_Msg( pScene, "read model file %s error: %s.",
 		meshFileName.c_str(), import.GetErrorString());
@@ -78,7 +78,7 @@ bool CommonModelLoader::LoadFile(const std::string resourcePath, const std::stri
 
 		//render group info
 		SRenderGroupInfo *pGroup = new SRenderGroupInfo();
-		pGroup->materialID = mesh->mMaterialIndex;
+		pGroup->materialID = i;
 		pGroup->indexCount_ = mesh->mNumFaces * 3;
 		pGroup->indexOffset_ = indexOffset;
 
@@ -123,7 +123,6 @@ bool CommonModelLoader::loadVerticeData(EVerticeType type, const aiMesh* mesh, v
 			}
 			break;
 		}
-
 		case eVertex_XYZNUVTB:
 		{
 			SVertexXyznuvtb *batch = static_cast<SVertexXyznuvtb*>(buffer);
@@ -131,7 +130,7 @@ bool CommonModelLoader::loadVerticeData(EVerticeType type, const aiMesh* mesh, v
 			{
 				SVertexXyznuvtb* pVertex = &batch[i];
 				memcpy(pVertex->pos_, &mesh->mVertices[i], sizeof(float) * 3);
-				memcpy(pVertex->uv_, &mesh->mTextureCoords[i], sizeof(float) * 2);
+				memcpy(pVertex->uv_, &mesh->mTextureCoords[0][i], sizeof(float) * 2);
 				memcpy(pVertex->normal_, &mesh->mNormals[i], sizeof(float) * 3);
 				memcpy(pVertex->tangent_, &mesh->mTangents[i], sizeof(float) * 3);
 				memcpy(pVertex->binormal_, &mesh->mBitangents[i], sizeof(float) * 3);
@@ -147,10 +146,11 @@ bool CommonModelLoader::loadVerticeData(EVerticeType type, const aiMesh* mesh, v
 }
 
 
-bool CommonModelLoader::loadIndiceData(aiMesh* mesh, ulUshort* buffer)
+bool CommonModelLoader::loadIndiceData(aiMesh* mesh, ulUint* buffer)
 {
 	for (ulUint i = 0; i < mesh->mNumFaces; ++i)
 	{
+		assert(mesh->mFaces[i].mNumIndices == 3);
 		buffer[3 * i]   = mesh->mFaces[i].mIndices[0];
 		buffer[3 * i+1] = mesh->mFaces[i].mIndices[1];
 		buffer[3 * i+2] = mesh->mFaces[i].mIndices[2];
@@ -187,6 +187,7 @@ bool CommonModelLoader::loadMaterial(
 		{
 			SMaterialData* materialData = new SMaterialData;
 
+
 			xml_node<> *shaderNode = material->first_node("shader");
 			xml_node<> *fileNameNode = shaderNode->first_node("fileName");
 			xml_node<> *vsEnterPointNode = shaderNode->first_node("vsEnterPoint");
@@ -209,7 +210,6 @@ bool CommonModelLoader::loadMaterial(
 			buffer >> materialData->psEnterPoint;
 			buffer.clear();
 
-			
 			buffer << index;
 			buffer >> materialData->identifer;
 			buffer.clear();

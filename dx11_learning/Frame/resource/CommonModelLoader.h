@@ -66,7 +66,7 @@ namespace ul
 
 		bool loadIndiceData(
 			aiMesh* mesh,
-			ulUshort* buffer);
+			ulUint* buffer);
 
 		bool loadMaterial(
 			const std::string& resourcePath,

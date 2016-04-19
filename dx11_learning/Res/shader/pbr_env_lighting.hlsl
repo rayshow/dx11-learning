@@ -52,15 +52,9 @@ struct PS_TranslateInput
 {
 	float4 f4Position   : SV_Position;
 	float3 f3Normal     : COLOR1;
+	float3 f3Position   : COLOR2;
 	float2 f2TexCoord   : TEXTURE;
 	float3 f3WorldPos   : POSITION;
-};
-
-
-// 单片元单输出
-struct PS_SingleOutput
-{
-	float4 rt0    : SV_Target0;
 };
 
 
@@ -109,7 +103,7 @@ resolveNormal(PS_TranslateInput I)
 	return normal;
 }
 
-float4 resovleAlbedo(float4 albedo, float gamma)
+float3 resovleAlbedo(float3 albedo, float gamma)
 {
 	return pow(albedo,  gamma);
 }
@@ -131,19 +125,21 @@ PS_TranslateInput VS_FillBuffer(VS_VertexLayout I)
 	//coord
 	O.f2TexCoord = I.f2TexCoord;
 
+	O.f3Position = O.f4Position.xyw;
 	return O;
 }
 
 
 
-
 //片元，普通模型
-PS_SingleOutput PS_FillBuffer(PS_TranslateInput I)
+PS_Output_Single PS_FillBuffer(PS_TranslateInput I)
 {
-	PS_SingleOutput O;
-
+	PS_Output_Single O;
+	//O.color0 = float4(0.3, 0, 0, 1);
+	//return O;
 	float2 coord = I.f2TexCoord;
 	float4 albedo = Albedomap.SampleLevel(AlbedoSampler, coord, 0);
+	albedo.rgb = resovleAlbedo(albedo.rgb, 2.2f);
 	float3 normalWarp = resolveNormal(I);
 	float3 RMB = Specularmap.SampleLevel(SpecularSampler, coord, 0);
 
@@ -158,7 +154,7 @@ PS_SingleOutput PS_FillBuffer(PS_TranslateInput I)
 
 
 	//environment
-	float2 brdfTerm = IntergeLukupmap.SampleLevel(IntergeSampler, float2(VoN, glossness), 0).xy;
+	float2 brdfTerm = IntergeLukupmap.SampleLevel(IntergeSampler, float2(VoN, roughness), 0).xy;
 	float3 specularIBL = 0;
 	float3 irridiance = 0;
 	if (irridianceType == eIrridiance_Sh)
@@ -179,7 +175,7 @@ PS_SingleOutput PS_FillBuffer(PS_TranslateInput I)
 			SpecularSampler);
 	}
 	else{
-		specularIBL = SpecularLukup.SampleLevel(SpecularSampler, refl, glossness * 9).rgb;
+		specularIBL = SpecularLukup.SampleLevel(SpecularSampler, refl, glossness * 7).rgb;
 	}
 
 	float3 dielectricColor = float3(0.04, 0.04, 0.04);
@@ -211,6 +207,6 @@ PS_SingleOutput PS_FillBuffer(PS_TranslateInput I)
 	}
 
 
-	O.rt0.rgb = litColor;
+	O.color0.rgb = litColor;
 	return O;
 }

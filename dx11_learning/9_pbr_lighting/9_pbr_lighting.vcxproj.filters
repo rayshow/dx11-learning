@@ -9,5 +9,7 @@
     <None Include="..\Res\shader\base_define.hlsli" />
     <None Include="..\Res\shader\brdf.hlsli" />
     <None Include="..\Res\shader\sh_lighting.hlsli" />
+    <None Include="..\Res\shader\full_screen_process.hlsli" />
+    <None Include="..\Res\shader\tone_mapping.hlsli" />
   </ItemGroup>
 </Project>

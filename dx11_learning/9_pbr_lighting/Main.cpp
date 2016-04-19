@@ -115,6 +115,7 @@ public:
 		uiIrridianceType_ = eIrridiance_Ibl;
 		uiTonemappingType_ = eTonemapping_Avg_Lumin;
 		uiOutputType_ = eOutput_All;
+		uiExpoure_ = 2.0f;
 
 		TwType specularTypes =    TwDefineEnum("SpecularType", SpecularEnums, 2);
 		TwType irrianceTypes =    TwDefineEnum("IrridianceType", IrridianceEnums, 2);
@@ -127,7 +128,9 @@ public:
 		TwAddVarRW(bar, "irridiance type", irrianceTypes, &uiIrridianceType_, " group='render'");
 		TwAddVarRW(bar, "tonemapping type", tonemappingTypes, &uiTonemappingType_, " group='render'");
 		TwAddVarRW(bar, "output color", outputTypes, &uiOutputType_, " group='render'");
+		TwAddVarRW(bar, "exposoure", TW_TYPE_FLOAT, &uiExpoure_, "min=0.1 max=20.0 step=0.1 group=render");
 
+		//uiExpoure_
 		//camara
 		pCamara_ = this->GetSceneMgr().GetMainCamara();
 		pCamara_->LookAt(XMFLOAT4(0, 0, -100, 0), XMFLOAT4(0, 0, 0, 0));
@@ -158,9 +161,10 @@ public:
 		pCamara_->SetProject(BaseCamara::eCamara_Perspective, XM_PI / 4, aspect, 0.1f, 1000.0f);
 
 		skybox_.ApplySkyBox(context);
+
 		postProcessChain_.Create(width, height);
 		//postProcessChain_.AddPostProcess(PostProcessChain::ePostProcess_PresentHDR);
-
+		hdrProcess_ = postProcessChain_.CreateHdrPresentProcess();
 	};
 
 
@@ -183,9 +187,11 @@ public:
 		perFrame.specularType = uiSpecularType_;
 		perFrame.irridianceType = uiIrridianceType_;
 		perFrame.outputType = uiOutputType_;
-		Log_Info("specular type %d", uiSpecularType_);
+		Log_Info("specular type %d exposure %f", uiSpecularType_, uiExpoure_);
 
 		ResourceMgr::GetSingletonPtr()->MappingBufferWriteOnly(perframeBuffer_, &perFrame, sizeof(CB_PerFrame));
+
+		hdrProcess_->SetExposure(uiExpoure_);
 
 	}
 
@@ -197,21 +203,17 @@ public:
 		ID3D11DepthStencilView* mainDSV = this->GetMainDSV();
 
 		////sky box
-		context->OMSetRenderTargets(1, &mainRT, nullptr);
-
-		//postProcessChain_.ClearBackground(context);
-		//postProcessChain_.BindAsRenderTarget(context, nullptr);
+		postProcessChain_.ClearBackground(context);
+		postProcessChain_.BindAsRenderTarget(context, nullptr);
 		skybox_.Render(context);
 
 		//obj
-		//postProcessChain_.BindAsRenderTarget(context, mainDSV);
-		context->OMSetRenderTargets(1, &mainRT, mainDSV);
-
+		postProcessChain_.BindAsRenderTarget(context, mainDSV);
 		pistol_->SetConstBuffer(perframeBuffer_);
 		pistol_->Render(context);
 
-		//postProcessChain_.Process(context);
-		//postProcessChain_.Present(context, mainRT);
+		postProcessChain_.Process(context);
+		postProcessChain_.Present(context, mainRT);
 
 		//ui
 		TwDraw();
@@ -240,9 +242,10 @@ public:
 		TwTerminate();
 	};
 private:
-	ID3D11Buffer*        perframeBuffer_;
+	ID3D11Buffer*         perframeBuffer_;
 	ID3D11SamplerState*   samplers_[3];
 
+	HdrPresentProcess*    hdrProcess_;
 	PostProcessChain      postProcessChain_;
 	BaseModel*            pistol_;
 	SkyBox                skybox_;
@@ -256,6 +259,7 @@ private:
 	unsigned              uiIrridianceType_;
 	unsigned              uiTonemappingType_;
 	unsigned              uiOutputType_;
+	float                 uiExpoure_;
 };
 
 
@@ -264,7 +268,7 @@ private:
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	PSTR pScmdline, int iCmdshow)
 {
-	//ul::SetBreakPointAtMemoryLeak(505);
+	//ul::SetBreakPointAtMemoryLeak(46691);
 	ul::OpenConsoleAndDebugLeak();
 
 	Log_Info("hello");
@@ -276,7 +280,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	}
 
 	// Initialize and run the system object.
-	if (app->Initialize(800, 600))
+	if (app->Initialize(1024, 768))
 	{
 		app->Run();
 	}

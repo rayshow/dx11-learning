@@ -3,6 +3,27 @@
 
 using namespace ul;
 
+
+
+bool PostProcess::CreateConstBuffer()
+{
+	Null_Return_False(
+		(constBuffer_ = ResourceMgr::GetSingletonPtr()->CreateConstantBuffer(bufferSize_))
+	);
+	return true;
+}
+
+void  PostProcess::UpdateConstBuffer()
+{
+	if (isBufferDirty_)
+	{
+		ResourceMgr::GetSingletonPtr()->MappingBufferWriteOnly(constBuffer_, memBuffer_, bufferSize_);
+		isBufferDirty_ = false;
+	}
+		
+}
+
+
 bool PostProcess::Create(
 	const string& fileName,
 	const string& psFunction,
@@ -64,22 +85,14 @@ bool PostProcess::Create(
 		psFunction.c_str()
 	);
 
-	Null_Return_False_With_Msg(
-		(parameterBuffer_ = mgr->CreateConstantBuffer(sizeof(SPostProcess_Parameter))),
-		"create postprocess const buffer error."
-	);
 
 	Null_Return_False((fullScreenVs_ = mgr->CreateVertexShaderFromResourceBasePath("shader/full_screen_process.hlsli", 
 						"VS_FullScreenProcess", "vs_5_0")));
 	Null_Return_False((fullScreenPs_ = mgr->CreatePixelShaderFromResourceBasePath(fileName.c_str(), 
 						psFunction.c_str(), "ps_5_0")));
 
-	SPostProcess_Parameter parameter;
-	memset(&parameter, 0, sizeof(parameter));
-	parameter.mipLevel = mipLevel;
-	mgr->MappingBufferWriteOnly(parameterBuffer_, &parameter, sizeof(parameter));
-
-
+	False_Return_False(this->CreateConstBuffer());
+	
 	return true;
 }
 
@@ -94,12 +107,14 @@ bool PostPresent::Create()
 	return true;
 }
 
+
+
 bool HdrPresentProcess::Create(
 	ulUint width, ulUint height)
 {
 	//output to 8888 format
 	return PostProcess::Create("shader/full_screen_process.hlsli",
-		"PS_present_hdr", DXGI_FORMAT_R8G8B8A8_UNORM, width, height);
+		"PS_present_hdr", DXGI_FORMAT_R16G16B16A16_FLOAT, width, height);
 }
 
 bool PostProcessChain::Create(ulUint width, ulUint height)
