@@ -690,9 +690,9 @@ namespace ul
 		{
 			D3D11_SAMPLER_DESC SamDesc;
 			SamDesc.Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
-			SamDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
-			SamDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
-			SamDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+			SamDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+			SamDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+			SamDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
 			SamDesc.MipLODBias = 0.0f;
 			SamDesc.MaxAnisotropy = 1;
 			SamDesc.ComparisonFunc = D3D11_COMPARISON_LESS_EQUAL;

@@ -16,7 +16,7 @@ bool CommonModelLoader::LoadFile(const std::string resourcePath, const std::stri
 
 	Assimp::Importer import;
 	const aiScene* pScene = import.ReadFile(meshFileName.c_str(),
-		aiProcess_Triangulate | aiProcess_SortByPType| aiProcess_GenSmoothNormals | aiProcess_FlipUVs);
+		aiProcess_GenSmoothNormals | aiProcess_FlipUVs);
 
 	Null_Return_False_With_Msg( pScene, "read model file %s error: %s.",
 		meshFileName.c_str(), import.GetErrorString());
@@ -58,7 +58,6 @@ bool CommonModelLoader::LoadFile(const std::string resourcePath, const std::stri
 
 	data.groups_.reserve(pScene->mNumMeshes);
 	data.materials_.reserve(pScene->mNumMaterials);
-	
 	data.primtives_.verticeNum_ = 0;
 	data.primtives_.indiceNum_ = 0;
 	for (ulUint i = 0; i < pScene->mNumMeshes; ++i)

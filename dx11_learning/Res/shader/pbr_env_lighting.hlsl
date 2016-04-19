@@ -207,6 +207,6 @@ PS_Output_Single PS_FillBuffer(PS_TranslateInput I)
 	}
 
 
-	O.color0.rgb = litColor;
+	O.color0.rgb = specularIBL;//litColor;
 	return O;
 }

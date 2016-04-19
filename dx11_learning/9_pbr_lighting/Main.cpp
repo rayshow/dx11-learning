@@ -87,8 +87,6 @@ TwEnumVal TonemmappingEnums[] =
 };
 
 
-
-
 class Lession1_Frame :public Application
 {
 public:
@@ -163,7 +161,6 @@ public:
 		skybox_.ApplySkyBox(context);
 
 		postProcessChain_.Create(width, height);
-		//postProcessChain_.AddPostProcess(PostProcessChain::ePostProcess_PresentHDR);
 		hdrProcess_ = postProcessChain_.CreateHdrPresentProcess();
 	};
 
