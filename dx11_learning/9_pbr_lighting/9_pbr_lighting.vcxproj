@@ -40,8 +40,10 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);../Frame;../Frame/util;../Include/dx;../Include/assimp;../Include/AntTweakBar</IncludePath>
-    <LibraryPath>../Frame/prebuilt/$(Configuration);../lib/x86;../lib/Assimp/$(Configuration);../lib/AntTweakBar;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);../0_Frame;../Include/dx;../Include/assimp</IncludePath>
+    <LibraryPath>$(SolutionDir)$(Configuration);../lib/x86;../lib/Assimp/$(Configuration);../lib/AntTweakBar;$(LibraryPath)</LibraryPath>
+    <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)compile_mid\$(ProjectName)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);../Frame;../Frame/util;../Include/dx;</IncludePath>
@@ -52,6 +54,8 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
+      <FloatingPointModel>Fast</FloatingPointModel>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -76,11 +80,6 @@
     <ClCompile Include="Main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Frame\Frame.vcxproj">
-      <Project>{7c78dfa1-7446-4d2e-9153-34ff7711a00f}</Project>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <None Include="..\Res\shader\base_define.hlsli" />
     <None Include="..\Res\shader\brdf.hlsli" />
     <None Include="..\Res\shader\full_screen_process.hlsli" />
@@ -90,6 +89,11 @@
     </None>
     <None Include="..\Res\shader\sh_lighting.hlsli" />
     <None Include="..\Res\shader\tone_mapping.hlsli" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\0_Frame\0_Frame.vcxproj">
+      <Project>{7c78dfa1-7446-4d2e-9153-34ff7711a00f}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

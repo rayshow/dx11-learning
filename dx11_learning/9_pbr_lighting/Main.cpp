@@ -48,13 +48,14 @@ enum EToneMapping_Type
 
 enum EOutput_Type
 {
-	eOutput_All,
+	eOutput_LitColor,
 	eOutput_Irridiance,
 	eOutput_Specular,
 	eOutput_Ao,
 	eOutput_Roughness,
 	eOutput_Materness,
 	eOutput_Lukup,
+	eOutput_Normal,
 };
 
 TwEnumVal SpecularEnums[] =
@@ -71,13 +72,14 @@ TwEnumVal IrridianceEnums[]=
 
 TwEnumVal OutputEnums[] =
 {
-	{ eOutput_All, "output normal color" },
-	{ eOutput_Irridiance, "output irridiance color" },
-	{ eOutput_Specular, "output specular color" },
-	{ eOutput_Ao, "output ao color" },
-	{ eOutput_Roughness, "output roughness" },
-	{ eOutput_Materness, "output matelness" },
-	{ eOutput_Lukup, "output lukup " },
+	{ eOutput_LitColor, "lighting color" },
+	{ eOutput_Normal, "normal " },
+	{ eOutput_Irridiance, "irridiance color" },
+	{ eOutput_Specular, "specular color" },
+	{ eOutput_Ao, "ao color" },
+	{ eOutput_Roughness, "roughness" },
+	{ eOutput_Materness, "matelness" },
+	{ eOutput_Lukup, "interge lukup " },
 };
 
 TwEnumVal TonemmappingEnums[] =
@@ -112,12 +114,12 @@ public:
 		uiSpecularType_ = eSpecular_Ibl;
 		uiIrridianceType_ = eIrridiance_Ibl;
 		uiTonemappingType_ = eTonemapping_Avg_Lumin;
-		uiOutputType_ = eOutput_All;
+		uiOutputType_ = eOutput_LitColor;
 		uiExpoure_ = 2.0f;
 
 		TwType specularTypes =    TwDefineEnum("SpecularType", SpecularEnums, 2);
 		TwType irrianceTypes =    TwDefineEnum("IrridianceType", IrridianceEnums, 2);
-		TwType outputTypes = TwDefineEnum("OutputType", OutputEnums, 7);
+		TwType outputTypes = TwDefineEnum("OutputType", OutputEnums, 8);
 		TwType tonemappingTypes = TwDefineEnum("ToneMappingType", TonemmappingEnums, 2);
 
 		TwSetParam(bar, nullptr, "size", TW_PARAM_INT32, 2, barSize);
@@ -144,6 +146,9 @@ public:
 		//sample
 		Null_Return_Void((samplers_[0] = mgr->CreateLinearSamplerState()));
 		samplers_[1] = samplers_[2] = samplers_[0];
+
+		
+		pointSampler_ = mgr->CreatePointSamplerState();
 	
 	};
 
@@ -184,8 +189,8 @@ public:
 		perFrame.specularType = uiSpecularType_;
 		perFrame.irridianceType = uiIrridianceType_;
 		perFrame.outputType = uiOutputType_;
-		Log_Info("specular type %d exposure %f", uiSpecularType_, uiExpoure_);
-
+		//Log_Info("specular type %d exposure %f frash rate:%f", uiSpecularType_, uiExpoure_, this->GetFPS());
+		
 		ResourceMgr::GetSingletonPtr()->MappingBufferWriteOnly(perframeBuffer_, &perFrame, sizeof(CB_PerFrame));
 
 		hdrProcess_->SetExposure(uiExpoure_);
@@ -199,16 +204,16 @@ public:
 		ID3D11RenderTargetView* mainRT = this->GetMainRT();
 		ID3D11DepthStencilView* mainDSV = this->GetMainDSV();
 
-		////sky box
+		//sky box
 		postProcessChain_.ClearBackground(context);
 		postProcessChain_.BindAsRenderTarget(context, nullptr);
 		skybox_.Render(context);
 
-		//obj
 		postProcessChain_.BindAsRenderTarget(context, mainDSV);
 		pistol_->SetConstBuffer(perframeBuffer_);
 		pistol_->Render(context);
 
+		context->PSSetSamplers(0, 1, &pointSampler_);
 		postProcessChain_.Process(context);
 		postProcessChain_.Present(context, mainRT);
 
@@ -241,6 +246,7 @@ public:
 private:
 	ID3D11Buffer*         perframeBuffer_;
 	ID3D11SamplerState*   samplers_[3];
+	ID3D11SamplerState*   pointSampler_;
 
 	HdrPresentProcess*    hdrProcess_;
 	PostProcessChain      postProcessChain_;

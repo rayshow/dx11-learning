@@ -15,7 +15,7 @@ cbuffer HDR_Parameter : register(b0)
 	float3 padding;
 }
 
-SamplerState     sampleLinear         	 	  : register(s0);
+SamplerState     pointSampler         	 	  : register(s0);
 Texture2D        needProcessTex               : register(t0);
 
 
@@ -32,7 +32,7 @@ PS_FullScreenInput VS_FullScreenProcess(uint VertexID: SV_VertexID)
 PS_Output_Single PS_present_screen(PS_FullScreenInput I)
 {
 	PS_Output_Single O;
-	float4 color = needProcessTex.SampleLevel(sampleLinear, I.f2TexCoord, 0);
+	float4 color = needProcessTex.SampleLevel(pointSampler, I.f2TexCoord, 0);
 
 	O.color0 = color;
 	return O;
@@ -43,10 +43,10 @@ PS_Output_Single PS_present_screen(PS_FullScreenInput I)
 PS_Output_Single PS_present_hdr(PS_FullScreenInput I)
 {
 	PS_Output_Single O;
-	float4 inColor = needProcessTex.SampleLevel(sampleLinear, I.f2TexCoord, 0);
-	float3 color = ApplyFilmicToneMap(inColor.rgb, Exposure);
-	color = pow(color, 1.0f / 2.2f);
-	O.color0.rgb = color;
+	float4 inColor = needProcessTex.SampleLevel(pointSampler, I.f2TexCoord, 0);
+	//float3 color = ApplyFilmicToneMap(inColor.rgb, Exposure);
+	//color = pow(color, 1.0f / 2.2f);
+	O.color0.rgb = inColor;
 	return O;
 }
 

@@ -37,6 +37,7 @@ static const float TextureGamma = 2.0;
 #define eOutput_Roughness 4
 #define eOutput_Matelness 5
 #define eOutput_Lukup 6
+#define eOutput_Normal 7
 
 
 // ¶¥µã²ÎÊý
@@ -69,7 +70,6 @@ float3x3 invert_3x3(float3x3 M)
 	cross(T[2], T[0]),
 	cross(T[0], T[1])) / (D + 1e-6);
 }
-
 
 
 float3
@@ -175,7 +175,7 @@ PS_Output_Single PS_FillBuffer(PS_TranslateInput I)
 			SpecularSampler);
 	}
 	else{
-		specularIBL = SpecularLukup.SampleLevel(SpecularSampler, refl, glossness * 7).rgb;
+		specularIBL = SpecularLukup.SampleLevel(SpecularLukupSampler, refl, glossness * 9.0f).rgb;
 	}
 
 	float3 dielectricColor = float3(0.04, 0.04, 0.04);
@@ -186,6 +186,9 @@ PS_Output_Single PS_FillBuffer(PS_TranslateInput I)
 
 	switch (outputType)
 	{
+	case eOutput_Normal:
+		litColor = normalWarp;
+		break;
 	case eOutput_Irridiance:
 		litColor = irridiance.rgb;
 		break;
@@ -207,6 +210,6 @@ PS_Output_Single PS_FillBuffer(PS_TranslateInput I)
 	}
 
 
-	O.color0.rgb = specularIBL;//litColor;
+	O.color0.rgb = litColor;//specularIBL;//
 	return O;
 }
