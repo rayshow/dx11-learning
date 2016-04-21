@@ -82,7 +82,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>$(IncludePath);../Include/dx;../Include/assimp;../Include/rapidxml-1.13</IncludePath>
+    <IncludePath>$(IncludePath);../Include/dx;../Include/assimp;../Include/rapidxml-1.13;../Include/effect11</IncludePath>
     <LibraryPath>../lib/x86;../Frame/prebuilt/$(Configuration);$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)Compile_Mid\$(ProjectName)\$(Configuration)\</IntDir>

@@ -94,7 +94,7 @@ class Lession1_Frame :public Application
 public:
 	virtual ~Lession1_Frame(){}
 public:
-	virtual void InitResource(ID3D11Device *dev,
+	virtual bool InitResource(ID3D11Device *dev,
 		ID3D11DeviceContext* context)
 	{
 		ResourceMgr *mgr = ResourceMgr::GetSingletonPtr();
@@ -141,24 +141,21 @@ public:
 
 		//model
 		pistol_ = mgr->CreateModelFromFile("pbr_model/pistol/pistol.fbx");
-		Null_Return_Void((perframeBuffer_ = mgr->CreateConstantBuffer(sizeof(CB_PerFrame))));
+		Null_Return_False((perframeBuffer_ = mgr->CreateConstantBuffer(sizeof(CB_PerFrame))));
 
 		//sample
-		Null_Return_Void((samplers_[0] = mgr->CreateLinearSamplerState()));
+		Null_Return_False((samplers_[0] = mgr->CreateLinearSamplerState()));
 		samplers_[1] = samplers_[2] = samplers_[0];
 
 		
 		pointSampler_ = mgr->CreatePointSamplerState();
-	
+		return true;
 	};
 
 	virtual void WindowResize(int width, int height,
 		ID3D11Device *dev,
 		ID3D11DeviceContext* context)
 	{
-		ResourceMgr *mgr = ResourceMgr::GetSingletonPtr();
-		mgr->ReleaseLoadedResourcePerSwapChain();
-
 		aspect = (float)width / (float)height;
 		XMStoreFloat4x4(&world_, XMMatrixIdentity());
 		pCamara_->SetProject(BaseCamara::eCamara_Perspective, XM_PI / 4, aspect, 0.1f, 1000.0f);
@@ -192,7 +189,6 @@ public:
 		//Log_Info("specular type %d exposure %f frash rate:%f", uiSpecularType_, uiExpoure_, this->GetFPS());
 		
 		ResourceMgr::GetSingletonPtr()->MappingBufferWriteOnly(perframeBuffer_, &perFrame, sizeof(CB_PerFrame));
-
 		hdrProcess_->SetExposure(uiExpoure_);
 
 	}
@@ -277,13 +273,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	Log_Info("hello");
 	//Utils::SetBreakPointAtMemoryLeak(154);
 	Lession1_Frame  *app = new Lession1_Frame;
-	if (!app)
-	{
-		return 0;
-	}
 
 	// Initialize and run the system object.
-	if (app->Initialize(1024, 768))
+	if (app && app->Initialize(1024, 768))
 	{
 		app->Run();
 	}

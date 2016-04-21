@@ -26,7 +26,10 @@ LRESULT CALLBACK MessageProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			EndPaint(hwnd, &ps);
 			return 0;
 		}
+		case WM_CREATE:
 		case WM_SIZE:
+		case WM_EXITSIZEMOVE:
+		case WM_ENTERSIZEMOVE:
 		case WM_MOUSEMOVE:
 		case WM_LBUTTONDOWN:
 		case WM_LBUTTONUP:
@@ -40,11 +43,12 @@ LRESULT CALLBACK MessageProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		case WM_MBUTTONDBLCLK:
 		case WM_KEYUP:
 		case WM_KEYDOWN:
+		case WM_ACTIVATE:
+		
 		{
 			app->InputProcess(hwnd, msg, wparam, lparam);
 			return 0;
 		}
-
 		default:
 		{
 			return DefWindowProc(hwnd, msg, wparam, lparam);

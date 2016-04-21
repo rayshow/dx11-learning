@@ -6,26 +6,64 @@
 
 using namespace ul;
 
+
+
+
+inline void BaseCamara::UpdateProjectRelative(const XMMATRIX& view)
+{
+	XMVECTOR det;
+	XMMATRIX project = XMLoadFloat4x4(&project_);
+	XMMATRIX transposeProject = XMMatrixTranspose(project);
+	XMMATRIX viewProject = XMMatrixMultiply(view, project);
+	XMMATRIX transposeViewProject = XMMatrixTranspose(viewProject);
+	XMMATRIX invViewProject = XMMatrixInverse(&det, viewProject);
+	XMMATRIX transposeInvViewProject = XMMatrixTranspose(invViewProject);
+	XMMATRIX rotateMatrix = XMLoadFloat3x3(&rotateMatrix_);
+	XMMATRIX rotateProject = XMMatrixMultiply(rotateMatrix, project);
+	XMMATRIX invRotateProject = XMMatrixInverse(&det, rotateProject);
+	XMMATRIX transposeInvRotateProject = XMMatrixTranspose(invRotateProject);
+	XMMATRIX transposeRotateProject = XMMatrixTranspose(rotateProject);
+	XMStoreFloat4x4(&transposeRotateProject_, transposeRotateProject);
+	XMStoreFloat4x4(&transposeProject_, transposeProject);
+	XMStoreFloat4x4(&viewProject_, viewProject);
+	XMStoreFloat4x4(&transposeViewProject_, transposeViewProject);
+	XMStoreFloat4x4(&invViewProject_, invViewProject);
+	XMStoreFloat4x4(&transposeInvViewProject_, transposeInvViewProject);
+	XMStoreFloat4x4(&invRotateProject_, invRotateProject);
+	XMStoreFloat4x4(&transposeInvRotateProject_, transposeRotateProject);
+}
+
+void BaseCamara::UpdateViewRelative(const XMMATRIX& view)
+{
+	XMVECTOR det;
+	XMMATRIX invView = XMMatrixInverse(&det, view);
+	XMMATRIX transposeView = XMMatrixTranspose(view);
+	XMMATRIX transposeInvView = XMMatrixTranspose(invView);
+	XMStoreFloat4x4(&view_, view);
+	XMStoreFloat3x3(&rotateMatrix_, view);
+	XMStoreFloat4x4(&invView_, invView);
+	XMStoreFloat4x4(&transposeView_, transposeView);
+	XMStoreFloat4x4(&transposeInvView_, transposeInvView);
+}
+
+
 void  BaseCamara::LookAt(XMFLOAT4& eye, XMFLOAT4& at)
 {
 	position_ = eye;
 	lookDirection_ = at;
-
 	XMVECTOR vpos = XMLoadFloat4(&eye);
 	XMVECTOR vat = XMLoadFloat4(&at);
 	XMVECTOR vup = XMVectorSet(0, 1, 0, 0);
-
 	XMMATRIX view = XMMatrixLookAtLH(vpos, vat, vup);
 	UpdateViewRelative(view);
-
 	XMMATRIX invView = GetInvViewMatrix();
 	XMVECTOR angleVector = invView.r[2];
-
 	XMFLOAT4 angles;
 	XMStoreFloat4(&angles, angleVector);
 	yaw_   = atan2f(angles.x, angles.z);
 	pitch_ = -atan2f(angles.y, angles.x*angles.x + angles.z*angles.z);
 }
+
 
 void  BaseCamara::SetProject(ECamaraProjectType type,
 	float p, float q, float nearclip =0.1, float farclip =1000 )
@@ -53,8 +91,8 @@ void  BaseCamara::SetProject(ECamaraProjectType type,
 		break;
 	}
 	UpdateProjectRelative(GetViewMatrix());
-
 }
+
 
 FirstPersonController::eCamaraKey FirstPersonController::keyMap(ulUint keycode)
 {

@@ -46,106 +46,65 @@ namespace ul
 		//angle
 		ulFloat			    yaw_;
 		ulFloat			    pitch_;
-		
+
 		//
 		ulFloat             near_;
 		ulFloat             far_;
 
 		ECamaraProjectType  projectType_;
 		ulFloat             projParameter_[2];
-		
-	public:
-		inline ulFloat GetYaw() { return yaw_;  }
 
-		inline void SetYaw(ulFloat yaw) {  this->yaw_ = yaw;  }
-		
-		inline ulFloat GetPitch(){  return pitch_; }
+	public:
+		inline ulFloat GetYaw() { return yaw_; }
+
+		inline void SetYaw(ulFloat yaw) { this->yaw_ = yaw; }
+
+		inline ulFloat GetPitch(){ return pitch_; }
 
 		inline void SetPitch(ulFloat pitch) { this->pitch_ = pitch; }
 
-		XMFLOAT4& GetEyePosStoreType() {  return position_;   }
+		XMFLOAT4& GetEyePosStoreType() { return position_; }
 
-		XMVECTOR GetEyePos() {  return XMLoadFloat4(&position_);  }
+		XMVECTOR GetEyePos() { return XMLoadFloat4(&position_); }
 
-		inline XMMATRIX GetViewMatrix(){  return XMLoadFloat4x4(&view_); }
+		inline XMMATRIX GetViewMatrix(){ return XMLoadFloat4x4(&view_); }
 
-		inline XMMATRIX GetProjectMatrix(){  return XMLoadFloat4x4(&project_);  }
+		inline XMMATRIX GetProjectMatrix(){ return XMLoadFloat4x4(&project_); }
 
-		inline XMMATRIX GetViewProjectMatrix(){  return XMLoadFloat4x4(&viewProject_);  }
+		inline XMMATRIX GetViewProjectMatrix(){ return XMLoadFloat4x4(&viewProject_); }
 
-		inline XMMATRIX GetInvViewMatrix() {  return XMLoadFloat4x4(&invView_);  }
+		inline XMMATRIX GetInvViewMatrix() { return XMLoadFloat4x4(&invView_); }
 
-		inline XMMATRIX GetInvViewProjectMatrix() {  return XMLoadFloat4x4(&invViewProject_);  }
+		inline XMMATRIX GetInvViewProjectMatrix() { return XMLoadFloat4x4(&invViewProject_); }
 
-		inline XMFLOAT4X4& GetInvRotateProjectStoreType() { return transposeInvRotateProject_;  }
+		inline XMFLOAT4X4& GetInvRotateProjectStoreType() { return transposeInvRotateProject_; }
+		inline float* GetInvRotateProjectStorePtr(){ return (float*)&invRotateProject_; }
 
 		inline XMFLOAT4X4& GetInvViewProjectStoreType() { return transposeInvViewProject_; }
+		inline float* GetInvViewProjectStorePtr(){ return (float*)&invViewProject_;  }
 
-		inline XMFLOAT4X4&  GetViewStoreType() {  return transposeView_; }
+		inline XMFLOAT4X4&  GetViewStoreType() { return transposeView_; }
+		inline float* GetViewStorePtr(){ return (float*)&view_; }
 
-		inline XMFLOAT4X4&  GetProjectStoreType(){  return transposeProject_;  }
+		inline XMFLOAT4X4&  GetProjectStoreType(){ return transposeProject_; }
+		inline float* GetProjectStorePtr(){return (float*)&project_; }
 
 		inline XMFLOAT4X4& GetViewProjectStoreType() {  return transposeViewProject_;  }
-
+		inline float* GetViewProjectStorePtr() const { return (float*)&viewProject_;  }
+		
 		inline XMFLOAT4X4& GetRotateProjectStoreType()  { return transposeRotateProject_; }
+		inline float* GetRotateProjectStorePtr(){ return (float*)&rotateProject_;  }
 
 		//update view invView transposeView 
-		inline void UpdateViewRelative(const XMMATRIX& view)
-		{
-			XMVECTOR det;
-			XMMATRIX invView = XMMatrixInverse(&det, view);
-			XMMATRIX transposeView = XMMatrixTranspose(view);
-			XMMATRIX transposeInvView = XMMatrixTranspose(invView);
+	    void UpdateViewRelative(const XMMATRIX& view);
 
-			XMStoreFloat4x4(&view_, view);
+		void UpdateAllMatrix(const XMMATRIX& view) { UpdateViewRelative(view); UpdateProjectRelative(view); }
 
-			XMStoreFloat3x3(&rotateMatrix_, view);
-			XMStoreFloat4x4(&invView_, invView);
-			XMStoreFloat4x4(&transposeView_, transposeView);
-			XMStoreFloat4x4(&transposeInvView_, transposeInvView);
+		void UpdateProjectRelative(const XMMATRIX& view);
 
-		}
+		void   SetProject(ECamaraProjectType projectType, float , float, float, float);
 
-		//update viewproject matrix
-		inline void UpdateProjectRelative(const XMMATRIX& view)
-		{
-			XMVECTOR det;
-			XMMATRIX project = XMLoadFloat4x4(&project_);
-			
-			XMMATRIX transposeProject = XMMatrixTranspose(project);
-			XMMATRIX viewProject = XMMatrixMultiply(view, project);
-
-			XMMATRIX transposeViewProject = XMMatrixTranspose(viewProject);
-			XMMATRIX invViewProject = XMMatrixInverse(&det, viewProject);
-			XMMATRIX transposeInvViewProject = XMMatrixTranspose(invViewProject);
-			
-			XMMATRIX rotateMatrix = XMLoadFloat3x3(&rotateMatrix_);
-			XMMATRIX rotateProject = XMMatrixMultiply(rotateMatrix, project);
-			XMMATRIX invRotateProject = XMMatrixInverse(&det, rotateProject);
-			XMMATRIX transposeInvRotateProject = XMMatrixTranspose(invRotateProject);
-			XMMATRIX transposeRotateProject = XMMatrixTranspose(rotateProject);
-
-			XMStoreFloat4x4(&transposeRotateProject_, transposeRotateProject);
-			XMStoreFloat4x4(&transposeProject_, transposeProject);
-			XMStoreFloat4x4(&viewProject_, viewProject);
-			XMStoreFloat4x4(&transposeViewProject_, transposeViewProject);
-			XMStoreFloat4x4(&invViewProject_, invViewProject);
-			XMStoreFloat4x4(&transposeInvViewProject_, transposeInvViewProject);
-			XMStoreFloat4x4(&invRotateProject_, invRotateProject);
-			XMStoreFloat4x4(&transposeInvRotateProject_, transposeRotateProject);
-		}
-
-		//update all matrix
-		inline void UpdateAllMatrix(const XMMATRIX& view)
-		{
-			UpdateViewRelative(view);
-			UpdateProjectRelative(view);
-		}
-
-		void   SetProject(ECamaraProjectType , float, float, float, float);
 		void   LookAt(XMFLOAT4& eye, XMFLOAT4& at);
-
-
 	};  //BaseCamara
 
 

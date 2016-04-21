@@ -20,17 +20,17 @@ namespace ul
 	class Application :public Singleton<Application>
 	{
 	private:
-		int       width_;
-		int       height_;
-		string    appName_;
-		bool      fullscreen_;
-		HWND      hWnd_;
-		HINSTANCE hInstance_;
-		Timer     timer_;
-		bool      initialized_;
-		char      fpsDisplay_[20];
+		int						   width_;
+		int						   height_;
+		string					   appName_;
+		bool					   fullscreen_;
+		HWND					   hWnd_;
+		HINSTANCE				   hInstance_;
+		Timer					   timer_;
+		bool					   initialized_;
+		char					   fpsDisplay_[20];
 		D3D11GraphicsContext       graphicsContext_;
-		SceneMgr  sceneMgr_;
+		SceneMgr				   sceneMgr_;
 	public:
 		Application() :
 			width_(0),
@@ -75,10 +75,10 @@ namespace ul
 			//init graphics
 			RECT rect;
 			GetClientRect(hWnd_, &rect);
-			graphicsContext_.Initialize(hWnd_, rect.right-rect.left, rect.bottom-rect.top, true, fullscreen_, false);
+			False_Return_False( graphicsContext_.Initialize(hWnd_, rect.right-rect.left, rect.bottom-rect.top, true, fullscreen_, false) );
 
 			//call InitResource 
-			this->InitResource( GetDevicePtr(), GetDeviceContextPtr() );
+			False_Return_False( this->InitResource( GetDevicePtr(), GetDeviceContextPtr() ) );
 			
 
 			// when initialized show window
@@ -111,6 +111,14 @@ namespace ul
 
 		LRESULT CALLBACK InputProcess(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		{
+			if (msg == WM_CREATE)
+			{
+				int a = 0;
+			}
+			if (msg == WM_ACTIVATE)
+			{
+				int b = 0;
+			}
 			//lost device and reset
 			if (msg == WM_SIZE)
 			{
@@ -130,6 +138,7 @@ namespace ul
 
 		void OnResize(int width, int height)
 		{
+			ResourceMgr::GetSingletonPtr()->ReleaseLoadedResourcePerSwapChain();
 			graphicsContext_.Resize(width, height);
 			this->WindowResize(width, height, GetDevicePtr(), GetDeviceContextPtr());
 		}
@@ -141,14 +150,14 @@ namespace ul
 
 		float GetElapse()
 		{
-			return timer_.GetElapsedSeconds();
+			return timer_.GetDeltaTime();
 		}
 	public:
 		virtual void WindowResize(
 			int width, int height, ID3D11Device *dev,
 			ID3D11DeviceContext* context) = 0;
 
-		virtual void InitResource(
+		virtual bool InitResource(
 			ID3D11Device *dev,
 			ID3D11DeviceContext* context) = 0;
 

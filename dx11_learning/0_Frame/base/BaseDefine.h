@@ -45,9 +45,8 @@ namespace ul
 #define Zero(p) (0==(p))
 #define Fail(p) ( 0 > (p))
 
-#define Condi_Return_Val( condi, val, msg, ...)   if (condi){ Log_Err(msg, __VA_ARGS__); assert(0); return val; }
-#define Condi_Return( condi, msg, ...)   if (condi)  { Log_Err(msg, __VA_ARGS__); assert(0); return; } 
-
+#define Condi_Return_Val( condi, val, msg, ...)   if (condi){ Log_Err(msg, __VA_ARGS__);  return val; }
+#define Condi_Return( condi, msg, ...)   if (condi)  { Log_Err(msg, __VA_ARGS__); return; } 
 #define Null_Return_Null(ptr)  Condi_Return_Val((nullptr == ptr), (nullptr), "pointer is nullptr.")
 #define Null_Return_Void(ptr)  Condi_Return(    (nullptr == ptr),            "pointer is nullptr.")
 #define Null_Return_Fail(ptr)  Condi_Return_Val((nullptr == ptr), (-1),      "pointer is nullptr.")

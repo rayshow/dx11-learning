@@ -2,10 +2,14 @@
 #include<memory>
 
 #include<Application.h>
-
 #include<D3DX10Math.h>
+#include<d3dx11effect.h>
+#include<iostream>
+#include<ios>
+#include<fstream>
 
 using namespace ul;
+using namespace std;
 
 struct CB_PerFrame
 {
@@ -18,7 +22,7 @@ public:
 	virtual ~Lession1_Frame(){}
 public:
 
-	virtual void InitResource(
+	virtual bool InitResource(
 		ID3D11Device *dev,
 		ID3D11DeviceContext* context)
 	{
@@ -26,28 +30,60 @@ public:
 		mgr->SetResourceBasePath("../res/");
 
 		pCamara_ = SceneMgr::GetSingletonPtr()->GetMainCamara();
-		pCamara_->LookAt(XMFLOAT4(0, 0, 0, 0), XMFLOAT4(0, 0, 1, 0));
+		pCamara_->LookAt(XMFLOAT4(0, 0, 200, 0), XMFLOAT4(0, 0, 1, 0));
 		controller.SetCamara(pCamara_);
-		skybox_.Create(dev, "skybox/sky1/dome1.env");
+
+		Null_Return_False((pPistolRender_ = mgr->CreateStaticMeshRenderFromFile("pbr_model/pistol/pistol.fbx")));
+	
+		ulUint shaderFlag = 0;
+#if defined(DEBUG) ||defined(_DEBUG)
+		shaderFlag |= D3D10_SHADER_DEBUG;
+		shaderFlag |= D3D10_SHADER_SKIP_OPTIMIZATION;
+#endif
+		
+		ID3D10Blob* compiledShader = nullptr;
+		ID3D10Blob* compileMsg = nullptr;
+		HRESULT hr= D3DX11CompileFromFileA("test.fx", nullptr, nullptr, nullptr, "fx_5_0", shaderFlag, 0, nullptr, &compiledShader, &compileMsg, 0);
+		if (compileMsg != nullptr)
+		{
+			Log_Err("compile error:%s", compileMsg->GetBufferPointer() );
+			Safe_Release(compileMsg);
+		}
+		Fail_Return_False_With_Msg(hr, "compile error");
+
+		ifstream fin("fx/color.fxo", ios::binary);
+		if (!fin.is_open())
+		{
+			return false;
+		}
+		fin.seekg(0, std::ios_base::end);
+		int size = (int)fin.tellg();
+		std::vector<char> buffer(size);
+		fin.read(&buffer.front(), size);
+		Fail_Return_False_With_Msg(D3DX11CreateEffectFromMemory(buffer.data(),
+			size, 0, dev, &testFx_),
+			"create fx from memory error");
+		Safe_Release(compiledShader);
+
+		wvp_ = testFx_->GetVariableByName("WorldViewProject")->AsMatrix();
+		pPistolRender_->SetShader(testFx_, dev);
+		return true;
 	};
 
 	virtual void WindowResize(int width, int height,
 		ID3D11Device *dev,
 		ID3D11DeviceContext* context)
 	{
-		ResourceMgr *mgr = ResourceMgr::GetSingletonPtr();
-		mgr->ReleaseLoadedResourcePerSwapChain();
-		aspect = (float)width / (float)height;
-		pCamara_->SetProject(BaseCamara::eCamara_Perspective, XM_PI / 4, aspect, 0.1f, 1000.0f);
+		aspect_ = (float)width / (float)height;
+		pCamara_->SetProject(BaseCamara::eCamara_Perspective, XM_PI / 4, aspect_, 0.1f, 1000.0f);
 
-		skybox_.ApplySkyBox(context);
 	};
 
 
 	void SetParameter(ID3D11Device *dev,
 		ID3D11DeviceContext* context)
 	{
-		context->RSSetState(resterState_);
+		wvp_->SetMatrix( pCamara_->GetViewProjectStorePtr() );
 	}
 
 	virtual void RenderFrame(ID3D11Device *dev,
@@ -55,10 +91,8 @@ public:
 	{
 		this->SetParameter(dev, context);
 		ID3D11RenderTargetView* mainRT = this->GetMainRT();
-		ID3D11DepthStencilView* mainDSV = this->GetMainDSV();
-
-		context->OMSetRenderTargets(1, &mainRT, nullptr);
-		skybox_.Render(context);
+		context->OMSetRenderTargets(1, &mainRT, this->GetMainDSV());
+		pPistolRender_->Render(context);
 	};
 
 	virtual int MsgProcess(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
@@ -74,20 +108,15 @@ public:
 
 	virtual void Exit()
 	{
+		Safe_Release(testFx_);
 	};
 private:
-	ID3D11SamplerState   *TriLinerSampler_;
-	ID3D11SamplerState   *LinerSampler_;
-	ID3D11SamplerState   *PointSampler_;
-
-	ID3D11RasterizerState* resterState_;
-
-	SkyBox                skybox_;
-	BaseCamara*           pCamara_;
-	FirstPersonController controller;
-
-	XMFLOAT4X4 world_, view_, project_;
-	float aspect;
+	float						 aspect_;
+	ID3DX11Effect*				 testFx_;
+	ID3DX11EffectMatrixVariable* wvp_;
+	BaseCamara*					 pCamara_;
+	FirstPersonController		 controller;
+	StaticMeshRender*            pPistolRender_;
 };
 
 

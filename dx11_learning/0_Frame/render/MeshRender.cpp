@@ -144,3 +144,91 @@ void BaseModel::Render(ID3D11DeviceContext* context)
 	int a = 0;
 }
 
+
+
+bool StaticMeshRender::Create(ID3D11Device* pd3dDevice,
+	SModelData& data)
+{
+	D3D11_BUFFER_DESC vbd;
+	D3D11_BUFFER_DESC ibd;
+	D3D11_SUBRESOURCE_DATA vdata, idata;
+	ResourceMgr* mgr = ResourceMgr::GetSingletonPtr();
+
+	//vb
+	vbd.Usage = D3D11_USAGE_IMMUTABLE;
+	vbd.ByteWidth = data.primtives_.verticeNum_*data.primtives_.stride_;
+	vbd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	vbd.CPUAccessFlags = 0;
+	vbd.MiscFlags = 0;
+	vbd.StructureByteStride = 0;
+	ZeroMemory(&vdata, sizeof(vdata));
+	vdata.pSysMem = &data.primtives_.verticeBuffer_[0];
+	Null_Return_False((vb_ = mgr->CreateBuffer(vbd, &vdata)));
+
+	//ib
+	ibd = vbd;
+	ibd.ByteWidth = sizeof(ulUint)*data.primtives_.indices_.size();;
+	ibd.BindFlags = D3D11_BIND_INDEX_BUFFER;
+	ZeroMemory(&idata, sizeof(idata));
+	idata.pSysMem = &data.primtives_.indices_[0];
+	Null_Return_False((ib_ = mgr->CreateBuffer(ibd, &idata)));
+
+	//vertex layout
+	ulUint count;
+	Vertex_GetInputDescByType(data.primtives_.type_, desc_, &descCount_);
+
+
+	//render parameters
+	materials_.reserve(data.materials_.size());
+	ulUint i = 0;
+	for (; i < data.materials_.size(); ++i)
+	{
+		SMaterialData*   pMaterial = data.materials_[i];
+		SRenderMaterial* pRenderData = new SRenderMaterial();
+		memset(pRenderData, 0, sizeof(SRenderMaterial));
+		materials_.push_back(pRenderData);
+	}
+
+	//render batch
+	children_.reserve(data.groups_.size());
+	for (ulUint i = 0; i < data.groups_.size(); ++i)
+	{
+		SRenderGroupInfo* pGroup = data.groups_[i];
+		StaticMeshPart part;
+		part.SetRenderBatch(pGroup->indexOffset_, pGroup->indexCount_);
+		part.SetMaterial(materials_.at(pGroup->materialID));
+		children_.push_back(part);
+	}
+
+	childCount_ = children_.size();
+	stride_ = data.primtives_.stride_;
+	offset_ = 0;
+	return true;
+}
+
+
+
+
+void StaticMeshRender::Render(ID3D11DeviceContext* context)
+{
+	assert(context != 0);
+	context->IASetVertexBuffers(0, 1, &vb_, &stride_, &offset_);
+	context->IASetIndexBuffer(ib_, DXGI_FORMAT_R32_UINT, 0);
+	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	context->IASetInputLayout(vertexLayout_);
+
+	for (ulUint i = 0; i < childCount_; ++i)
+	{
+		children_[i].Render(context);
+	}
+}
+
+
+void StaticMeshPart::Render(ID3D11DeviceContext* context)
+{
+	for (ulUint i = 0; i < refMaterial_->passNum_; ++i)
+	{
+		refMaterial_->defaultTech_->GetPassByIndex(i)->Apply(0, context);
+		context->DrawIndexed(indexCount_, indexOffset_, 0);
+	}
+}

@@ -1,9 +1,11 @@
 #ifndef UL_RENDERABLE_HEADER__
 #define UL_RENDERABLE_HEADER__
 
+
 #include<vector>
 #include<d3d11.h>
 #include<D3DX11tex.h>
+#include<d3dx11effect.h>
 
 #include"../util/UlHelper.h"
 #include"Material.h"
@@ -55,6 +57,8 @@ namespace ul{
 		ID3D11PixelShader*          psEnterPoint_;
 		ID3D11ShaderResourceView*   srvs_[CONST_MAX_TEXTURE_NUM];
 	};
+
+
 
 	class SceneMgr;
 
@@ -169,7 +173,82 @@ namespace ul{
 	};
 
 
+	struct SRenderMaterial
+	{
+		ID3DX11Effect*			  effect_;
+		ID3DX11EffectTechnique*   defaultTech_;
+		ulUint                    passNum_;
+		D3DX11_TECHNIQUE_DESC     desc_;
+		ID3D11ShaderResourceView* shaderSRVs_[CONST_MAX_TEXTURE_NUM];
+	};
+
+
+	class StaticMeshPart
+	{
+	protected:
+		ulUint              indexOffset_;
+		ulUint				indexCount_;
+		SRenderMaterial*    refMaterial_;
+	public:
+		StaticMeshPart(){};
+		~StaticMeshPart() {}
+
+		void Render(ID3D11DeviceContext* context);
+
+		void SetMaterial(SRenderMaterial* material)
+		{
+			refMaterial_ = material;
+		}
+
+		inline void SetRenderBatch(ulUint indexOffset, ulUint indexCount)
+		{
+			this->indexCount_ = indexCount;
+			this->indexOffset_ = indexOffset;
+		}
+	};
+
 	
+
+	class StaticMeshRender
+	{
+	public:
+		StaticMeshRender() :vb_(nullptr), ib_(nullptr) {}
+		~StaticMeshRender() {}
+		bool Create(ID3D11Device* pd3dDevice,
+			SModelData& data);
+
+	public:
+		void Render(ID3D11DeviceContext* context);
+		void SetShader(ID3DX11Effect* effect, ID3D11Device* device)
+		{
+			assert(effect != nullptr);
+			ID3DX11EffectTechnique* tech = nullptr;
+			Null_Return_Void( (tech = effect->GetTechniqueByName("Default")) );
+			D3DX11_PASS_DESC pasDesc;
+			tech->GetPassByIndex(0)->GetDesc(&pasDesc);
+			device->CreateInputLayout(desc_, descCount_, pasDesc.pIAInputSignature, pasDesc.IAInputSignatureSize, &vertexLayout_);
+			for (ulUint i = 0; i < materials_.size(); ++i)
+			{
+				SRenderMaterial* pRenderMaterial = materials_.at(i);
+				pRenderMaterial->effect_ = effect;
+				pRenderMaterial->defaultTech_ = tech;
+				pRenderMaterial->defaultTech_->GetDesc(&pRenderMaterial->desc_);
+				pRenderMaterial->passNum_ = pRenderMaterial->desc_.Passes;
+			}
+		}
+
+	protected:
+		ID3D11Buffer*			       vb_;
+		ID3D11Buffer*			       ib_;
+		ID3D11InputLayout*			   vertexLayout_;
+		ulUint					       stride_;
+		ulUint						   offset_;
+		ulUint						   childCount_;
+		std::vector<StaticMeshPart>	   children_;
+		std::vector<SRenderMaterial*>  materials_;
+		D3D11_INPUT_ELEMENT_DESC	   desc_[CONST_MAX_INPUT_ELEMENT_COUNT];
+		ulUint                         descCount_;
+	};
 
 
 
