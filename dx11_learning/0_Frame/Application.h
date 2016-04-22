@@ -27,41 +27,68 @@ namespace ul
 		HWND					   hWnd_;
 		HINSTANCE				   hInstance_;
 		Timer					   timer_;
-		bool					   initialized_;
+		bool					   running_;
 		char					   fpsDisplay_[20];
 		D3D11GraphicsContext       graphicsContext_;
 		SceneMgr				   sceneMgr_;
+
+		bool                       resizing_;
+		bool                       minimized_;
+		bool                       maximized_;
+		ulUint                     clientWidth_;
+		ulUint                     clientHeight_;
 	public:
 		Application() :
 			width_(0),
 			height_(0),
 			appName_("Dx11Appcalition"),
 			fullscreen_(false),
-			initialized_(false)
+			running_(false),
+			resizing_(false),
+			minimized_(false),
+			maximized_(false)
 		{
-			s_Singleton = this;
 			memset(fpsDisplay_, 0, 20);
 			Log_Info("application construct.");
 		}
-		virtual ~Application(){
+		virtual ~Application(){};
+
+		void Shutdown()
+		{
+			graphicsContext_.Shutdown();
+			this->Exit();
 			Log_Info("application destoryed.");
-		};
+		}
 
 	public:
-		HWND GetHwnd()
+		HWND GetHwnd() { return hWnd_; }
+
+		SceneMgr& GetSceneMgr() { return sceneMgr_; }
+
+		float GetFPS() { return timer_.GetFPS(); }
+
+		void SetAppcationName(const string& name) { appName_ = name; }
+
+		float GetElapse() 	{ return timer_.GetDeltaTime(); }
+
+		ID3D11Device* GetDevicePtr() { return graphicsContext_.GetDevicePtr(); }
+
+		ID3D11DeviceContext* GetDeviceContextPtr() { return graphicsContext_.GetDeviceContextPtr(); }
+
+		ID3D11RenderTargetView* GetMainRT() { return graphicsContext_.GetMainRenderTargetPtr(); }
+
+		ID3D11DepthStencilView* GetMainDSV() { return graphicsContext_.GetMainDepthStencilViewPtr(); }
+
+		void ClearRenderTarget(ID3D11RenderTargetView* rt) { GetDeviceContextPtr()->ClearRenderTargetView(rt, BLACK_COLOR); }
+
+		void ClearRenderTargets(int num, ID3D11RenderTargetView** rt)
 		{
-			return hWnd_;
+			for (int i = 0; i < num; ++i)
+			{
+				ClearRenderTarget(rt[i]);
+			}
 		}
 
-		SceneMgr& GetSceneMgr()
-		{
-			return sceneMgr_;
-		}
-
-		void SetAppcationName(const string& name)
-		{
-			appName_ = name;
-		}
 
 		bool Initialize(int width, int height)
 		{
@@ -80,22 +107,20 @@ namespace ul
 			//call InitResource 
 			False_Return_False( this->InitResource( GetDevicePtr(), GetDeviceContextPtr() ) );
 			
-
 			// when initialized show window
 			ShowWindow(hWnd_, SW_SHOW);
 			SetForegroundWindow(hWnd_);
 			SetFocus(hWnd_);
 
-			initialized_ = true;
+			running_ = true;
 			Log_Info("application %s initialized.", appName_.c_str());
-
 			return true;
 		}
 
 		void Run()
 		{
 			MSG msg;
-			while (initialized_)
+			while (true)
 			{
 				if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
 				{
@@ -109,50 +134,42 @@ namespace ul
 			}
 		}
 
-		LRESULT CALLBACK InputProcess(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
+		LRESULT CALLBACK MsgHandle(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		{
-			if (msg == WM_CREATE)
+			switch (msg)
 			{
-				int a = 0;
+			case WM_ENTERSIZEMOVE:
+				resizing_ = true;
+				break;
+			case WM_EXITSIZEMOVE:
+				resizing_ = false;
+				resize();
+				break;
+			case WM_SIZE:
+				clientWidth_ = LOWORD(lparam);
+				clientHeight_ = HIWORD(lparam);
+				switch (wparam)
+				{
+				case SIZE_MINIMIZED:
+					minimized_ = true;
+					maximized_ = false;
+					break;
+				case SIZE_MAXIMIZED:
+					minimized_ = false;
+					maximized_ = true;
+					resize();
+					break;
+				case SIZE_RESTORED:
+					if(!resizing_) resize();
+					break;
+				}
+				break;
 			}
-			if (msg == WM_ACTIVATE)
-			{
-				int b = 0;
-			}
-			//lost device and reset
-			if (msg == WM_SIZE)
-			{
-				int nWidth = LOWORD(lparam); // width of client area
-				int nHeight = HIWORD(lparam); // height of client area
-				if (nWidth >= 1 && nHeight >= 1)
-					this->OnResize(nWidth, nHeight);
-			}			
+	
 			return this->MsgProcess(hwnd, msg, wparam, lparam);
 		}
 
-		void Shutdown()
-		{
-			graphicsContext_.Shutdown();
-			this->Exit();
-		}
-
-		void OnResize(int width, int height)
-		{
-			ResourceMgr::GetSingletonPtr()->ReleaseLoadedResourcePerSwapChain();
-			graphicsContext_.Resize(width, height);
-			this->WindowResize(width, height, GetDevicePtr(), GetDeviceContextPtr());
-		}
-
-		float GetFPS()
-		{
-			return timer_.GetFPS();
-		}
-
-		float GetElapse()
-		{
-			return timer_.GetDeltaTime();
-		}
-	public:
+	protected:
 		virtual void WindowResize(
 			int width, int height, ID3D11Device *dev,
 			ID3D11DeviceContext* context) = 0;
@@ -172,11 +189,12 @@ namespace ul
 
 		virtual void UpdateScene(float elapse) = 0;
 
-	protected:
+	private:
 		bool initializeWindow(int width, int height);
 		bool frame(){ 
 			sprintf(fpsDisplay_, "fps:%f ", this->GetFPS());
 			::SetWindowText(hWnd_, fpsDisplay_);
+
 			timer_.Tick();
 			this->UpdateScene(timer_.GetDeltaTime());
 
@@ -186,35 +204,12 @@ namespace ul
 
 			return true; 
 		};
-		ID3D11Device* GetDevicePtr()
-		{
-			return graphicsContext_.GetDevicePtr();
-		}
-		ID3D11DeviceContext* GetDeviceContextPtr()
-		{
-			return graphicsContext_.GetDeviceContextPtr();
-		}
-		ID3D11RenderTargetView* GetMainRT() 
-		{
-			return graphicsContext_.GetMainRenderTargetPtr();
-		}
 
-		ID3D11DepthStencilView* GetMainDSV()
+		void resize()
 		{
-			return graphicsContext_.GetMainDepthStencilViewPtr();
-		}
-
-		void ClearRenderTarget(ID3D11RenderTargetView* rt)
-		{
-			GetDeviceContextPtr()->ClearRenderTargetView(rt, BLACK_COLOR);
-		}
-
-		void ClearRenderTargets(int num, ID3D11RenderTargetView** rt)
-		{
-			for (int i = 0; i < num; ++i)
-			{
-				ClearRenderTarget(rt[i]);
-			}
+			Log_Info("resize............................");
+			graphicsContext_.Resize(clientWidth_, clientHeight_);
+			this->WindowResize(clientWidth_, clientHeight_, GetDevicePtr(), GetDeviceContextPtr());
 		}
 	};
 

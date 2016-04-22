@@ -6,6 +6,7 @@
 #include <cassert>
 #include"UlHelper.h"
 
+
 namespace ul
 {
 	class Timer
@@ -30,7 +31,7 @@ namespace ul
 		void Tick()
 		{
 			QueryPerformanceCounter(&currentCount_);
-			elapseSecond_ = (currentCount_.QuadPart - lastCount_.QuadPart) * secondPerCount_;
+			elapseSecond_ = (currentCount_.QuadPart - lastCount_.QuadPart) * secondPerCount_; 
 			lastCount_ = currentCount_;
 
 			time_ += elapseSecond_;

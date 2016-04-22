@@ -6,34 +6,12 @@
 
 using namespace ul;
 
-SubBatch::SubBatch() :refParameter_(nullptr), texCount_(0), indexOffset_(0), indexCount_(0), refSceneMgr_(nullptr), constBuffer_(nullptr)
-{
-	refSceneMgr_ = SceneMgr::GetSingletonPtr();
-	assert(refSceneMgr_ != nullptr);
-}
-
-
-
-void SubBatch::Render(ID3D11DeviceContext* context)
-{
-	context->VSSetShader(refParameter_->vsEnterPoint_, nullptr, 0);
-	context->PSSetShader(refParameter_->psEnterPoint_, nullptr, 0);
-	context->VSSetConstantBuffers(0, 1, &constBuffer_);
-	context->PSSetConstantBuffers(0, 1, &constBuffer_);
-	context->PSSetShaderResources(0, eShaderResource_Irridiance, refParameter_->srvs_);
-	context->DrawIndexed(indexCount_, indexOffset_, 0);
-}
-
-
-
-bool BaseModel::Create(
-	ID3D11Device* dev,
-	SModelData& data)
+bool StaticMeshRender::Create(ID3D11Device* pd3dDevice, const SModelData& data)
 {
 	D3D11_BUFFER_DESC vbd;
 	D3D11_BUFFER_DESC ibd;
 	D3D11_SUBRESOURCE_DATA vdata, idata;
-	ResourceMgr* mgr = ResourceMgr::GetSingletonPtr();
+	ResourceMgr* pResourceMgr = ResourceMgr::GetSingletonPtr();
 
 	//vb
 	vbd.Usage = D3D11_USAGE_IMMUTABLE;
@@ -44,7 +22,7 @@ bool BaseModel::Create(
 	vbd.StructureByteStride = 0;
 	ZeroMemory(&vdata, sizeof(vdata));
 	vdata.pSysMem = &data.primtives_.verticeBuffer_[0];
-	Null_Return_False((vb_ = mgr->CreateBuffer(vbd, &vdata)));
+	Null_Return_False((vb_ = pResourceMgr->CreateBuffer(vbd, &vdata)));
 
 	//ib
 	ibd = vbd;
@@ -52,142 +30,34 @@ bool BaseModel::Create(
 	ibd.BindFlags = D3D11_BIND_INDEX_BUFFER;
 	ZeroMemory(&idata, sizeof(idata));
 	idata.pSysMem = &data.primtives_.indices_[0];
-	Null_Return_False((ib_ = mgr->CreateBuffer(ibd, &idata)));
+	Null_Return_False((ib_ = pResourceMgr->CreateBuffer(ibd, &idata)));
 
-	//vertex layout
-	D3D11_INPUT_ELEMENT_DESC desc[CONST_MAX_INPUT_ELEMENT_COUNT];
-	ulUint count;
-	Vertex_GetInputDescByType(data.primtives_.type_, desc, &count);
-
-	
-	//render parameters
-	renderParameters_.reserve(data.materials_.size());
-	ulUint i = 0;
-	for (; i < data.materials_.size(); ++i)
-	{
-		SMaterialData *pMaterial = data.materials_[i];
-		SRenderParameter* pParameter = new SRenderParameter();
-
-		//texture
-		for (int j = 0; j < CONST_MAX_TEXTURE_NUM; ++j)
-		{
-			if (pMaterial->texturePath[j] != "")
-			{
-				pParameter->srvs_[j] = mgr->CreateTextureFromFile(pMaterial->texturePath[j]);
-			}
-			else{
-				pParameter->srvs_[j] = nullptr;
-			}
-		}
-		
-		//shader
-		if (i == 0 && data.materials_[0]->shaderFile != ""
-			&& data.materials_[0]->vsEnterPoint != ""
-			&& data.materials_[0]->psEnterPoint != "")
-		{
-			pParameter->vsEnterPoint_ = mgr->CreateVertexShaderAndInputlayoutFromResourceBasePath(data.materials_[0]->shaderFile.c_str(),
-				data.materials_[0]->vsEnterPoint.c_str(), "vs_5_0", desc, count, &this->vertexLayout_);
-			pParameter->psEnterPoint_ = mgr->CreatePixelShaderFromResourceBasePath(data.materials_[0]->shaderFile.c_str(),
-				data.materials_[0]->psEnterPoint.c_str(), "ps_5_0");
-		}
-		else
-		{
-			pParameter->vsEnterPoint_ = mgr->CreateVertexShaderFromResourceBasePath(pMaterial->shaderFile.c_str(),
-				pMaterial->vsEnterPoint.c_str(), "ps_5_0");
-			pParameter->psEnterPoint_ = mgr->CreatePixelShaderFromResourceBasePath(pMaterial->shaderFile.c_str(),
-				pMaterial->psEnterPoint.c_str(), "ps_5_0");
-			if (Null(pParameter->vsEnterPoint_) || Null(pParameter->psEnterPoint_))
-			{
-				Log_Err("load material from file %s, batch %d error.", data.sourceFile_.c_str(), i);
-				return false;
-			}
-		}
-		renderParameters_.push_back(pParameter);
-	}
-
-	//render batch
-	children_.reserve(data.groups_.size());
-	for (ulUint i = 0; i < data.groups_.size(); ++i)
-	{
-		SRenderGroupInfo* pGI = data.groups_[i];
-		SubBatch batch;
-
-		batch.SetRenderBatch(pGI->indexOffset_, pGI->indexCount_);
-
-		if (data.materials_.size()>0 )
-		{
-			batch.SetParameter(renderParameters_[ pGI->materialID] );
-		}
-		children_.push_back(batch);
-	}
-
-	childCount_ = children_.size();
-	stride_ = data.primtives_.stride_;
-	offset_ = 0;
-	return true;
-}
-
-
-
-void BaseModel::Render(ID3D11DeviceContext* context)
-{
-	assert(context != 0);
-	context->IASetVertexBuffers(0, 1, &vb_, &stride_, &offset_);
-	context->IASetIndexBuffer(ib_, DXGI_FORMAT_R32_UINT, 0);
-	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	context->IASetInputLayout(vertexLayout_);
-
-	for (ulUint i = 0; i < childCount_; ++i)
-	{
-		children_[i].Render(context);
-	}
-	int a = 0;
-}
-
-
-
-bool StaticMeshRender::Create(ID3D11Device* pd3dDevice,
-	SModelData& data)
-{
-	D3D11_BUFFER_DESC vbd;
-	D3D11_BUFFER_DESC ibd;
-	D3D11_SUBRESOURCE_DATA vdata, idata;
-	ResourceMgr* mgr = ResourceMgr::GetSingletonPtr();
-
-	//vb
-	vbd.Usage = D3D11_USAGE_IMMUTABLE;
-	vbd.ByteWidth = data.primtives_.verticeNum_*data.primtives_.stride_;
-	vbd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	vbd.CPUAccessFlags = 0;
-	vbd.MiscFlags = 0;
-	vbd.StructureByteStride = 0;
-	ZeroMemory(&vdata, sizeof(vdata));
-	vdata.pSysMem = &data.primtives_.verticeBuffer_[0];
-	Null_Return_False((vb_ = mgr->CreateBuffer(vbd, &vdata)));
-
-	//ib
-	ibd = vbd;
-	ibd.ByteWidth = sizeof(ulUint)*data.primtives_.indices_.size();;
-	ibd.BindFlags = D3D11_BIND_INDEX_BUFFER;
-	ZeroMemory(&idata, sizeof(idata));
-	idata.pSysMem = &data.primtives_.indices_[0];
-	Null_Return_False((ib_ = mgr->CreateBuffer(ibd, &idata)));
-
-	//vertex layout
-	ulUint count;
-	Vertex_GetInputDescByType(data.primtives_.type_, desc_, &descCount_);
-
+	vertexType_ = data.primtives_.type_;
+	meshFileName_ = data.sourceFile_;
 
 	//render parameters
 	materials_.reserve(data.materials_.size());
-	ulUint i = 0;
-	for (; i < data.materials_.size(); ++i)
+	for (ulUint i=0; i < data.materials_.size(); ++i)
 	{
-		SMaterialData*   pMaterial = data.materials_[i];
-		SRenderMaterial* pRenderData = new SRenderMaterial();
-		memset(pRenderData, 0, sizeof(SRenderMaterial));
+		SMaterialData*   pMaterialData = data.materials_[i];
+		SRenderData*     pRenderData = new SRenderData();
+		memset(pRenderData, 0, sizeof(SRenderData));
+		//shader
+		this->setShaderFile(pResourceMgr, pMaterialData->shaderFile, pRenderData);
+		//texture
+		for (int j = 0; j < CONST_MAX_TEXTURE_NUM; ++j)
+		{
+			if (pMaterialData->texturePath[j] != "")
+			{
+				Null_Return_False( (pRenderData->shaderSRVs_[j] = pResourceMgr->CreateTextureFromFile(pMaterialData->texturePath[j])) );
+			}
+		}
+
 		materials_.push_back(pRenderData);
 	}
+	//inputlayout
+	this->setInputLayout(pResourceMgr);
+
 
 	//render batch
 	children_.reserve(data.groups_.size());
@@ -207,11 +77,56 @@ bool StaticMeshRender::Create(ID3D11Device* pd3dDevice,
 }
 
 
+void StaticMeshRender::SetEffect(const string& fileName)
+{
+	ResourceMgr* pResourceMgr = ResourceMgr::GetSingletonPtr();
+	materials_.reserve(children_.size());
+	for (int i = 0; i < children_.size(); ++i)
+	{
+		SRenderData* pRenderData = new SRenderData;
+		memset(pRenderData, 0, sizeof(SRenderData));
+		this->setShaderFile(pResourceMgr, fileName, pRenderData);
+	}
+	this->setInputLayout(pResourceMgr);
 
+}
+
+
+
+void StaticMeshRender::setShaderFile(ResourceMgr* pResourceMgr, const string& shaderFileName, SRenderData* pRenderData)
+{	
+	ID3DX11Effect* pEffect = nullptr;
+	ID3DX11EffectTechnique* pTechnique = nullptr;
+	D3DX11_TECHNIQUE_DESC techDesc;
+
+	Null_Return_Void((pEffect = pResourceMgr->LoadEffectFromCompileFile(shaderFileName.c_str())));
+	Null_Return_Void((pTechnique = pEffect->GetTechniqueByName("Default")));
+	pTechnique->GetDesc(&techDesc);
+	pRenderData->passNum_ = techDesc.Passes;
+	pRenderData->passes_.reserve(pRenderData->passNum_);
+	for (ulUint j = 0; j < pRenderData->passNum_; ++j)
+	{
+		pRenderData->passes_.push_back(pTechnique->GetPassByIndex(j));
+		hasRenderPass_ = true;
+	}
+}
+
+
+void StaticMeshRender::setInputLayout(ResourceMgr* pResourceMgr)
+{
+	if (hasRenderPass_)
+	{
+		Vertex_GetInputDescByType(vertexType_, desc_, &descCount_);
+		D3DX11_PASS_DESC passDesc;
+		materials_.at(0)->passes_.at(0)->GetDesc(&passDesc);
+		vertexLayout_ = pResourceMgr->CreateInputLayoutFromPassDesc(desc_, descCount_, passDesc);
+	}
+}
 
 void StaticMeshRender::Render(ID3D11DeviceContext* context)
 {
 	assert(context != 0);
+	assert(hasRenderPass_);
 	context->IASetVertexBuffers(0, 1, &vb_, &stride_, &offset_);
 	context->IASetIndexBuffer(ib_, DXGI_FORMAT_R32_UINT, 0);
 	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -228,7 +143,7 @@ void StaticMeshPart::Render(ID3D11DeviceContext* context)
 {
 	for (ulUint i = 0; i < refMaterial_->passNum_; ++i)
 	{
-		refMaterial_->defaultTech_->GetPassByIndex(i)->Apply(0, context);
+		refMaterial_->passes_[i]->Apply(0, context);
 		context->DrawIndexed(indexCount_, indexOffset_, 0);
 	}
 }

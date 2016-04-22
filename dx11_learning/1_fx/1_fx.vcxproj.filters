@@ -5,5 +5,11 @@
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="test.fx" />
+    <FxCompile Include="..\Res\fx\pbr_env_lighting.fx" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\Res\fx\ibl.fx" />
+    <None Include="..\Res\fx\base_define.fx" />
+    <None Include="..\Res\fx\brdf.fx" />
   </ItemGroup>
 </Project>

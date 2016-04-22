@@ -159,9 +159,7 @@ bool SkyBox::createRenderData(ID3D11Device* device)
 
 	SMaterialData* materialData = new SMaterialData;
 	materialData->identifer = "skybox";
-	materialData->shaderFile = "shader/skybox.hlsl";
-	materialData->vsEnterPoint = "VS_FillBuffer";
-	materialData->psEnterPoint = "PS_FillBuffer";
+	materialData->shaderFile = "fx/skybox.fxo";
 	MaterialData_ClearTexturePath(materialData);
 	data.materials_.push_back(materialData);
 

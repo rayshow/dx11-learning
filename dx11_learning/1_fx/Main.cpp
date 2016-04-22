@@ -34,39 +34,9 @@ public:
 		controller.SetCamara(pCamara_);
 
 		Null_Return_False((pPistolRender_ = mgr->CreateStaticMeshRenderFromFile("pbr_model/pistol/pistol.fbx")));
-	
-		ulUint shaderFlag = 0;
-#if defined(DEBUG) ||defined(_DEBUG)
-		shaderFlag |= D3D10_SHADER_DEBUG;
-		shaderFlag |= D3D10_SHADER_SKIP_OPTIMIZATION;
-#endif
-		
-		ID3D10Blob* compiledShader = nullptr;
-		ID3D10Blob* compileMsg = nullptr;
-		HRESULT hr= D3DX11CompileFromFileA("test.fx", nullptr, nullptr, nullptr, "fx_5_0", shaderFlag, 0, nullptr, &compiledShader, &compileMsg, 0);
-		if (compileMsg != nullptr)
-		{
-			Log_Err("compile error:%s", compileMsg->GetBufferPointer() );
-			Safe_Release(compileMsg);
-		}
-		Fail_Return_False_With_Msg(hr, "compile error");
-
-		ifstream fin("fx/color.fxo", ios::binary);
-		if (!fin.is_open())
-		{
-			return false;
-		}
-		fin.seekg(0, std::ios_base::end);
-		int size = (int)fin.tellg();
-		std::vector<char> buffer(size);
-		fin.read(&buffer.front(), size);
-		Fail_Return_False_With_Msg(D3DX11CreateEffectFromMemory(buffer.data(),
-			size, 0, dev, &testFx_),
-			"create fx from memory error");
-		Safe_Release(compiledShader);
-
-		wvp_ = testFx_->GetVariableByName("WorldViewProject")->AsMatrix();
-		pPistolRender_->SetShader(testFx_, dev);
+		Null_Return_False((testFx_ = mgr->LoadEffectFromCompileFile("test.fxo")));
+		Null_Return_False((wvp_ = testFx_->GetVariableByName("WorldViewProject")->AsMatrix()));
+		pPistolRender_->SetEffect("test.fx");
 		return true;
 	};
 
@@ -76,7 +46,6 @@ public:
 	{
 		aspect_ = (float)width / (float)height;
 		pCamara_->SetProject(BaseCamara::eCamara_Perspective, XM_PI / 4, aspect_, 0.1f, 1000.0f);
-
 	};
 
 
@@ -108,7 +77,7 @@ public:
 
 	virtual void Exit()
 	{
-		Safe_Release(testFx_);
+		
 	};
 private:
 	float						 aspect_;
@@ -124,27 +93,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	PSTR pScmdline, int iCmdshow)
 {
 	//ul::SetBreakPointAtMemoryLeak(505);
-	ul::OpenConsoleAndDebugLeak();
-	
-	
+	ul::OpenConsoleAndDebugLeak();	
 	Log_Info("hello");
 	//Utils::SetBreakPointAtMemoryLeak(154);
-	Lession1_Frame  *app = new Lession1_Frame;
-	if (!app)
-	{
-		return 0;
-	}
 
+
+	Lession1_Frame  app;
 	// Initialize and run the system object.
-	if (app->Initialize(800, 600))
+	if (app.Initialize(800, 600))
 	{
-		app->Run();
+		app.Run();
 	}
-
-	// Shutdown and release the system object.
-	app->Shutdown();
-	delete app;
-	app = 0;
+	app.Shutdown();
 
 	return 0;
 }

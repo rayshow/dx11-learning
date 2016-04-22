@@ -18,14 +18,6 @@ LRESULT CALLBACK MessageProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			PostQuitMessage(0);
 			return 0;
 		}
-		
-		case WM_PAINT:
-		{
-			PAINTSTRUCT ps;
-			BeginPaint(hwnd, &ps);
-			EndPaint(hwnd, &ps);
-			return 0;
-		}
 		case WM_CREATE:
 		case WM_SIZE:
 		case WM_EXITSIZEMOVE:
@@ -46,8 +38,7 @@ LRESULT CALLBACK MessageProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		case WM_ACTIVATE:
 		
 		{
-			app->InputProcess(hwnd, msg, wparam, lparam);
-			return 0;
+			return app->MsgHandle(hwnd, msg, wparam, lparam);
 		}
 		default:
 		{
@@ -117,9 +108,9 @@ bool Application::initializeWindow(int width, int height)
 	}
 
 	// Create the window with the screen settings and get the handle to it.
-	hWnd_ = CreateWindowEx(WS_EX_OVERLAPPEDWINDOW, appName_.c_str(), appName_.c_str(),
-		WS_TILEDWINDOW,
-		posX, posY, screenWidth, screenHeight, NULL, NULL, hInstance_, NULL);
+	hWnd_ = CreateWindowEx(WS_EX_OVERLAPPEDWINDOW, appName_.c_str(), 
+		appName_.c_str(), WS_TILEDWINDOW, posX, posY, screenWidth,
+		screenHeight, NULL, NULL, hInstance_, NULL);
 
 	return true;
 }

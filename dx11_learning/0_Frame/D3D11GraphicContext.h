@@ -27,16 +27,21 @@ namespace ul
 		ulUint                   msaaQuality_;
 		int				         videoMemory_;
 		string			         videoCardDescription_;
-		IDXGISwapChain*          swapChain_;
-		ID3D11Device*            device_;
-		ID3D11DeviceContext*     deviceContext_;
-		ID3D11RenderTargetView*  mainRT_;
-		ID3D11DepthStencilView*  mainDSV_;
-		ID3D11DepthStencilState* depthStenilState_;
-		ID3D11RasterizerState*   rasterState_;
-		ResourceMgr*             resourceMgr_;
+		IDXGISwapChain*          pSwapChain_;
+		ID3D11Device*            pDevice_;
+		ID3D11DeviceContext*     pContext_;
+		ID3D11RenderTargetView*  pMainRT_;
+		ID3D11DepthStencilView*  pMainDSV_;
+		ID3D11DepthStencilState* pDepthStenilState_;
+		ID3D11RasterizerState*   pRasterState_;
+		ResourceMgr*             pResourceMgr_;
+		ID3D11Texture2D*         pDepthStencil2D_;
 		D3D11_VIEWPORT           viewport_;
 		DXGI_SWAP_CHAIN_DESC     swapChainDesc_;
+		D3D11_TEXTURE2D_DESC     depthBufferDesc_;
+		D3D11_DEPTH_STENCIL_DESC depthStencilDesc_;
+		D3D11_DEPTH_STENCIL_VIEW_DESC		dsvDesc_;
+		D3D11_RASTERIZER_DESC	 rasterDesc_;
 
 	public:
 		D3D11GraphicsContext() :
@@ -46,18 +51,18 @@ namespace ul
 			msaaQuality_(0),
 			videoMemory_(0),
 			videoCardDescription_(""),
-			swapChain_(nullptr),
-			device_(nullptr),
-			deviceContext_(nullptr),
-			mainRT_(nullptr),
-			mainDSV_(nullptr),
-			depthStenilState_(nullptr),
-			resourceMgr_(nullptr)
+			pSwapChain_(nullptr),
+			pDevice_(nullptr),
+			pContext_(nullptr),
+			pMainRT_(nullptr),
+			pMainDSV_(nullptr),
+			pDepthStenilState_(nullptr),
+			pResourceMgr_(nullptr),
+			pDepthStencil2D_(nullptr)
 		{};
 
 		~D3D11GraphicsContext()
 		{
-			
 		}
 
 	public:
@@ -65,40 +70,25 @@ namespace ul
 			bool vsync, bool fullScreen, bool enable4xMsaa);
 
 		void Shutdown();
+		void Resize(ulUint width, ulUint height);
+
+		void EndScene() { pSwapChain_->Present(0, 0); }
+
+		ID3D11Device* GetDevicePtr() { return pDevice_; }
+
+		ID3D11DeviceContext* GetDeviceContextPtr() { return pContext_; }
+
+		ID3D11RenderTargetView* GetMainRenderTargetPtr() { return pMainRT_; }
+
+		ID3D11DepthStencilView* GetMainDepthStencilViewPtr() { return pMainDSV_; }
+
 		void BeginScene()
 		{
-			deviceContext_->ClearRenderTargetView(mainRT_, BLACK_CLEAR_COLOR);
-			deviceContext_->ClearDepthStencilView(mainDSV_, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL,1.0f, 0);
+			pContext_->ClearRenderTargetView(pMainRT_, BLACK_CLEAR_COLOR);
+			pContext_->ClearDepthStencilView(pMainDSV_, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 		}
 
-		void Resize(ulUint width, ulUint height)
-		{
-			
-		}
-		void EndScene()
-		{
-			if (enableVsyn_)
-				swapChain_->Present(1, 0);
-			else
-				swapChain_->Present(0, 0);
-		}
 
-		ID3D11Device* GetDevicePtr()
-		{
-			return device_;
-		}
-		ID3D11DeviceContext* GetDeviceContextPtr()
-		{
-			return deviceContext_;
-		}
-		ID3D11RenderTargetView* GetMainRenderTargetPtr()
-		{
-			return mainRT_;
-		}
-		ID3D11DepthStencilView* GetMainDepthStencilViewPtr()
-		{
-			return mainDSV_;
-		}
 	};
 };
 

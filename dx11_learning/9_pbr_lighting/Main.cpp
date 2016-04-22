@@ -136,9 +136,6 @@ public:
 		pCamara_->LookAt(XMFLOAT4(0, 0, -100, 0), XMFLOAT4(0, 0, 0, 0));
 		camaraController_.SetCamara(pCamara_);
 
-		//skybox
-		skybox_.Create(dev, "skybox/sky1/dome1.env");
-
 		//model
 		pistol_ = mgr->CreateModelFromFile("pbr_model/pistol/pistol.fbx");
 		Null_Return_False((perframeBuffer_ = mgr->CreateConstantBuffer(sizeof(CB_PerFrame))));
@@ -157,13 +154,7 @@ public:
 		ID3D11DeviceContext* context)
 	{
 		aspect = (float)width / (float)height;
-		XMStoreFloat4x4(&world_, XMMatrixIdentity());
 		pCamara_->SetProject(BaseCamara::eCamara_Perspective, XM_PI / 4, aspect, 0.1f, 1000.0f);
-
-		skybox_.ApplySkyBox(context);
-
-		postProcessChain_.Create(width, height);
-		hdrProcess_ = postProcessChain_.CreateHdrPresentProcess();
 	};
 
 
@@ -189,8 +180,6 @@ public:
 		//Log_Info("specular type %d exposure %f frash rate:%f", uiSpecularType_, uiExpoure_, this->GetFPS());
 		
 		ResourceMgr::GetSingletonPtr()->MappingBufferWriteOnly(perframeBuffer_, &perFrame, sizeof(CB_PerFrame));
-		hdrProcess_->SetExposure(uiExpoure_);
-
 	}
 
 	virtual void RenderFrame(ID3D11Device *dev,
@@ -200,18 +189,10 @@ public:
 		ID3D11RenderTargetView* mainRT = this->GetMainRT();
 		ID3D11DepthStencilView* mainDSV = this->GetMainDSV();
 
-		//sky box
-		postProcessChain_.ClearBackground(context);
-		postProcessChain_.BindAsRenderTarget(context, nullptr);
-		skybox_.Render(context);
-
-		postProcessChain_.BindAsRenderTarget(context, mainDSV);
 		pistol_->SetConstBuffer(perframeBuffer_);
 		pistol_->Render(context);
 
-		context->PSSetSamplers(0, 1, &pointSampler_);
-		postProcessChain_.Process(context);
-		postProcessChain_.Present(context, mainRT);
+
 
 		//ui
 		TwDraw();
@@ -246,13 +227,13 @@ private:
 
 	HdrPresentProcess*    hdrProcess_;
 	PostProcessChain      postProcessChain_;
+
 	BaseModel*            pistol_;
 	SkyBox                skybox_;
 	FirstPersonController camaraController_;
 	BaseCamara*           pCamara_;
-	XMFLOAT4X4			  world_, view_, project_;
+
 	float				  aspect;
-	
 	XMFLOAT4              uiRotate_;
 	unsigned              uiSpecularType_;
 	unsigned              uiIrridianceType_;
@@ -269,21 +250,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 {
 	//ul::SetBreakPointAtMemoryLeak(46691);
 	ul::OpenConsoleAndDebugLeak();
+	Lession1_Frame  app;
 
-	Log_Info("hello");
-	//Utils::SetBreakPointAtMemoryLeak(154);
-	Lession1_Frame  *app = new Lession1_Frame;
-
-	// Initialize and run the system object.
-	if (app && app->Initialize(1024, 768))
+	if (app.Initialize(1024, 768))
 	{
-		app->Run();
+		app.Run();
 	}
-
-	// Shutdown and release the system object.
-	app->Shutdown();
-	delete app;
-	app = 0;
+	app.Shutdown();
 
 	return 0;
 }

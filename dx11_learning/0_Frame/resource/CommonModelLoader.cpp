@@ -99,7 +99,15 @@ bool CommonModelLoader::LoadFile(const std::string resourcePath, const std::stri
 		Log_Err("file name %s error", meshFileName.c_str());
 		return false;
 	}
-	std::string materialName = meshFileName.substr(0, off) + ".material";
+	std::string materialName = meshFileName.substr(0, off) + ".visual";
+
+	ifstream fin(materialName, ios::binary);
+	if (!fin.is_open())
+	{
+		Log_Info("no visual file found of %s.", meshFileName.c_str());
+		return true;
+	}
+
 	this->loadMaterial(resourcePath, materialName, data.materials_ );
 
 	return true;
@@ -162,76 +170,59 @@ bool CommonModelLoader::loadMaterial(
 	const std::string& materialFileName,
 	std::vector<SMaterialData*>& materialGroup)
 {
-
 	std::stringstream buffer;
 	std::string mapName;
-	int index = 0;
-	
+
+
 
 	try{
 		file<> fl(materialFileName.c_str());
+
 		xml_document<> doc;
 		doc.parse<0>(fl.data());
 
 		//nodelessVisual
-		xml_node<> *materials = nullptr;
-		if ((materials = doc.first_node("materials")) == nullptr)
+		xml_node<> *pVisualNode = nullptr;
+		if ((pVisualNode = doc.first_node("visual")) == nullptr)
 		{
-			Log_Err("can't find material data in %s", materialFileName.c_str());
+			Log_Err("can't find visual node in %s", materialFileName.c_str());
 			return false;
 		}
 
-		xml_node<> *material = materials->first_node("material");
-		for (; material != nullptr; material = material->next_sibling("material"))
+		xml_node<> *pRenderSet = pVisualNode->first_node("renderset");
+		if (Null(pRenderSet))
 		{
-			SMaterialData* materialData = new SMaterialData;
+			Log_Err("can't find renderset node in %s", materialFileName.c_str());
+			return false;
+		}
 
-
-			xml_node<> *shaderNode = material->first_node("shader");
-			xml_node<> *fileNameNode = shaderNode->first_node("fileName");
-			xml_node<> *vsEnterPointNode = shaderNode->first_node("vsEnterPoint");
-			xml_node<> *psEnterPointNode = shaderNode->first_node("psEnterPoint");
-			if (Null(shaderNode) || Null(fileNameNode) || Null(vsEnterPointNode) || Null(psEnterPointNode))
-			{
-				Log_Err("load material shader error, file %s, batch %d", materialFileName.c_str(), index);
-				return false;
-			}
-
-			buffer << fileNameNode->value();
-			buffer >> materialData->shaderFile;
+		xml_node<> *pMaterialNode = pRenderSet->first_node("material");
+		for (; pMaterialNode != nullptr; pMaterialNode = pMaterialNode->next_sibling("material"))
+		{
+			SMaterialData* pMaterialData = new SMaterialData;
+			xml_node<> *pShaderNode = pMaterialNode->first_node("shader");
+			buffer << pShaderNode->value();
+			buffer >> mapName;
+			pMaterialData->shaderFile = resourcePath + mapName;
 			buffer.clear();
-
-			buffer << vsEnterPointNode->value();
-			buffer >> materialData->vsEnterPoint;
-			buffer.clear();
-
-			buffer << psEnterPointNode->value();
-			buffer >> materialData->psEnterPoint;
-			buffer.clear();
-
-			buffer << index;
-			buffer >> materialData->identifer;
-			buffer.clear();
-
 			for (int i = 0; i < CONST_MAX_TEXTURE_NUM; ++i)
 			{
 				if (CONST_ALL_TEXTURE_POS_NAMES[i].name != "")
 				{
-					xml_node<> *node = material->first_node(CONST_ALL_TEXTURE_POS_NAMES[i].name.c_str());
+					xml_node<> *node = pMaterialNode->first_node(CONST_ALL_TEXTURE_POS_NAMES[i].name.c_str());
 					if (Not_Null(node))
 					{
 						buffer<<node->value();
 						buffer >> mapName;
-						materialData->texturePath[CONST_ALL_TEXTURE_POS_NAMES[i].index] = resourcePath + mapName;
+						pMaterialData->texturePath[CONST_ALL_TEXTURE_POS_NAMES[i].index] = resourcePath + mapName;
 						buffer.clear();
 					}
 					else{
-						materialData->texturePath[CONST_ALL_TEXTURE_POS_NAMES[i].index] = "";
+						pMaterialData->texturePath[CONST_ALL_TEXTURE_POS_NAMES[i].index] = "";
 					}
 				}
 			}
-			
-			materialGroup.push_back(materialData);
+			materialGroup.push_back(pMaterialData);
 		}
 	}
 	catch (exception e)

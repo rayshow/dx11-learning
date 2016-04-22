@@ -16,6 +16,8 @@
 #include <map>
 #include <memory>
 #include <stdio.h>
+#include <iostream>
+#include <fstream>
 
 #pragma comment(lib, "d3dcompiler.lib")
 
@@ -58,10 +60,10 @@ namespace ul
 	typedef vector<ID3D11InputLayout*>                    InputLayoutVector;
 	typedef vector<ID3D11RasterizerState*>                RasterVector;
 	typedef vector<ID3D11Buffer*>                         BufferVector;
+	typedef vector<ID3D11DepthStencilState*>              DepthStencilStateVector;
 
 	//duplicable use resource
 	typedef map< string, ID3D11ShaderResourceView*>       ShaderResourceFilePool;
-	typedef map< string, BaseModel*>					  ModelPool;
 	typedef map< string, StaticMeshRender*>               StaticMeshRenderPool;
 	typedef map< string, ID3DX11Effect*>                  EffectPool;
 
@@ -85,7 +87,6 @@ namespace ul
 	typedef BufferVector::iterator						  BufferVectorIter;
 	typedef RasterVector::iterator						  RasterVectorIter;
 	typedef ShaderResourceFilePool::iterator			  TexturePoolIter;
-	typedef ModelPool::iterator							  ModelPoolIter;
 	typedef StaticMeshRenderPool::iterator			      StaticMeshRenderPoolIter;
 	typedef EffectPool::iterator                          EffectPoolIter;
 
@@ -121,10 +122,9 @@ namespace ul
 		InputLayoutVector		  inputLayouts;
 		BufferVector			  buffers;
 		RasterVector			  rasterStates;
-
+		DepthStencilStateVector   dsStates;
 		//pool
 		ShaderResourceFilePool	  texturePool;
-		ModelPool				  modelPool;
 		StaticMeshRenderPool	  staticRenderPool;
 		EffectPool                effectPool;
 	};
@@ -166,7 +166,6 @@ namespace ul
 		}
 		return true;
 	}
-
 
 
 	//回收集
@@ -332,6 +331,58 @@ namespace ul
 			return pRtv;
 		}
 
+		//创建effect
+		ID3DX11Effect* LoadEffectFromCompileFile(const char* szFileName)
+		{
+		
+			if (szFileName[0] == '\0')
+			{
+				Log_Err("file %s name is empty.", szFileName);
+				return nullptr;
+			}
+
+			//already load
+			EffectPoolIter find = releaseSetOnExit_.effectPool.find(szFileName);
+			if (find != releaseSetOnExit_.effectPool.end())
+			{
+				return find->second;
+			}
+
+
+			ifstream fin(szFileName, ios::binary);
+			if (!fin.is_open())
+			{
+				Log_Err("file %s not found.", szFileName);
+				return nullptr;
+			}
+
+			ID3DX11Effect* pEffect = nullptr;
+			fin.seekg(0, std::ios_base::end);
+			int size = (int)fin.tellg();
+			fin.seekg(0, std::ios_base::beg);
+			std::vector<char> buffer(size);
+			fin.read(&buffer.front(), size);
+			Fail_Return_False_With_Msg(
+				D3DX11CreateEffectFromMemory(buffer.data(), size, 0, pDevice_, &pEffect),
+				"create fx from file %s error.", szFileName
+			);
+			fin.close();
+
+			releaseSetOnExit_.effectPool.insert(make_pair(szFileName, pEffect));
+			return pEffect;
+		}
+
+
+		inline ID3D11InputLayout* 
+		CreateInputLayoutFromPassDesc(D3D11_INPUT_ELEMENT_DESC *pEleDesc,
+			ulUint size, const D3DX11_PASS_DESC& desc)
+		{
+			ID3D11InputLayout* pLayout = nullptr;
+			Fail_Return_Null( pDevice_->CreateInputLayout(pEleDesc, size, desc.pIAInputSignature, desc.IAInputSignatureSize, &pLayout) );
+			releaseSetOnExit_.inputLayouts.push_back(pLayout);
+			return pLayout;
+		}
+
 		//创建纹理
 		inline ID3D11ShaderResourceView*
 		CreateTextureFromFile(const string& fileName)
@@ -349,33 +400,6 @@ namespace ul
 			releaseSetOnExit_.texturePool.insert(std::make_pair(fileName, pSrv));
 			Log_Info("read texture %s ok", fileName.c_str());
 			return pSrv;
-		}
-
-		//创建模型
-		inline BaseModel* CreateModelFromFile(const string& fileName)
-		{
-			ModelPoolIter find = releaseSetOnExit_.modelPool.find(fileName);
-			//exists
-			if (find != releaseSetOnExit_.modelPool.end())
-			{
-				return find->second;
-			}
-			Log_Info("loading model %s ", fileName.c_str());
-
-			CommonModelLoader loader;
-			SModelData data;
-		
-			False_Return_Null_With_Msg(
-				loader.LoadFile(resourceBasePath_,  fileName, data),
-				"loading model %s error.", fileName.c_str());
-			BaseModel* model = new BaseModel();
-			Null_Return_Null(model);
-			model->Create(pDevice_, data);
-			ModelData_Free(data);
-
-			releaseSetOnExit_.modelPool.insert(std::make_pair(fileName, model));
-			Log_Info("read model %s ok", fileName.c_str());
-			return model;
 		}
 
 		inline StaticMeshRender* CreateStaticMeshRenderFromFile(const string& fileName)
@@ -427,6 +451,15 @@ namespace ul
 				assert(0);
 			}
 			return pDsv;
+		}
+	  //创建深度状态
+		inline ID3D11DepthStencilState*
+		CreateDepthStencilState(const D3D11_DEPTH_STENCIL_DESC& desc)
+		{
+			ID3D11DepthStencilState* pState;
+			Fail_Return_False( pDevice_->CreateDepthStencilState(&desc, &pState) );
+			releaseSetOnExit_.dsStates.push_back(pState);
+			return pState;
 		}
 
 		//无序视图
@@ -696,46 +729,43 @@ namespace ul
 		inline ID3D11Buffer*
 		CreateVertexBuffer(void *memory, ulUint bytewide)
 		{
-				ID3D11Buffer* vb;
-				D3D11_BUFFER_DESC vbd;
-				D3D11_SUBRESOURCE_DATA vdata;
+			ID3D11Buffer* vb;
+			D3D11_BUFFER_DESC vbd;
+			D3D11_SUBRESOURCE_DATA vdata;
 
-				vbd.Usage = D3D11_USAGE_IMMUTABLE;
-				vbd.ByteWidth = bytewide;
-				vbd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-				vbd.CPUAccessFlags = 0;
-				vbd.MiscFlags = 0;
-				vbd.StructureByteStride = 0;
+			vbd.Usage = D3D11_USAGE_IMMUTABLE;
+			vbd.ByteWidth = bytewide;
+			vbd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+			vbd.CPUAccessFlags = 0;
+			vbd.MiscFlags = 0;
+			vbd.StructureByteStride = 0;
 
-				ZeroMemory(&vdata, sizeof(vdata));
-				vdata.pSysMem = memory;
+			ZeroMemory(&vdata, sizeof(vdata));
+			vdata.pSysMem = memory;
 
-				Null_Return_Null_With_Msg((vb = this->CreateBuffer(vbd, &vdata)));
-				return vb;
+			Null_Return_Null((vb = this->CreateBuffer(vbd, &vdata)));
+			return vb;
 		}
 
 		inline ID3D11Buffer*
-			CreateIndiceBuffer(void *memory, ulUint bytewide)
+		CreateIndiceBuffer(void *memory, ulUint bytewide)
 		{
-				ID3D11Buffer *ib;
-				D3D11_BUFFER_DESC ibd;
-				D3D11_SUBRESOURCE_DATA  idata;
+			ID3D11Buffer *ib;
+			D3D11_BUFFER_DESC ibd;
+			D3D11_SUBRESOURCE_DATA  idata;
 
-				ibd.Usage = D3D11_USAGE_IMMUTABLE;
-				ibd.ByteWidth = bytewide;
-				ibd.BindFlags = D3D11_BIND_INDEX_BUFFER;
-				ibd.CPUAccessFlags = 0;
-				ibd.MiscFlags = 0;
-				ibd.StructureByteStride = 0;
+			ibd.Usage = D3D11_USAGE_IMMUTABLE;
+			ibd.ByteWidth = bytewide;
+			ibd.BindFlags = D3D11_BIND_INDEX_BUFFER;
+			ibd.CPUAccessFlags = 0;
+			ibd.MiscFlags = 0;
+			ibd.StructureByteStride = 0;
 
-				ZeroMemory(&idata, sizeof(idata));
-				idata.pSysMem = memory;
+			ZeroMemory(&idata, sizeof(idata));
+			idata.pSysMem = memory;
 
-				Null_Return_Null_With_Msg(
-					(ib = this->CreateBuffer(ibd, &idata)),
-					"create indice buffer error."
-					);
-				return ib;
+			Null_Return_Null( (ib = this->CreateBuffer(ibd, &idata)) );
+			return ib;
 
 		}
 
@@ -759,7 +789,7 @@ namespace ul
 
 
 		//窗口重置时释放资源
-		inline void ReleaseLoadedResourcePerSwapChain()
+		inline void ReleaseLoadedResourceOnResize()
 		{
 			//release SRV
 			SAFE_RELEASE_VECTOR<ShaderResViewVector>(releaseSetOnResize_.shaderResViews);
@@ -772,6 +802,9 @@ namespace ul
 
 			//release texuture2d
 			SAFE_RELEASE_VECTOR<Texture2DVector>(releaseSetOnResize_.texture2Ds);
+
+			//unorder view
+			SAFE_RELEASE_VECTOR<UnorderedAccessViewVector>(releaseSetOnResize_.unorderViews);
 		}
 
 		//app退出时释放
@@ -787,7 +820,7 @@ namespace ul
 			SAFE_RELEASE_VECTOR<DepthStencilViewVector>(releaseSetOnExit_.depthStencilViews);
 
 			//release UAV
-			SAFE_RELEASE_VECTOR<UnorderedAccessViewVector>(releaseSetOnExit_.unorderedViews);
+			SAFE_RELEASE_VECTOR<UnorderedAccessViewVector>(releaseSetOnExit_.unorderViews);
 
 			//release texuture2d
 			SAFE_RELEASE_VECTOR<Texture2DVector>(releaseSetOnExit_.texture2Ds);
@@ -819,11 +852,17 @@ namespace ul
 			//raster state
 			SAFE_RELEASE_VECTOR<RasterVector>(releaseSetOnExit_.rasterStates);
 
+			//depth stencil state
+			SAFE_RELEASE_VECTOR<DepthStencilStateVector>(releaseSetOnExit_.dsStates);
+
 			//textures from file
 			SAFE_RELEASE_MAP<ShaderResourceFilePool>(releaseSetOnExit_.texturePool);
 
-			//model
-			SAFE_DELETE_MAP<ModelPool>(releaseSetOnExit_.modelPool);
+			//static model
+			SAFE_DELETE_MAP<StaticMeshRenderPool>(releaseSetOnExit_.staticRenderPool);
+
+			//effect
+			SAFE_RELEASE_MAP<EffectPool>(releaseSetOnExit_.effectPool);
 
 			Log_Info("resource mgr release all resource.");
 		}

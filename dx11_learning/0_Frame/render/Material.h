@@ -11,8 +11,6 @@ namespace ul
 	struct SMaterialData{
 		std::string				 identifer;
 		std::string              shaderFile;
-		std::string              vsEnterPoint;
-		std::string              psEnterPoint;
 		std::string              texturePath[CONST_MAX_TEXTURE_NUM];
 	};
 

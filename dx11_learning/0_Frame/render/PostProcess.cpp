@@ -55,7 +55,7 @@ bool PostProcess::Create(
 		texDesc.MiscFlags = 0;
 
 		Null_Return_False_With_Msg(
-			(owner = mgr->CreateTexture2DNoData(texDesc, ResourceMgr::eRecyclePerSwapChain)),
+			(owner = mgr->CreateTexture2DNoData(texDesc, eRelease_OnResize)),
 			"create single mipmaps texture from postprocess shader file %s : %s error",
 			fileName.c_str(),
 			psFunction.c_str()
@@ -70,7 +70,7 @@ bool PostProcess::Create(
 	rtvDesc.Texture2D.MipSlice = 0;
 	rtvDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
 	Null_Return_False((renderTarget_ = mgr->CreateRenderTargetView(owner,
-		&rtvDesc, ResourceMgr::eRecyclePerSwapChain)));
+		&rtvDesc, eRelease_OnResize)));
 
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
@@ -79,16 +79,16 @@ bool PostProcess::Create(
 	srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
 	srvDesc.Format = format;
 	Null_Return_False_With_Msg(
-		(nextStepProcessSRV_ = mgr->CreateShaderResourceView(owner, &srvDesc, ResourceMgr::eRecyclePerSwapChain)),
+		(nextStepProcessSRV_ = mgr->CreateShaderResourceView(owner, &srvDesc, eRelease_OnResize)),
 		"create postprocess rendertarget from shader %s : %s error",
 		fileName.c_str(),
 		psFunction.c_str()
 	);
 
 
-	Null_Return_False((fullScreenVs_ = mgr->CreateVertexShaderFromResourceBasePath("shader/full_screen_process.hlsli", 
+	Null_Return_False((fullScreenVs_ = mgr->CreateVertexShaderResBase("shader/full_screen_process.hlsli", 
 						"VS_FullScreenProcess", "vs_5_0")));
-	Null_Return_False((fullScreenPs_ = mgr->CreatePixelShaderFromResourceBasePath(fileName.c_str(), 
+	Null_Return_False((fullScreenPs_ = mgr->CreatePixelShaderResBase(fileName.c_str(), 
 						psFunction.c_str(), "ps_5_0")));
 
 	False_Return_False(this->CreateConstBuffer());
@@ -100,9 +100,9 @@ bool PostProcess::Create(
 bool PostPresent::Create()
 {
 	ResourceMgr* mgr = ResourceMgr::GetSingletonPtr();
-	Null_Return_False((fullScreenVs_ = mgr->CreateVertexShaderFromResourceBasePath("shader/full_screen_process.hlsli",
+	Null_Return_False((fullScreenVs_ = mgr->CreateVertexShaderResBase("shader/full_screen_process.hlsli",
 		"VS_FullScreenProcess", "vs_5_0")));
-	Null_Return_False((fullScreenPs_ = mgr->CreatePixelShaderFromResourceBasePath("shader/full_screen_process.hlsli",
+	Null_Return_False((fullScreenPs_ = mgr->CreatePixelShaderResBase("shader/full_screen_process.hlsli",
 		"PS_present_screen", "ps_5_0")));
 	return true;
 }
@@ -134,7 +134,7 @@ bool PostProcessChain::Create(ulUint width, ulUint height)
 	texDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
 	texDesc.CPUAccessFlags = 0;
 	texDesc.MiscFlags = 0;
-	Null_Return_False((srcTexture_ = mgr->CreateTexture2DNoData(texDesc, ResourceMgr::eRecyclePerSwapChain)));
+	Null_Return_False((srcTexture_ = mgr->CreateTexture2DNoData(texDesc, eRelease_OnResize)));
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
 	srvDesc.Texture2D.MipLevels = -1;
@@ -142,14 +142,14 @@ bool PostProcessChain::Create(ulUint width, ulUint height)
 	srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
 	srvDesc.Format = texDesc.Format;
 	Null_Return_False((srcResourceView_ = mgr->CreateShaderResourceView(srcTexture_, 
-		&srvDesc, ResourceMgr::eRecyclePerSwapChain)));
+		&srvDesc, eRelease_OnResize)));
 
 	D3D11_RENDER_TARGET_VIEW_DESC rtvDesc;
 	rtvDesc.Format = texDesc.Format;
 	rtvDesc.Texture2D.MipSlice = 0;
 	rtvDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
 	Null_Return_False((srcRenderTarget_ = mgr->CreateRenderTargetView(srcTexture_,
-		&rtvDesc, ResourceMgr::eRecyclePerSwapChain)));
+		&rtvDesc, eRelease_OnResize)));
 
 	width_ = width;
 	height_ = height;

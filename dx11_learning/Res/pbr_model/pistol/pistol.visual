@@ -1,0 +1,13 @@
+<visual>
+	<node>
+		<transform></transform>
+	</node>	
+	<renderset>
+		<material>
+			<shader>fx/pbr_env_lighting.fxo</shader>
+			<albedoMap> pbr_model/pistol/Cerberus_A.dds </albedoMap>
+			<normalMap> pbr_model/pistol/Cerberus_N.dds </normalMap>
+			<specularMap> pbr_model/pistol/Cerberus_RMAC.dds</specularMap>
+		</material>
+	</renderset>
+</visual>

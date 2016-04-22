@@ -59,7 +59,7 @@ namespace ul
 		};
 	private:
 		Environmentable    environment_;
-		BaseModel          model_;
+		StaticMeshRender   model_;
 		ID3D11Buffer*	   constBuffer_;
 		SSkeyBox_Parameter parameter_;
 	public:
