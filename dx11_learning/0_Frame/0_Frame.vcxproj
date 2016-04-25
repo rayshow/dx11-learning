@@ -51,6 +51,7 @@
     <ClCompile Include="resource\CommonModelLoader.cpp" />
     <ClCompile Include="resource\TyModelLoader.cpp" />
     <ClCompile Include="scene\Camara.cpp" />
+    <ClCompile Include="scene\SceneManager.cpp" />
     <ClCompile Include="util\Logger.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

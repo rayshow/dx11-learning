@@ -4,12 +4,13 @@
     <ClCompile Include="Main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\Res\shader\pbr_env_lighting.hlsl" />
-    <None Include="..\Res\shader\ibl.hlsli" />
-    <None Include="..\Res\shader\base_define.hlsli" />
-    <None Include="..\Res\shader\brdf.hlsli" />
-    <None Include="..\Res\shader\sh_lighting.hlsli" />
-    <None Include="..\Res\shader\full_screen_process.hlsli" />
-    <None Include="..\Res\shader\tone_mapping.hlsli" />
+    <FxCompile Include="..\Res\fx\full_screen_process.fx" />
+    <FxCompile Include="..\Res\fx\pbr_env_lighting.fx" />
+    <FxCompile Include="..\Res\fx\skybox.fx" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\Res\fx\brdf.fx" />
+    <None Include="..\Res\fx\base_define.fx" />
+    <None Include="..\Res\fx\tone_mapping.fx" />
   </ItemGroup>
 </Project>

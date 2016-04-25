@@ -1,8 +1,8 @@
 #ifndef FULL_SCREEN_RPOCESS
 #define FULL_SCREEN_PROCESS
 
-#include"base_define.hlsli"
-#include"tone_mapping.hlsli"
+#include"base_define.fx"
+#include"tone_mapping.fx"
 
 cbuffer cbParameter : register(b0)
 {
@@ -46,7 +46,7 @@ PS_Output_Single PS_present_hdr(PS_FullScreenInput I)
 	float4 inColor = needProcessTex.SampleLevel(pointSampler, I.f2TexCoord, 0);
 	//float3 color = ApplyFilmicToneMap(inColor.rgb, Exposure);
 	//color = pow(color, 1.0f / 2.2f);
-	O.color0.rgb = inColor;
+	O.color0.rgb = inColor.rgb;
 	return O;
 }
 

@@ -3,12 +3,15 @@
 
 
 #include<vector>
+#include<hash_map>
 #include<d3d11.h>
 #include<D3DX11tex.h>
 #include<d3dx11effect.h>
+#include<xnamath.h>
 
 #include"../util/UlHelper.h"
 #include"Material.h"
+
 
 
 using namespace std;
@@ -50,21 +53,18 @@ namespace ul{
 	};
 
 	class SceneMgr;
-
+	class ResourceMgr;
 
 	struct SRenderData
 	{
 		string                     effectName_;
+		ID3DX11Effect*             effect_;
 		vector<ID3DX11EffectPass*> passes_;
 		ulUint                     passNum_;
 		D3DX11_TECHNIQUE_DESC      desc_;
 		ID3D11ShaderResourceView*  shaderSRVs_[CONST_MAX_TEXTURE_NUM];
-	};
-
-	struct SRenderPair
-	{
-		string    parameterName;
-		
+		XMFLOAT4X4                 worldTransform_;
+		XMFLOAT4X4                 worldViewProjectTransform_;
 	};
 
 	class StaticMeshPart
@@ -100,24 +100,31 @@ namespace ul{
 		{
 			for (ulUint i = 0; i < materials_.size(); ++i)
 			{
-				Safe_Delete(materials_.at(i));
+				Safe_Delete(materials_[i]);
 			}
+			materials_.erase(materials_.begin(), materials_.end());
 		}
 		bool Create(ID3D11Device* pd3dDevice, const SModelData& data);
 	public:
 		
 		void Render(ID3D11DeviceContext* context);
-		
-		void SetConstBuffer(ID3D11Buffer* constBuffer)
-		{
 
+		template<typename XMFloat4x4>
+		void SetParameter(string name, XMFloat4x4* value, ulUint number = 1)
+		{
+			for (int i = 0; i < materials_.size(); ++i)
+			{
+				ID3DX11EffectMatrixVariable* var = materials_.at(i)->effect_->GetVariableByName(name.c_str())->AsMatrix();
+				var->SetMatrix((float*)value);
+			}
 		}
 
 		void SetEffect(const string& fileName);
 
-	private:
+	protected:
 		void setShaderFile(ResourceMgr* pResourceMgr, const string& shaderFileName, SRenderData* pRenderData);
 		void setInputLayout(ResourceMgr* pResourceMgr);
+		void updateParameter();
 
 	protected:
 		ID3D11Buffer*			       vb_;

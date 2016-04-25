@@ -5,6 +5,7 @@
 using namespace ul;
 
 bool D3D11GraphicsContext::Initialize(
+	ResourceMgr* pResourceMgr,
 	HWND hwnd, int width, 
 	int height, bool vsync = true, 
 	bool fullScreen = false, bool enable4xMsaa = false)
@@ -34,9 +35,15 @@ bool D3D11GraphicsContext::Initialize(
 	numerator = 0;
 	denominator = 1;
 	featureLevel = D3D_FEATURE_LEVEL_11_0;
+	pResourceMgr_ = pResourceMgr;
+
 	//create device and deviceContext
 	Fail_Return_False(D3D11CreateDevice(0, D3D_DRIVER_TYPE_HARDWARE, 0, deviceFlag, 0, 0,
 		D3D11_SDK_VERSION, &pDevice_, &featureLevel, &pContext_));
+
+	//init resource manager
+	False_Return_False(pResourceMgr->Initialize(pDevice_, pContext_));
+
 
 	if (enable4xMsaa)
 	{
@@ -69,10 +76,7 @@ bool D3D11GraphicsContext::Initialize(
 	swapChainDesc.Flags = 0;
 	Fail_Return_False(factoryPtr->CreateSwapChain(pDevice_, &swapChainDesc, &pSwapChain_));
 	
-	//resource manager
-	Null_Return_False_With_Msg((pResourceMgr_ = new ResourceMgr()),
-		"new resource manager failed, memory out.");
-	pResourceMgr_->init(pDevice_, pContext_);
+
 
 	//get main RT
 	Fail_Return_False(pSwapChain_->GetBuffer(0, __uuidof(ID3D11Texture2D),
@@ -120,6 +124,10 @@ bool D3D11GraphicsContext::Initialize(
 	depthStencilDesc_.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
 	depthStencilDesc_.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
 	Null_Return_False((pDepthStenilState_ = pResourceMgr_->CreateDepthStencilState(depthStencilDesc_)));
+
+	depthStencilDesc_.DepthEnable = false;
+	Null_Return_False((disableDepth_ = pResourceMgr_->CreateDepthStencilState(depthStencilDesc_)));
+
 	
 	// Setup the raster state
 	ZeroMemory(&rasterDesc_, sizeof(rasterDesc_));
@@ -184,17 +192,9 @@ void D3D11GraphicsContext::Shutdown()
 	{
 		pSwapChain_->SetFullscreenState(false, nullptr);
 	}
-	
-	pResourceMgr_->ReleaseLoadedResourceOnResize();
-	pResourceMgr_->ReleaseLoadedResourceOnExit();
 	pContext_->ClearState();
-
-	Safe_Delete(pResourceMgr_);
 	Safe_Release(pSwapChain_);
 
 	Safe_Release(pContext_);
 	Safe_Release(pDevice_);
-
-
-	int a = 0;
 }

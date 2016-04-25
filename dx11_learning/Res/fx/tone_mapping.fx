@@ -1,5 +1,5 @@
-#ifndef TONE_MAPPING
-#define TONE_MAPPING
+#ifndef TONE_MAPPING_H_
+#define TONE_MAPPING_H_
 
 float3 filmicTonemap(float3 x) {
 	float A = 0.15;

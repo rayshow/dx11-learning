@@ -10,7 +10,7 @@ using namespace ul;
 using namespace rapidxml;
 using namespace std;
 
-bool Environmentable::setEnvmap(
+bool Environment::setEnvmap(
 	const std::string& diffuseName,
 	const std::string& specularName,
 	const std::string& intergeFileName)
@@ -39,20 +39,7 @@ bool Environmentable::setEnvmap(
 }
 
 
-void Environmentable::ApplyEnvironment(ID3D11DeviceContext* context)
-{
-	if (Null(samplers_[0]))
-	{
-		samplers_[0] = ResourceMgr::GetSingleton().CreateTrilinearSamplerState();
-		samplers_[1] = ResourceMgr::GetSingleton().CreateTrilinearSamplerState();
-		samplers_[2] = ResourceMgr::GetSingleton().CreateLinearSamplerState();
-	}
-	context->PSSetSamplers(eSampler_Irridiance, 3, samplers_);
-	context->PSSetShaderResources(eShaderResource_Irridiance, 3, environmentMaps_);
-}
-
-
-bool Environmentable::LoadFromFile(const string& fileName)
+bool Environment::Initialize(const string& fileName)
 {
 	stringstream buffer;
 	string irridianceMapName = "";
@@ -115,7 +102,7 @@ bool Environmentable::LoadFromFile(const string& fileName)
 	return true;
 }
 
-bool SkyBox::createRenderData(ID3D11Device* device)
+bool SkyBox::createRenderData()
 {
 	SModelData data;
 	ResourceMgr* mgr = ResourceMgr::GetSingletonPtr();
@@ -157,28 +144,15 @@ bool SkyBox::createRenderData(ID3D11Device* device)
 	pGroup->materialID = 0;
 	data.groups_.push_back(pGroup);
 
+	//material
 	SMaterialData* materialData = new SMaterialData;
 	materialData->identifer = "skybox";
-	materialData->shaderFile = "fx/skybox.fxo";
+	materialData->shaderFile = mgr->GetResourceBasePath()+"fx/skybox.fxo";
 	MaterialData_ClearTexturePath(materialData);
 	data.materials_.push_back(materialData);
 
-	model_.Create(device, data);
+	box_.Create(mgr->GetDevice(), data);
 	ModelData_Free(data);
-
-	Null_Return_False((constBuffer_ = mgr->CreateConstantBuffer(sizeof(SSkeyBox_Parameter))));
-	model_.SetConstBuffer(constBuffer_);
-
 	return true;
 }
 
-
-
-void SkyBox::updateBuffer()
-{
-	assert(constBuffer_ != nullptr);
-	BaseCamara *pCamara = SceneMgr::GetSingletonPtr()->GetMainCamara();
-	ResourceMgr *resourceMgr = ResourceMgr::GetSingletonPtr();
-	parameter_.rotateProject = pCamara->GetRotateProjectStoreType();
-	ResourceMgr::GetSingletonPtr()->MappingBufferWriteOnly(constBuffer_, &parameter_, sizeof(parameter_));
-}

@@ -112,6 +112,12 @@ bool Application::initializeWindow(int width, int height)
 		appName_.c_str(), WS_TILEDWINDOW, posX, posY, screenWidth,
 		screenHeight, NULL, NULL, hInstance_, NULL);
 
+	RECT rect;
+	GetClientRect(hWnd_, &rect);
+
+	clientWidth_ = rect.right - rect.left;
+	clientHeight_ = rect.bottom - rect.top;
+
 	return true;
 }
 

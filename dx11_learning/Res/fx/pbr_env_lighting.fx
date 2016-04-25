@@ -1,11 +1,10 @@
 #include"ibl.fx"
 #include"base_define.fx"
 
+
+
 cbuffer cbPerFrame : register(b0)
 {
-	float4x4 world;
-	float4x4 worldViewProject;
-	float4   camaraWorldPos;
 	uint     specularType;
 	uint     irridianceType;
 	uint     outputType;
@@ -77,7 +76,7 @@ resolveNormal(PS_TranslateInput I)
 	// Tangent basis from screen space derivatves. 
 	normal = I.f3Normal;
 	float3x3 tbnTransform;
-	float4 texNormal = Normalmap.SampleLevel(NormalSampler, I.f2TexCoord, 0);
+	float4 texNormal = Normalmap.SampleLevel(PointSampler, I.f2TexCoord, 0);
 	texNormal.xyz = normalize((2.0f * texNormal.xyz) - 1.0f);
 
 	float3 dp1 = ddx_fine(I.f3WorldPos.xyz);
@@ -110,13 +109,13 @@ PS_TranslateInput VS_FillBuffer(VS_VertexLayout I)
 {
 	PS_TranslateInput O;
 	float4 posMS = float4(I.f3Position, 1);
-	float4 posWS = mul(posMS, world);
+	float4 posWS = mul(posMS, World);
 
 	O.f3WorldPos = posWS.xyz;
 	//ndcŒª÷√
-	O.f4Position = mul(posMS, worldViewProject);
+	O.f4Position = mul(posMS, WorldViewProject);
 	//normal 
-	O.f3Normal =   normalize( mul(I.f3Normal, (float3x3)world) );
+	O.f3Normal =   normalize( mul(I.f3Normal, (float3x3)World) );
 	//coord
 	O.f2TexCoord = I.f2TexCoord;
 
@@ -133,30 +132,28 @@ PS_Output_Single PS_FillBuffer(PS_TranslateInput I)
 	//O.color0 = float4(0.3, 0, 0, 1);
 	//return O;
 	float2 coord = I.f2TexCoord;
-	float4 albedo = Albedomap.SampleLevel(AlbedoSampler, coord, 0);
+	float4 albedo = Albedomap.SampleLevel(LinearSampler, coord, 0);
 	albedo.rgb = resovleAlbedo(albedo.rgb, 2.2f);
 	float3 normalWarp = resolveNormal(I);
-	float3 RMB = Specularmap.SampleLevel(SpecularSampler, coord, 0);
+	float3 RMB = Specularmap.SampleLevel(LinearSampler, coord, 0);
 
 	float roughness = RMB.x;
 	float glossness = 1.0f - roughness;
 	float matelness = RMB.y;
 	float bakedAO = RMB.z;
 
-	float3 view = normalize(camaraWorldPos - I.f3WorldPos);
+	float3 view = normalize(CamaraWorldPos - I.f3WorldPos);
 	float3 refl = normalize(reflect(-view, normalize(normalWarp)));
 	float VoN = dot(view, normalWarp);
 
 
 	//environment
-	float2 brdfTerm = IntergeLukupmap.SampleLevel(IntergeSampler, float2(VoN, roughness), 0).xy;
+	float2 brdfTerm = IntergeLukupmap.SampleLevel(LinearSampler, float2(VoN, roughness), 0).xy;
 	float3 specularIBL = 0;
 	float3 irridiance = 0;
 
 	
-	irridiance = Irridiancemap.SampleLevel(IrridianceSampler, normalWarp, 0) / PI;
-	
-
+	irridiance = Irridiancemap.SampleLevel(anisotropicSampler, normalWarp, 0) / PI;
 	if (specularType == eSpecular_Realtime_Imp)
 	{
 		specularIBL = PrefilterSpecularMap(
@@ -164,10 +161,10 @@ PS_Output_Single PS_FillBuffer(PS_TranslateInput I)
 			refl,
 			16,
 			SpecularLukup,
-			SpecularSampler);
+			anisotropicSampler);
 	}
 	else{
-		specularIBL = SpecularLukup.SampleLevel(SpecularLukupSampler, refl, glossness * 9.0f).rgb;
+		specularIBL = SpecularLukup.SampleLevel(anisotropicSampler, refl, glossness * 9.0f).rgb;
 	}
 
 	float3 dielectricColor = float3(0.04, 0.04, 0.04);

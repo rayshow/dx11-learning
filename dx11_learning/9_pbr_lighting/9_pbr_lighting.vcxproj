@@ -80,20 +80,46 @@
     <ClCompile Include="Main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\Res\shader\base_define.hlsli" />
-    <None Include="..\Res\shader\brdf.hlsli" />
-    <None Include="..\Res\shader\full_screen_process.hlsli" />
-    <None Include="..\Res\shader\ibl.hlsli" />
-    <None Include="..\Res\shader\pbr_env_lighting.hlsl">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="..\Res\shader\sh_lighting.hlsli" />
-    <None Include="..\Res\shader\tone_mapping.hlsli" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\0_Frame\0_Frame.vcxproj">
       <Project>{7c78dfa1-7446-4d2e-9153-34ff7711a00f}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\Res\fx\base_define.fx">
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </EntryPointName>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Effect</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">../res/fx/%(Filename).fxo</ObjectFileOutput>
+      <FileType>Document</FileType>
+    </None>
+    <None Include="..\Res\fx\brdf.fx">
+      <FileType>Document</FileType>
+    </None>
+    <FxCompile Include="..\Res\fx\full_screen_process.fx">
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">../res/fx/%(Filename).fxo</ObjectFileOutput>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </EntryPointName>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Effect</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="..\Res\fx\pbr_env_lighting.fx">
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </EntryPointName>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Effect</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">../res/fx/%(Filename).fxo</ObjectFileOutput>
+    </FxCompile>
+    <FxCompile Include="..\Res\fx\skybox.fx">
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </EntryPointName>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Effect</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">../res/fx/%(Filename).fxo</ObjectFileOutput>
+    </FxCompile>
+    <None Include="..\Res\fx\tone_mapping.fx">
+      <FileType>Document</FileType>
+    </None>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

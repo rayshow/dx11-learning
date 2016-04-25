@@ -18,7 +18,7 @@ namespace ul
 	static const float     BLACK_CLEAR_COLOR[4] = { 0, 0, 0, 1 };
 	static const float     WHITE_CLEAR_COLOR[4] = { 1, 1, 1, 1 };
 
-	class D3D11GraphicsContext
+	class D3D11GraphicsContext: public Singleton<D3D11GraphicsContext>
 	{
 	private:
 		bool			         enableVsyn_;
@@ -33,8 +33,9 @@ namespace ul
 		ID3D11RenderTargetView*  pMainRT_;
 		ID3D11DepthStencilView*  pMainDSV_;
 		ID3D11DepthStencilState* pDepthStenilState_;
+		ID3D11DepthStencilState* disableDepth_;
 		ID3D11RasterizerState*   pRasterState_;
-		ResourceMgr*             pResourceMgr_;
+		
 		ID3D11Texture2D*         pDepthStencil2D_;
 		D3D11_VIEWPORT           viewport_;
 		DXGI_SWAP_CHAIN_DESC     swapChainDesc_;
@@ -42,7 +43,7 @@ namespace ul
 		D3D11_DEPTH_STENCIL_DESC depthStencilDesc_;
 		D3D11_DEPTH_STENCIL_VIEW_DESC		dsvDesc_;
 		D3D11_RASTERIZER_DESC	 rasterDesc_;
-
+		ResourceMgr*             pResourceMgr_;
 	public:
 		D3D11GraphicsContext() :
 			enableVsyn_(true),
@@ -57,7 +58,6 @@ namespace ul
 			pMainRT_(nullptr),
 			pMainDSV_(nullptr),
 			pDepthStenilState_(nullptr),
-			pResourceMgr_(nullptr),
 			pDepthStencil2D_(nullptr)
 		{};
 
@@ -66,13 +66,14 @@ namespace ul
 		}
 
 	public:
-		bool Initialize(HWND hwnd, int width,int height,
+		bool Initialize(ResourceMgr* pResourceMgr,
+			HWND hwnd, int width,int height,
 			bool vsync, bool fullScreen, bool enable4xMsaa);
 
 		void Shutdown();
 		void Resize(ulUint width, ulUint height);
 
-		void EndScene() { pSwapChain_->Present(0, 0); }
+		void EndScene() { pSwapChain_->Present(1, 0); }
 
 		ID3D11Device* GetDevicePtr() { return pDevice_; }
 
@@ -81,6 +82,11 @@ namespace ul
 		ID3D11RenderTargetView* GetMainRenderTargetPtr() { return pMainRT_; }
 
 		ID3D11DepthStencilView* GetMainDepthStencilViewPtr() { return pMainDSV_; }
+
+		void DisableDepthTest()
+		{
+			
+		}
 
 		void BeginScene()
 		{

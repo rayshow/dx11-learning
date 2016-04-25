@@ -27,6 +27,8 @@ inline void BaseCamara::UpdateProjectRelative(const XMMATRIX& view)
 	XMStoreFloat4x4(&transposeProject_, transposeProject);
 	XMStoreFloat4x4(&viewProject_, viewProject);
 	XMStoreFloat4x4(&transposeViewProject_, transposeViewProject);
+	XMStoreFloat4x4(&rotateProject_, rotateProject);
+	
 	XMStoreFloat4x4(&invViewProject_, invViewProject);
 	XMStoreFloat4x4(&transposeInvViewProject_, transposeInvViewProject);
 	XMStoreFloat4x4(&invRotateProject_, invRotateProject);

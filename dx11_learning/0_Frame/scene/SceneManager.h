@@ -3,50 +3,81 @@
 
 
 #include"Camara.h"
+#include"../design_frame/Singleton.h"
 #include"../render/Environment.h"
-
+#include"../D3D11GraphicContext.h"
 
 namespace ul
 {
 	class SceneMgr :public Singleton<SceneMgr>
 	{
 	private:
-		BaseCamara*		 mainCamara_;
-		Environmentable* curEnvirment_;
+		Environment  			   mainEnvirment_;
+		SkyBox					   mainSkyBox_;
+		BaseCamara*				   mainCamara_;
+		vector<BaseCamara*>        camaras_;
+		vector<StaticMeshRender*>  staticObjects_;
+		ResourceMgr*               pResourceMgr_;
 	public:
-		SceneMgr()
+		SceneMgr(){};
+		~SceneMgr(){};
+			
+
+		bool Initialize(ResourceMgr* mgr)
 		{
-			mainCamara_ = new BaseCamara();
-			mainCamara_->LookAt(XMFLOAT4(0, 0, -1, 0), XMFLOAT4(0, 0, 0, 0));
-			mainCamara_->SetProject(BaseCamara::eCamara_Perspective, XM_PI / 4.0f, 16.0/9.0, 0.1f, 1000.0f);
-			curEnvirment_ = new Environmentable();
+			pResourceMgr_ = mgr;
+			False_Return_False( mainSkyBox_.Create() );
 		}
 
-		~SceneMgr()
+		void Shutdown()
 		{
-			Safe_Delete(mainCamara_);
-			Safe_Delete(curEnvirment_);
+			for (ulUint i = 0; i < camaras_.size(); ++i)
+			{
+				Safe_Delete(camaras_.at(i));
+			}
 		}
+
 	public:
-		void SetCamara(BaseCamara* camara)
+
+		StaticMeshRender* CreateStaticObject(string fileName);
+
+		BaseCamara* CreateCamara()
+		{
+			BaseCamara* camara = new BaseCamara();
+			camaras_.push_back(camara);
+			return camara;
+		}
+
+		void SetMainCamara(BaseCamara* camara)
 		{
 			mainCamara_ = camara;
 		}
 
-		void SetEnvironment(Environmentable* env)
+		void SetEnvironment(string envFileName)
 		{
-			curEnvirment_ = env;
+			mainEnvirment_.Initialize(envFileName);
 		}
 
-		BaseCamara* GetMainCamara()
+		Environment& GetMainEnvironmentRef()
+		{
+			return mainEnvirment_;
+		}
+
+		BaseCamara* GetMainCamaraPtr()
 		{
 			return mainCamara_;
 		}
 
-		Environmentable* GetEnvironment()
+		void RenderAll(ID3D11DeviceContext* context)
 		{
-			return curEnvirment_;
+			D3D11GraphicsContext::GetSingletonPtr()->DisableDepthTest();
+			mainSkyBox_.Render(context);
+			for (ulUint i = 0; i < staticObjects_.size(); ++i)
+			{
+				staticObjects_.at(i)->Render(context);
+			}
 		}
+
 	};
 };
 

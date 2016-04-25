@@ -1,4 +1,5 @@
 <materials>
+	
 	<material>
 		<shader> 
 			<fileName>shader/pbr_env_lighting.hlsl</fileName>

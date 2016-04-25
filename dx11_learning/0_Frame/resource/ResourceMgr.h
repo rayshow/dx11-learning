@@ -172,21 +172,21 @@ namespace ul
 	class ResourceMgr : public Singleton<ResourceMgr>
 	{
 	public:
-		
+
 	private:
 		SReleaseOnWindowReize		   releaseSetOnResize_;
 		SReleaseOnExit                 releaseSetOnExit_;
 		string                         resourceBasePath_;
 		ID3D11Device*                  pDevice_;
 		ID3D11DeviceContext*           pContext_;
-		
+
 	public:
 		ResourceMgr(){}
 	private:
 
 		//创建顶点着色器
 		inline ID3D11VertexShader*
-		createVertexShader(ID3DBlob * blob)
+			createVertexShader(ID3DBlob * blob)
 		{
 			ID3D11VertexShader *pVertexShader;
 			Fail_Return_Null(pDevice_->CreateVertexShader(
@@ -197,10 +197,10 @@ namespace ul
 
 		//创建inputLayout
 		inline ID3D11InputLayout*
-		createInputLayout(const D3D11_INPUT_ELEMENT_DESC *descs, ulUint count, ID3DBlob* pBlob)
+			createInputLayout(const D3D11_INPUT_ELEMENT_DESC *descs, ulUint count, ID3DBlob* pBlob)
 		{
 			ID3D11InputLayout *pLayout;
-			Fail_Return_Null( pDevice_->CreateInputLayout(descs, count,
+			Fail_Return_Null(pDevice_->CreateInputLayout(descs, count,
 				pBlob->GetBufferPointer(), pBlob->GetBufferSize(), &pLayout));
 			releaseSetOnExit_.inputLayouts.push_back(pLayout);
 			return pLayout;
@@ -228,7 +228,7 @@ namespace ul
 
 		//创建几何着色器
 		inline ID3D11GeometryShader*
-		createGeometryShader(ID3DBlob * blob)
+			createGeometryShader(ID3DBlob * blob)
 		{
 			ID3D11GeometryShader *pGeomShader;
 			Fail_Return_Null(pDevice_->CreateGeometryShader(blob->GetBufferPointer()
@@ -239,12 +239,16 @@ namespace ul
 
 	public:
 		//初始化
-		inline void
-		init(ID3D11Device* dev, ID3D11DeviceContext* context){
-			pDevice_  = dev;
+		inline bool
+		Initialize(ID3D11Device* dev, ID3D11DeviceContext* context){
+			pDevice_ = dev;
 			pContext_ = context;
 			Log_Info("resource manager initialized.");
+			return true;
 		}
+
+		inline ID3D11DeviceContext* GetContext(){ return pContext_; }
+		inline ID3D11Device*        GetDevice(){ return pDevice_; }
 
 		inline string GetResourceBasePath() const { return resourceBasePath_; }
 

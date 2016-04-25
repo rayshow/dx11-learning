@@ -10,18 +10,6 @@
 
 using namespace ul;
 
-
-struct CB_PerFrame
-{
-	XMFLOAT4X4  world;
-	XMFLOAT4X4  worldViewProject;
-	XMFLOAT4    camaraPos;
-	unsigned    specularType;
-	unsigned    irridianceType;
-	unsigned    outputType;
-	unsigned    padding;
-};
-
 struct CB_Coeffs
 {
 	XMFLOAT4   coeffs[9];
@@ -130,22 +118,15 @@ public:
 		TwAddVarRW(bar, "output color", outputTypes, &uiOutputType_, " group='render'");
 		TwAddVarRW(bar, "exposoure", TW_TYPE_FLOAT, &uiExpoure_, "min=0.1 max=20.0 step=0.1 group=render");
 
-		//uiExpoure_
+
 		//camara
 		pCamara_ = this->GetSceneMgr().GetMainCamara();
-		pCamara_->LookAt(XMFLOAT4(0, 0, -100, 0), XMFLOAT4(0, 0, 0, 0));
+		pCamara_->LookAt(XMFLOAT4(0, 0, -200, 0), XMFLOAT4(0, 0, 0, 0));
 		camaraController_.SetCamara(pCamara_);
 
 		//model
-		pistol_ = mgr->CreateModelFromFile("pbr_model/pistol/pistol.fbx");
-		Null_Return_False((perframeBuffer_ = mgr->CreateConstantBuffer(sizeof(CB_PerFrame))));
-
-		//sample
-		Null_Return_False((samplers_[0] = mgr->CreateLinearSamplerState()));
-		samplers_[1] = samplers_[2] = samplers_[0];
-
+		pistol_ = mgr->CreateStaticMeshRenderFromFile("pbr_model/pistol/pistol.fbx");
 		
-		pointSampler_ = mgr->CreatePointSamplerState();
 		return true;
 	};
 
@@ -161,35 +142,13 @@ public:
 	void SetParameter(ID3D11Device *dev,
 		ID3D11DeviceContext* context)
 	{
-		context->PSSetSamplers(0, 3, samplers_);
 
-		XMVECTOR rotQuaternion = XMLoadFloat4(&uiRotate_);
-		XMMATRIX rotMatrix = XMMatrixRotationQuaternion(rotQuaternion);
-
-		XMMATRIX viewProject = pCamara_->GetViewProjectMatrix();
-		XMMATRIX worldViewProject = XMMatrixMultiplyTranspose(rotMatrix, viewProject);
-		XMMATRIX worldStoreType = XMMatrixTranspose(rotMatrix);
-
-		CB_PerFrame perFrame;
-		XMStoreFloat4x4(&perFrame.world, worldStoreType);
-		XMStoreFloat4x4(&perFrame.worldViewProject, worldViewProject);
-		perFrame.camaraPos = pCamara_->GetEyePosStoreType();
-		perFrame.specularType = uiSpecularType_;
-		perFrame.irridianceType = uiIrridianceType_;
-		perFrame.outputType = uiOutputType_;
-		//Log_Info("specular type %d exposure %f frash rate:%f", uiSpecularType_, uiExpoure_, this->GetFPS());
-		
-		ResourceMgr::GetSingletonPtr()->MappingBufferWriteOnly(perframeBuffer_, &perFrame, sizeof(CB_PerFrame));
 	}
 
 	virtual void RenderFrame(ID3D11Device *dev,
 		ID3D11DeviceContext* context)
 	{
 		this->SetParameter(dev, context);
-		ID3D11RenderTargetView* mainRT = this->GetMainRT();
-		ID3D11DepthStencilView* mainDSV = this->GetMainDSV();
-
-		pistol_->SetConstBuffer(perframeBuffer_);
 		pistol_->Render(context);
 
 
@@ -228,7 +187,7 @@ private:
 	HdrPresentProcess*    hdrProcess_;
 	PostProcessChain      postProcessChain_;
 
-	BaseModel*            pistol_;
+	StaticMeshRender*     pistol_;
 	SkyBox                skybox_;
 	FirstPersonController camaraController_;
 	BaseCamara*           pCamara_;

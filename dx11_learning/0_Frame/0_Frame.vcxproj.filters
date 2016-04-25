@@ -136,5 +136,8 @@
     <ClCompile Include="gui\imgui_impl_dx11.cpp">
       <Filter>gui</Filter>
     </ClCompile>
+    <ClCompile Include="scene\SceneManager.cpp">
+      <Filter>scene</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

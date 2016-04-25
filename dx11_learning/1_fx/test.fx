@@ -1,5 +1,6 @@
 cbuffer cbPerFrame : register(b0)
 {
+	float4x4 World;
 	float4x4 WorldViewProject;
 }
 

@@ -1,12 +1,4 @@
-
-#include"base_define.hlsli"
-
-cbuffer cbPerFrame : register(b0)
-{
-	float4x4 rotateProject;
-}
-
-
+#include"base_define.fx"
 
 //普通模型的PS参数
 struct PS_TranslateInput
@@ -22,7 +14,7 @@ PS_TranslateInput VS_FillBuffer(VS_Input_Xyznuv I)
 {
 	PS_TranslateInput O;
 
-	float4 posPS = mul(float4(I.f3Position, 1), rotateProject);
+	float4 posPS = mul(float4(I.f3Position, 1), RotateProject);
 
 	O.f3Dir = normalize(I.f3Position);
 
@@ -41,6 +33,16 @@ PS_TranslateInput VS_FillBuffer(VS_Input_Xyznuv I)
 PS_Output_Single PS_FillBuffer(PS_TranslateInput I)
 {
 	PS_Output_Single O;
-	O.color0 = SpecularLukup.SampleLevel(SpecularLukupSampler, I.f3Dir, 0); //float4(0.2, 0, 0, 1);// 
+	O.color0 =  SpecularLukup.SampleLevel(anisotropicSampler, I.f3Dir, 0);
 	return O;
 }
+
+
+technique11 Default
+{
+	pass P0
+	{
+		SetVertexShader(CompileShader(vs_5_0, VS_FillBuffer()));
+		SetPixelShader(CompileShader(ps_5_0, PS_FillBuffer()));
+	}
+};

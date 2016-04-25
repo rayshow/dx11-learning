@@ -13,6 +13,8 @@ bool StaticMeshRender::Create(ID3D11Device* pd3dDevice, const SModelData& data)
 	D3D11_SUBRESOURCE_DATA vdata, idata;
 	ResourceMgr* pResourceMgr = ResourceMgr::GetSingletonPtr();
 
+	static XMMATRIX Identify = XMMatrixIdentity();
+
 	//vb
 	vbd.Usage = D3D11_USAGE_IMMUTABLE;
 	vbd.ByteWidth = data.primtives_.verticeNum_*data.primtives_.stride_;
@@ -40,8 +42,8 @@ bool StaticMeshRender::Create(ID3D11Device* pd3dDevice, const SModelData& data)
 	for (ulUint i=0; i < data.materials_.size(); ++i)
 	{
 		SMaterialData*   pMaterialData = data.materials_[i];
-		SRenderData*     pRenderData = new SRenderData();
-		memset(pRenderData, 0, sizeof(SRenderData));
+		SRenderData*     pRenderData = new SRenderData;
+		///////////////////////////////////////////////////////memset(pRenderData, 0, sizeof(SRenderData));
 		//shader
 		this->setShaderFile(pResourceMgr, pMaterialData->shaderFile, pRenderData);
 		//texture
@@ -53,6 +55,9 @@ bool StaticMeshRender::Create(ID3D11Device* pd3dDevice, const SModelData& data)
 			}
 		}
 
+		XMStoreFloat4x4(&pRenderData->worldTransform_, Identify);
+		
+		
 		materials_.push_back(pRenderData);
 	}
 	//inputlayout
@@ -80,18 +85,27 @@ bool StaticMeshRender::Create(ID3D11Device* pd3dDevice, const SModelData& data)
 void StaticMeshRender::SetEffect(const string& fileName)
 {
 	ResourceMgr* pResourceMgr = ResourceMgr::GetSingletonPtr();
-	materials_.reserve(children_.size());
+
+	SRenderData* pRenderData = nullptr;
+	if (materials_.size() > 0)
+	{
+		pRenderData = materials_.at(0);
+	}
+	else{
+		pRenderData = new SRenderData;
+	}
+	if (pRenderData->passNum_ > 0)
+	{
+		pRenderData->passes_.clear();
+	}
+	this->setShaderFile(pResourceMgr, fileName, pRenderData);
+
 	for (int i = 0; i < children_.size(); ++i)
 	{
-		SRenderData* pRenderData = new SRenderData;
-		memset(pRenderData, 0, sizeof(SRenderData));
-		this->setShaderFile(pResourceMgr, fileName, pRenderData);
+		children_.at(i).SetMaterial(pRenderData);
 	}
 	this->setInputLayout(pResourceMgr);
-
 }
-
-
 
 void StaticMeshRender::setShaderFile(ResourceMgr* pResourceMgr, const string& shaderFileName, SRenderData* pRenderData)
 {	
@@ -102,6 +116,8 @@ void StaticMeshRender::setShaderFile(ResourceMgr* pResourceMgr, const string& sh
 	Null_Return_Void((pEffect = pResourceMgr->LoadEffectFromCompileFile(shaderFileName.c_str())));
 	Null_Return_Void((pTechnique = pEffect->GetTechniqueByName("Default")));
 	pTechnique->GetDesc(&techDesc);
+	pRenderData->effectName_ = shaderFileName;
+	pRenderData->effect_ = pEffect;
 	pRenderData->passNum_ = techDesc.Passes;
 	pRenderData->passes_.reserve(pRenderData->passNum_);
 	for (ulUint j = 0; j < pRenderData->passNum_; ++j)
@@ -123,15 +139,39 @@ void StaticMeshRender::setInputLayout(ResourceMgr* pResourceMgr)
 	}
 }
 
+
+void StaticMeshRender::updateParameter()
+{
+	BaseCamara* pCamara = SceneMgr::GetSingletonPtr()->GetMainCamaraPtr();
+	Environment env = SceneMgr::GetSingletonPtr()->GetMainEnvironmentRef();
+	
+	for (ulUint i = 0; i < materials_.size(); ++i)
+	{
+		SRenderData* pRenderData = materials_.at(i);
+		ID3DX11Effect* pEffect = pRenderData->effect_;
+		XMMATRIX world = XMLoadFloat4x4(&pRenderData->worldTransform_);
+		XMMATRIX worldViewProject = XMMatrixMultiply( world, pCamara->GetViewProjectMatrix());
+		XMStoreFloat4x4(&pRenderData->worldViewProjectTransform_, worldViewProject);
+		pEffect->GetVariableByName("World")->AsMatrix()->SetMatrix((float*)&pRenderData->worldTransform_);
+		pEffect->GetVariableByName("RotateProject")->AsMatrix()->SetMatrix(pCamara->GetRotateProjectStorePtr());
+		pEffect->GetVariableByName("WorldViewProject")->AsMatrix()->SetMatrix((float*)&pRenderData->worldViewProjectTransform_);
+		pEffect->GetVariableByName("Irridiancemap")->AsShaderResource()->SetResource(env.GetEnvironmentmaps()[0]);
+		pEffect->GetVariableByName("SpecularLukup")->AsShaderResource()->SetResource(env.GetEnvironmentmaps()[1]);
+		pEffect->GetVariableByName("IntergeLukupmap")->AsShaderResource()->SetResource(env.GetEnvironmentmaps()[2]);
+	}
+}
+
 void StaticMeshRender::Render(ID3D11DeviceContext* context)
 {
 	assert(context != 0);
 	assert(hasRenderPass_);
+
 	context->IASetVertexBuffers(0, 1, &vb_, &stride_, &offset_);
 	context->IASetIndexBuffer(ib_, DXGI_FORMAT_R32_UINT, 0);
 	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	context->IASetInputLayout(vertexLayout_);
 
+	updateParameter();
 	for (ulUint i = 0; i < childCount_; ++i)
 	{
 		children_[i].Render(context);
@@ -141,6 +181,7 @@ void StaticMeshRender::Render(ID3D11DeviceContext* context)
 
 void StaticMeshPart::Render(ID3D11DeviceContext* context)
 {
+	
 	for (ulUint i = 0; i < refMaterial_->passNum_; ++i)
 	{
 		refMaterial_->passes_[i]->Apply(0, context);

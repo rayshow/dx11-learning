@@ -9,84 +9,52 @@
 
 namespace ul
 {
-	class Environmentable
+	class Environment
 	{
 	protected:
 		ID3D11ShaderResourceView*  environmentMaps_[3];
 		ID3D11SamplerState*        samplers_[3];
 		ulFloat                    exposure_;
 	public:
-		Environmentable()
+		Environment()
 		{
 			memset(environmentMaps_, 0, sizeof(ID3D11ShaderResourceView*) * 3);
 			memset(samplers_, 0, sizeof(ID3D11SamplerState*) * 3);
 		}
+		~Environment(){}
+		bool Initialize(const string& fileName);
 
-		bool SetEnvmaps(
-			const std::string& diffuseName,
-			const std::string& specularName,
-			const std::string& intergeFileName)
+
+		ID3D11ShaderResourceView** GetEnvironmentmaps()
 		{
-			False_Return_False(this->setEnvmap(diffuseName, specularName, intergeFileName));
-			return true;
+			return environmentMaps_;
 		}
-
-		bool LoadFromFile(const string& fileName);
-
-		virtual ~Environmentable(){}
-	public:
-		 ID3D11ShaderResourceView** GetEnvironmentmaps()
-		 {
-			 return environmentMaps_;
-		 }
-
-		 void ApplyEnvironment(ID3D11DeviceContext* context);
-
 	protected:
 		bool setEnvmap(
 			const std::string& diffuseName,
 			const std::string& specularName,
 			const std::string& intergeFileName);
-
 	};
 
 	class SkyBox
 	{
-	public:
-		struct SSkeyBox_Parameter
-		{
-			XMFLOAT4X4 rotateProject;
-		};
 	private:
-		Environmentable    environment_;
-		StaticMeshRender   model_;
-		ID3D11Buffer*	   constBuffer_;
-		SSkeyBox_Parameter parameter_;
+		StaticMeshRender   box_;
 	public:
-		SkyBox():constBuffer_(nullptr) {}
+		SkyBox(){}
 		~SkyBox(){}
-		bool Create(
-			ID3D11Device*    device,
-			std::string      fileName)
+		bool Create()
 		{
-			False_Return_False( environment_.LoadFromFile(fileName));
-			False_Return_False( this->createRenderData(device) );
+			False_Return_False( this->createRenderData() );
 			return true;
 		}
 
-		void ApplySkyBox(ID3D11DeviceContext* context)
-		{
-			environment_.ApplyEnvironment(context);
-		}
-		
 		void Render(ID3D11DeviceContext* context)
 		{
-			this->updateBuffer();
-			model_.Render(context);
+			box_.Render(context);
 		}
 	private:
-		bool createRenderData(ID3D11Device* device);
-		void updateBuffer();
+		bool createRenderData();
 	}; //skybox
 
 

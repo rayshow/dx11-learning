@@ -19,7 +19,7 @@ namespace ul
 
 	class Application :public Singleton<Application>
 	{
-	private:
+	protected:
 		int						   width_;
 		int						   height_;
 		string					   appName_;
@@ -30,8 +30,9 @@ namespace ul
 		bool					   running_;
 		char					   fpsDisplay_[20];
 		D3D11GraphicsContext       graphicsContext_;
+		ResourceMgr                resourceMgr_;
 		SceneMgr				   sceneMgr_;
-
+	
 		bool                       resizing_;
 		bool                       minimized_;
 		bool                       maximized_;
@@ -51,10 +52,13 @@ namespace ul
 			memset(fpsDisplay_, 0, 20);
 			Log_Info("application construct.");
 		}
-		virtual ~Application(){};
+	    ~Application(){};
 
 		void Shutdown()
 		{
+			resourceMgr_.ReleaseLoadedResourceOnResize();
+			resourceMgr_.ReleaseLoadedResourceOnExit();
+			sceneMgr_.Shutdown();
 			graphicsContext_.Shutdown();
 			this->Exit();
 			Log_Info("application destoryed.");
@@ -66,6 +70,8 @@ namespace ul
 		SceneMgr& GetSceneMgr() { return sceneMgr_; }
 
 		float GetFPS() { return timer_.GetFPS(); }
+
+		void SetResourceBasePath(string path){ resourceMgr_.SetResourceBasePath(path);  }
 
 		void SetAppcationName(const string& name) { appName_ = name; }
 
@@ -98,11 +104,13 @@ namespace ul
 			//init window
 			fullscreen_ = false;
 			this->initializeWindow(width, height);
-			
+		
 			//init graphics
-			RECT rect;
-			GetClientRect(hWnd_, &rect);
-			False_Return_False( graphicsContext_.Initialize(hWnd_, rect.right-rect.left, rect.bottom-rect.top, true, fullscreen_, false) );
+			False_Return_False(graphicsContext_.Initialize( &resourceMgr_, hWnd_,
+				clientWidth_, clientHeight_, true, fullscreen_, false));
+
+			//init scene manager
+			False_Return_False( sceneMgr_.Initialize(&resourceMgr_) );
 
 			//call InitResource 
 			False_Return_False( this->InitResource( GetDevicePtr(), GetDeviceContextPtr() ) );
@@ -111,6 +119,8 @@ namespace ul
 			ShowWindow(hWnd_, SW_SHOW);
 			SetForegroundWindow(hWnd_);
 			SetFocus(hWnd_);
+
+		
 
 			running_ = true;
 			Log_Info("application %s initialized.", appName_.c_str());
@@ -207,7 +217,6 @@ namespace ul
 
 		void resize()
 		{
-			Log_Info("resize............................");
 			graphicsContext_.Resize(clientWidth_, clientHeight_);
 			this->WindowResize(clientWidth_, clientHeight_, GetDevicePtr(), GetDeviceContextPtr());
 		}

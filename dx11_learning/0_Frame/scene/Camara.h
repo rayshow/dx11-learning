@@ -90,7 +90,7 @@ namespace ul
 		inline float* GetProjectStorePtr(){return (float*)&project_; }
 
 		inline XMFLOAT4X4& GetViewProjectStoreType() {  return transposeViewProject_;  }
-		inline float* GetViewProjectStorePtr() const { return (float*)&viewProject_;  }
+		inline float* GetViewProjectStorePtr()  { return (float*)&viewProject_; }
 		
 		inline XMFLOAT4X4& GetRotateProjectStoreType()  { return transposeRotateProject_; }
 		inline float* GetRotateProjectStorePtr(){ return (float*)&rotateProject_;  }
@@ -106,10 +106,6 @@ namespace ul
 
 		void   LookAt(XMFLOAT4& eye, XMFLOAT4& at);
 	};  //BaseCamara
-
-
-
-
 
 
 	class FirstPersonController
