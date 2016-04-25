@@ -2,6 +2,19 @@
 #include"base_define.fx"
 
 
+float4x4	World				:WorldMatrix;
+float4x4	WorldViewProject	:WorldViewProjectMatrix;
+
+Texture2D   Albedomap			:AlbedoMap;
+Texture2D   Normalmap			:NormalMap;
+Texture2D   Miscmap				:MiscMap;
+TextureCube Irridiancemap		:IrridianceMap;
+TextureCube FilteredSpecularmap :FilteredSpecularMap;
+Texture2D   IntergeLukupmap		:IntergeLukupMap;
+
+float4 CamaraWorldPos           :CamaraWorldPos;
+
+
 
 cbuffer cbPerFrame : register(b0)
 {
@@ -135,12 +148,12 @@ PS_Output_Single PS_FillBuffer(PS_TranslateInput I)
 	float4 albedo = Albedomap.SampleLevel(LinearSampler, coord, 0);
 	albedo.rgb = resovleAlbedo(albedo.rgb, 2.2f);
 	float3 normalWarp = resolveNormal(I);
-	float3 RMB = Specularmap.SampleLevel(LinearSampler, coord, 0);
+	float3 misc = Miscmap.SampleLevel(LinearSampler, coord, 0);
 
-	float roughness = RMB.x;
+	float roughness = misc.x;
 	float glossness = 1.0f - roughness;
-	float matelness = RMB.y;
-	float bakedAO = RMB.z;
+	float matelness = misc.y;
+	float bakedAO = misc.z;
 
 	float3 view = normalize(CamaraWorldPos - I.f3WorldPos);
 	float3 refl = normalize(reflect(-view, normalize(normalWarp)));
@@ -160,11 +173,11 @@ PS_Output_Single PS_FillBuffer(PS_TranslateInput I)
 			roughness,
 			refl,
 			16,
-			SpecularLukup,
+			FilteredSpecularmap,
 			anisotropicSampler);
 	}
 	else{
-		specularIBL = SpecularLukup.SampleLevel(anisotropicSampler, refl, glossness * 9.0f).rgb;
+		specularIBL = FilteredSpecularmap.SampleLevel(anisotropicSampler, refl, glossness * 9.0f).rgb;
 	}
 
 	float3 dielectricColor = float3(0.04, 0.04, 0.04);

@@ -70,8 +70,7 @@ namespace ul
 
 		void RenderAll(ID3D11DeviceContext* context)
 		{
-			D3D11GraphicsContext::GetSingletonPtr()->DisableDepthTest();
-			mainSkyBox_.Render(context);
+			//mainSkyBox_.Render(context);
 			for (ulUint i = 0; i < staticObjects_.size(); ++i)
 			{
 				staticObjects_.at(i)->Render(context);

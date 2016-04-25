@@ -406,6 +406,13 @@ namespace ul
 			return pSrv;
 		}
 
+		inline ID3D11ShaderResourceView*
+		CreateTextureFromFileBaseDir(const string& fileName)
+		{
+			return this->CreateTextureFromFile(resourceBasePath_ + fileName);
+		}
+
+
 		inline StaticMeshRender* CreateStaticMeshRenderFromFile(const string& fileName)
 		{
 			StaticMeshRenderPoolIter find = releaseSetOnExit_.staticRenderPool.find(fileName);

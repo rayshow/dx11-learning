@@ -18,6 +18,10 @@ using namespace std;
 
 namespace ul{
 
+	class SceneMgr;
+	class ResourceMgr;
+
+
 	enum EShaderResource_Type
 	{
 		eShaderResource_Albedo = 0,
@@ -52,8 +56,7 @@ namespace ul{
 		eSampler_Cubemap2,
 	};
 
-	class SceneMgr;
-	class ResourceMgr;
+	
 
 	struct SRenderData
 	{
@@ -65,6 +68,7 @@ namespace ul{
 		ID3D11ShaderResourceView*  shaderSRVs_[CONST_MAX_TEXTURE_NUM];
 		XMFLOAT4X4                 worldTransform_;
 		XMFLOAT4X4                 worldViewProjectTransform_;
+		
 	};
 
 	class StaticMeshPart
@@ -110,19 +114,14 @@ namespace ul{
 		void Render(ID3D11DeviceContext* context);
 
 		template<typename XMFloat4x4>
-		void SetParameter(string name, XMFloat4x4* value, ulUint number = 1)
-		{
-			for (int i = 0; i < materials_.size(); ++i)
-			{
-				ID3DX11EffectMatrixVariable* var = materials_.at(i)->effect_->GetVariableByName(name.c_str())->AsMatrix();
-				var->SetMatrix((float*)value);
-			}
-		}
-
+		void SetParameter(string name, XMFloat4x4* value, ulUint number);
+	
 		void SetEffect(const string& fileName);
 
 	protected:
 		void setShaderFile(ResourceMgr* pResourceMgr, const string& shaderFileName, SRenderData* pRenderData);
+		void setShaderParameter(const std::string effectName, ID3DX11Effect* pEffect,
+			const SMaterialData* pMaterialData);
 		void setInputLayout(ResourceMgr* pResourceMgr);
 		void updateParameter();
 

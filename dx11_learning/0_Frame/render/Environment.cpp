@@ -148,7 +148,6 @@ bool SkyBox::createRenderData()
 	SMaterialData* materialData = new SMaterialData;
 	materialData->identifer = "skybox";
 	materialData->shaderFile = mgr->GetResourceBasePath()+"fx/skybox.fxo";
-	MaterialData_ClearTexturePath(materialData);
 	data.materials_.push_back(materialData);
 
 	box_.Create(mgr->GetDevice(), data);

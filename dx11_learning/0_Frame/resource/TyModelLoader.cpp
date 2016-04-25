@@ -100,26 +100,7 @@ bool TyModelReader::Load(
 				{
 					SMaterialData* materialData = data.materials_[i];
 
-					for (unsigned int j = 0; j < CONST_MAX_TEXTURE_NUM; ++j)
-					{
-						texPath = materialData->texturePath[j];
-						if (texPath != "")
-						{
-							if (useDDSTexture)
-							{
-								int lastDot = texPath.find_last_of('.');
-								texPath = texPath.substr(0, lastDot) + ".dds";
-							}
-
-							if (loadAsSingleModel)
-							{
-								int lastSeperate = texPath.find_last_of('/');
-								texPath = dir + texPath.substr(lastSeperate + 1);
-							}
-							materialData->texturePath[j] = texPath;
-						}
-						
-					}
+				
 				}
 
 				if ( !ret )

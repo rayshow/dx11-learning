@@ -31,9 +31,13 @@ public:
 		pCamara_->LookAt(XMFLOAT4(0, 0, -100, 0), XMFLOAT4(0, 0, 0, 0));
 		controller.SetCamara(pCamara_);
 
+		ID3DX11Effect* pEffect= resourceMgr_.LoadEffectFromCompileFile("test.fxo");
+		ID3DX11EffectVariable* var= pEffect->GetVariableByName("WorldViewProject");
+		
+		bool valid =var->IsValid();
 		//gun
 		pistol_ = sceneMgr_.CreateStaticObject("pbr_model/pistol/pistol.fbx");
-		pistol_->SetEffect("test.fxo");
+		//pistol_->SetEffect("test.fxo");
 
 		return true;
 	};
@@ -91,7 +95,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	// Initialize and run the system object.
 
 	app.SetResourceBasePath("../res/");
-	if (app.Initialize(800, 600))
+	if (app.Initialize(1024, 768))
 	{
 		app.Run();
 	}

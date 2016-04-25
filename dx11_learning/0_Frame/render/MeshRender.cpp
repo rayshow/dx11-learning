@@ -46,18 +46,8 @@ bool StaticMeshRender::Create(ID3D11Device* pd3dDevice, const SModelData& data)
 		///////////////////////////////////////////////////////memset(pRenderData, 0, sizeof(SRenderData));
 		//shader
 		this->setShaderFile(pResourceMgr, pMaterialData->shaderFile, pRenderData);
-		//texture
-		for (int j = 0; j < CONST_MAX_TEXTURE_NUM; ++j)
-		{
-			if (pMaterialData->texturePath[j] != "")
-			{
-				Null_Return_False( (pRenderData->shaderSRVs_[j] = pResourceMgr->CreateTextureFromFile(pMaterialData->texturePath[j])) );
-			}
-		}
-
+		this->setShaderParameter(pMaterialData->shaderFile, pRenderData->effect_, pMaterialData);
 		XMStoreFloat4x4(&pRenderData->worldTransform_, Identify);
-		
-		
 		materials_.push_back(pRenderData);
 	}
 	//inputlayout
@@ -127,6 +117,37 @@ void StaticMeshRender::setShaderFile(ResourceMgr* pResourceMgr, const string& sh
 	}
 }
 
+void StaticMeshRender::setShaderParameter(const std::string effectName, 
+	ID3DX11Effect* pEffect, const SMaterialData* pMaterialData)
+{
+	ResourceMgr* pResourceMgr = ResourceMgr::GetSingletonPtr();
+	ID3DX11EffectVariable *var = nullptr;
+	for (ulUint i = 0; i < pMaterialData->parameters.size(); ++i)
+	{
+		SMaterialParameter* parameter = pMaterialData->parameters.at(i);
+		var = pEffect->GetVariableBySemantic(parameter->name.c_str());
+		if (!var->IsValid())
+		{
+			Log_Err("parameter %s not found in effect file %s", parameter->name.c_str(), effectName.c_str());
+			continue;
+		}
+		switch (parameter->type)
+		{
+		case eMaterialParameter_Path:
+				var->AsShaderResource()->SetResource(pResourceMgr->CreateTextureFromFileBaseDir((char*)parameter->value));
+			break;
+		case eMaterialParameter_Float:
+			var->AsScalar()->SetFloat(*static_cast<float*>(parameter->value));
+			break;
+		case eMaterialParameter_Int:
+			var->AsScalar()->SetInt(*static_cast<int*>(parameter->value));
+		case eMaterialParameter_Vector:
+			var->AsVector()->SetFloatVector(static_cast<float*>(parameter->value));
+		case eMaterialParameter_Unkown:
+			assert(0);
+		}
+	}
+}
 
 void StaticMeshRender::setInputLayout(ResourceMgr* pResourceMgr)
 {
@@ -139,6 +160,15 @@ void StaticMeshRender::setInputLayout(ResourceMgr* pResourceMgr)
 	}
 }
 
+template<typename XMFloat4x4>
+void StaticMeshRender::SetParameter(string name, XMFloat4x4* value, ulUint number = 1)
+{
+	for (int i = 0; i < materials_.size(); ++i)
+	{
+		ID3DX11EffectMatrixVariable* var = materials_.at(i)->effect_->GetVariableByName(name.c_str())->AsMatrix();
+		var->SetMatrix((float*)value);
+	}
+}
 
 void StaticMeshRender::updateParameter()
 {

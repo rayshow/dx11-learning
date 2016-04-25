@@ -1,13 +1,73 @@
+#include"CommonModelLoader.h"
+
 #include<rapidxml.hpp>
 #include<rapidxml_utils.hpp>
 #include<sstream>
 #include<exception>
+#include<xnamath.h>
 
-#include"CommonModelLoader.h"
 
 using namespace ul;
 using namespace rapidxml;
 using namespace std;
+
+static EMaterialParameterType MaterialParameterType_FromString(const std::string& type)
+{
+	if (type == "texture")
+		return eMaterialParameter_Path;
+	if (type == "vector")
+		return eMaterialParameter_Vector;
+	if (type == "float")
+		return eMaterialParameter_Float;
+	if (type == "int")
+		return eMaterialParameter_Int;
+	return eMaterialParameter_Unkown;
+};
+
+
+
+static void MaterialParameter_ResovleValue(SMaterialParameter* parameter,
+	const std::string content, std::stringstream& buffer)
+{
+	XMFLOAT4 vector;
+
+	switch (parameter->type)
+	{
+	case eMaterialParameter_Path:
+		parameter->size = content.length() + 1;
+		parameter->value = new char[parameter->size];
+		memcpy(parameter->value, content.c_str(), parameter->size);
+		break;
+	case eMaterialParameter_Vector:
+		buffer << content;
+		buffer >> vector.x  >> vector.y  >> vector.z  >> vector.w;
+		parameter->size = sizeof(vector);
+		parameter->value = new XMFLOAT4[1];
+		memcpy(parameter->value, &vector, sizeof(vector));
+		break;
+	case eMaterialParameter_Float:
+		float fvalue;
+		buffer << content;
+		buffer >> fvalue;
+		parameter->value = new float[1];
+		parameter->size = sizeof(float);
+		memcpy(parameter->value, &fvalue, sizeof(float));
+		break;
+	case eMaterialParameter_Int:
+		int ivalue;
+		buffer << content;
+		buffer >> ivalue;
+		parameter->value = new int[1];
+		parameter->size = sizeof(int);
+		memcpy(parameter->value, &ivalue, sizeof(int));
+		break;
+	case eMaterialParameter_Unkown:
+		assert(0);
+		break;
+	}
+	buffer.clear();
+}
+
 
 bool CommonModelLoader::LoadFile(const std::string resourcePath, const std::string& fileName
 	, SModelData& data)
@@ -205,22 +265,33 @@ bool CommonModelLoader::loadMaterial(
 			buffer >> mapName;
 			pMaterialData->shaderFile = resourcePath + mapName;
 			buffer.clear();
-			for (int i = 0; i < CONST_MAX_TEXTURE_NUM; ++i)
+			
+			xml_attribute<>* nameNode = nullptr;
+			xml_attribute<>* typeNode = nullptr;
+			SMaterialParameter *parameter = nullptr;
+			//parameter
+			xml_node<> *parameterNode = pMaterialNode->first_node("parameter");
+			for (; parameterNode != nullptr; parameterNode = parameterNode->next_sibling("parameter"))
 			{
-				if (CONST_ALL_TEXTURE_POS_NAMES[i].name != "")
+				nameNode  = parameterNode->first_attribute("name");
+				typeNode  = parameterNode->first_attribute("type");
+				if (Null(nameNode) || Null(typeNode))
 				{
-					xml_node<> *node = pMaterialNode->first_node(CONST_ALL_TEXTURE_POS_NAMES[i].name.c_str());
-					if (Not_Null(node))
-					{
-						buffer<<node->value();
-						buffer >> mapName;
-						pMaterialData->texturePath[CONST_ALL_TEXTURE_POS_NAMES[i].index] = resourcePath + mapName;
-						buffer.clear();
-					}
-					else{
-						pMaterialData->texturePath[CONST_ALL_TEXTURE_POS_NAMES[i].index] = "";
-					}
+					Log_Err("parameter attribute miss in file %s", materialFileName.c_str());
+					return false;
 				}
+				parameter = new  SMaterialParameter;
+				buffer << nameNode->value();
+				buffer >> parameter->name;
+				buffer.clear();
+				buffer << typeNode->value();
+				buffer >> mapName;
+				parameter->type = MaterialParameterType_FromString(mapName);
+				buffer.clear();
+				buffer << parameterNode->value();
+				buffer >> mapName;
+				MaterialParameter_ResovleValue(parameter, mapName, buffer);
+				pMaterialData->parameters.push_back(parameter);
 			}
 			materialGroup.push_back(pMaterialData);
 		}

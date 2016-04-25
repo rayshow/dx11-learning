@@ -6,6 +6,7 @@
 #include<xnamath.h>
 
 #include"MeshRender.h"
+#include"../D3D11GraphicContext.h"
 
 namespace ul
 {
@@ -40,18 +41,22 @@ namespace ul
 	{
 	private:
 		StaticMeshRender   box_;
+		D3D11GraphicsContext* context_;
 	public:
-		SkyBox(){}
+		SkyBox() :context_(nullptr){}
 		~SkyBox(){}
 		bool Create()
 		{
 			False_Return_False( this->createRenderData() );
+			context_ = D3D11GraphicsContext::GetSingletonPtr();
 			return true;
 		}
 
 		void Render(ID3D11DeviceContext* context)
 		{
+			context_->DisableDepthTest();
 			box_.Render(context);
+			context_->EnableDepthTest();
 		}
 	private:
 		bool createRenderData();

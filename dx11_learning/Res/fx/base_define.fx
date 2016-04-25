@@ -90,19 +90,8 @@ float floatEqual(
 }
 
 
-Texture2D                   Albedomap           : register(t0);
-Texture2D                   Normalmap			: register(t1);
-Texture2D                   Specularmap		    : register(t2);
-Texture2D                   Emitmap			    : register(t3);
-TextureCube                 Irridiancemap		: register(t4);
-TextureCube                 SpecularLukup		: register(t5);
-Texture2D                   IntergeLukupmap 	: register(t6);
-TextureCube                 EnvCubemap			: register(t7);
-Texture2D                   Texture0			: register(t8);
-Texture2D                   Texture1			: register(t9);
-Texture2D                   Texture2			: register(t10);
-Texture2D                   Cubemap1			: register(t11);
-Texture2D                   Cubemap2			: register(t12);
+
+
 
 
 
@@ -139,14 +128,28 @@ SamplerState clampSampler
 	BorderColor = float4(0, 0, 0, 0);
 };
 
+/*
 
-float4x4 World;
-float4x4 View;
-float4x4 Project;
-float4x4 InvView;
-float4x4 InvProject;
-float4x4 RotateProject;
-float4x4 WorldViewProject;
-float4   CamaraWorldPos;
+Texture2D                   Albedomap:AlbedoMap;
+Texture2D                   Normalmap:NormalMap;
+Texture2D                   Miscmap:MiscMap;
+Texture2D                   Emitmap:EmitMap;
+TextureCube                 Irridiancemap:IrridianceMap;
+TextureCube                 FilteredSpecularmap: FilteredSpecularMap;
+Texture2D                   IntergeLukupmap: IntergeLukupMap;
+TextureCube                 EnvCubemap:EnvCubeMap;
+
+*/
+/*
+float4x4 World : WorldMatrix;
+float4x4 View: ViewMatrix;
+float4x4 Project: ProjectMatrix;
+float4x4 InvView: InvViewMatrix;
+float4x4 InvProject : InvProjectMatrix;
+float4x4 RotateProject: RotateProjectMatrix;
+float4x4 WorldViewProject: WorldViewProjectMatrix;
+float4   CamaraWorldPos: CamaraWorldPosition;
+
+*/
 
 #endif

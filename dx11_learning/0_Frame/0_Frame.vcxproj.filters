@@ -1,9 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="shader">
-      <UniqueIdentifier>{fda45c06-1d42-4af4-a066-edb08969d9dd}</UniqueIdentifier>
-    </Filter>
     <Filter Include="design_frame">
       <UniqueIdentifier>{16fddf66-0adf-42b6-8f30-593810d89065}</UniqueIdentifier>
     </Filter>
@@ -24,6 +21,9 @@
     </Filter>
     <Filter Include="gui">
       <UniqueIdentifier>{dfaded0d-7d58-4143-b1bd-fb7e849b72d2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="dx11">
+      <UniqueIdentifier>{c9e12d6a-473e-4b27-92a4-ca09b15358d0}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -99,6 +99,9 @@
     <ClInclude Include="gui\AntTweakBar.h">
       <Filter>gui</Filter>
     </ClInclude>
+    <ClInclude Include="dx11\VertexInputBuffer.h">
+      <Filter>dx11</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="render\Environment.cpp">
@@ -138,6 +141,9 @@
     </ClCompile>
     <ClCompile Include="scene\SceneManager.cpp">
       <Filter>scene</Filter>
+    </ClCompile>
+    <ClCompile Include="dx11\VertexInputBuffer.cpp">
+      <Filter>dx11</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

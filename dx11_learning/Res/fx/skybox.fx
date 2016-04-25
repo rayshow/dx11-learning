@@ -1,5 +1,11 @@
 #include"base_define.fx"
 
+
+float4x4 RotateProject: RotateProjectMatrix;
+TextureCube EnvCubemap:EnvCubeMap;
+
+
+
 //普通模型的PS参数
 struct PS_TranslateInput
 {
@@ -33,7 +39,7 @@ PS_TranslateInput VS_FillBuffer(VS_Input_Xyznuv I)
 PS_Output_Single PS_FillBuffer(PS_TranslateInput I)
 {
 	PS_Output_Single O;
-	O.color0 =  SpecularLukup.SampleLevel(anisotropicSampler, I.f3Dir, 0);
+	O.color0 = EnvCubemap.SampleLevel(anisotropicSampler, I.f3Dir, 0);
 	return O;
 }
 

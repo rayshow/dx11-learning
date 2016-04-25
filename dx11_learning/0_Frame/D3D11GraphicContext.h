@@ -85,8 +85,15 @@ namespace ul
 
 		void DisableDepthTest()
 		{
-			
+			pContext_->OMSetDepthStencilState(disableDepth_, 0);
 		}
+
+		void EnableDepthTest()
+		{
+			pContext_->OMSetDepthStencilState(pDepthStenilState_, 1);
+		}
+
+
 
 		void BeginScene()
 		{

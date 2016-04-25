@@ -15,6 +15,7 @@
     <ClInclude Include="base\BaseDefine.h" />
     <ClInclude Include="D3D11GraphicContext.h" />
     <ClInclude Include="design_frame\Singleton.h" />
+    <ClInclude Include="dx11\VertexInputBuffer.h" />
     <ClInclude Include="Frame.h" />
     <ClInclude Include="gui\AntTweakBar.h" />
     <ClInclude Include="gui\imconfig.h" />
@@ -41,6 +42,7 @@
   <ItemGroup>
     <ClCompile Include="Application.cpp" />
     <ClCompile Include="D3D11GraphicContext.cpp" />
+    <ClCompile Include="dx11\VertexInputBuffer.cpp" />
     <ClCompile Include="gui\imgui.cpp" />
     <ClCompile Include="gui\imgui_demo.cpp" />
     <ClCompile Include="gui\imgui_draw.cpp" />
