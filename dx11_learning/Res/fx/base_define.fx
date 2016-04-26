@@ -89,12 +89,6 @@ float floatEqual(
 	return (abs(a - b) < 0.00001f ? 1.0 : 0.0f);
 }
 
-
-
-
-
-
-
 sampler PointSampler
 {
 	Filter = MIN_MAG_MIP_POINT;
@@ -106,12 +100,12 @@ sampler PointSampler
 SamplerState LinearSampler
 {
 	Filter = MIN_MAG_MIP_LINEAR;
-	AddressU = CLAMP;
-	AddressV = CLAMP;
+	AddressU = Wrap;
+	AddressV = Wrap;
 	MipLODBias = 0.0f;
 };
 
-SamplerState anisotropicSampler
+SamplerState trilinearSampler
 {
 	Filter = MIN_MAG_MIP_LINEAR;
 	MaxAnisotropy = 16;
@@ -125,8 +119,18 @@ SamplerState clampSampler
 	Filter = MIN_MAG_MIP_LINEAR;
 	AddressU = Clamp;
 	AddressV = Clamp;
-	BorderColor = float4(0, 0, 0, 0);
+	BorderColor = float4(10000, 10000, 10000, 10000);
 };
+
+SamplerState anisotropicSampler
+{
+	Filter = MIN_MAG_MIP_LINEAR;
+	MaxAnisotropy = 16;
+	AddressU = Wrap;
+	AddressV = Wrap;
+	BorderColor = float4(10000, 10000, 10000, 10000);
+};
+
 
 /*
 

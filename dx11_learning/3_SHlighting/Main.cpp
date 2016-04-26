@@ -35,15 +35,13 @@ public:
 		ID3D11Device *dev,
 		ID3D11DeviceContext* context)
 	{
-
 	};
 
-	virtual void InitResource(ID3D11Device *dev,
+	virtual bool InitResource(ID3D11Device *dev,
 		ID3D11DeviceContext* context)
 	{
-		ResourceMgr *mgr = ResourceMgr::GetSingletonPtr();
 
-		envTexture_ = mgr->CreateTextureFromFile("../Res/skybox/sky1/domeSpecularHDR.dds");
+		envTexture_ = resourceMgr_.CreateTextureFromFile("../Res/skybox/sky1/domeSpecularHDR.dds");
 
 		float r[9], g[9], b[9];
 		
@@ -71,13 +69,13 @@ public:
 		lukupDesc.Usage = D3D11_USAGE_DEFAULT;
 		lukupDesc.BindFlags = D3D11_BIND_UNORDERED_ACCESS;
 		lukupDesc.MiscFlags = 0;
-		Null_Return_Void(( processedTexture = mgr->CreateTexture2DNoData(lukupDesc) ));
+		Null_Return_False((processedTexture = resourceMgr_.CreateTexture2DNoData(lukupDesc)));
 
 		D3D11_UNORDERED_ACCESS_VIEW_DESC sbUAVDesc;
 		sbUAVDesc.Texture2D.MipSlice = 0;
 		sbUAVDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
 		sbUAVDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D;
-		Null_Return_Void((processedUAV = mgr->CreateUnorderedAccessView(processedTexture, sbUAVDesc, ResourceMgr::eReleaseOnExit)));
+		Null_Return_False((processedUAV = resourceMgr_.CreateUnorderedAccessView(processedTexture, sbUAVDesc, eRelease_OnExit)));
 
 		int ShBufferCounter = floor(std::log10((ENV_MAP_WIDTH / THREAD_DIMENSION)) / std::log10(2)) + 1;
 		int BufferWidth = ENV_MAP_WIDTH;
@@ -102,14 +100,14 @@ public:
 			unordered_buffer_desc.StructureByteStride = sizeof(UB_Coeffs);
 			unordered_buffer_desc.ByteWidth = sizeof(UB_Coeffs)* BufferWidth * BufferWidth;
 			
-			Null_Return_Void( 
-				(buffer = mgr->CreateBuffer(unordered_buffer_desc, nullptr))
+			Null_Return_False( 
+				(buffer = resourceMgr_.CreateBuffer(unordered_buffer_desc, nullptr))
 			);
 			ShBufferVec.push_back(buffer);
 
 			ID3D11UnorderedAccessView *uav;
 			uavbuffer_desc.Buffer.NumElements = BufferWidth*BufferWidth;
-			Null_Return_Void((uav = mgr->CreateUnorderedAccessView(buffer, uavbuffer_desc, ResourceMgr::eReleaseOnExit)));
+			Null_Return_False((uav = resourceMgr_.CreateUnorderedAccessView(buffer, uavbuffer_desc, eRelease_OnExit)));
 			ShUnorderedStructs.push_back(uav);
 
 			BufferWidth = BufferWidth / 2;
@@ -141,12 +139,12 @@ public:
 		SamDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
 
 		SamDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-		Null_Return_Void((trilinear = mgr->CreateSamplerState(SamDesc)));  //三线性
-		Null_Return_Void((ShCpuValue = mgr->CreateBuffer(cpu_buffer_desc, nullptr)));
-		Null_Return_Void((SHvalueFirstPass = mgr->CreateComputeShader("cubemap_to_sh.hlsl", "FirstPass", "cs_5_0")));
-		Null_Return_Void((SHvalueNextPass =  mgr->CreateComputeShader("cubemap_to_sh.hlsl", "NextPass", "cs_5_0")));
+		Null_Return_False((trilinear = resourceMgr_.CreateSamplerState(SamDesc)));  //三线性
+		Null_Return_False((ShCpuValue = resourceMgr_.CreateBuffer(cpu_buffer_desc, nullptr)));
+		Null_Return_False((SHvalueFirstPass = resourceMgr_.CreateComputeShader("cubemap_to_sh.hlsl", "FirstPass", "cs_5_0")));
+		Null_Return_False((SHvalueNextPass = resourceMgr_.CreateComputeShader("cubemap_to_sh.hlsl", "NextPass", "cs_5_0")));
 		
-		resolutionBuffer_ = mgr->CreateConstantBuffer(sizeof(CB_ComputeResolution));
+		resolutionBuffer_ = resourceMgr_.CreateConstantBuffer(sizeof(CB_ComputeResolution));
 	};
 
 
@@ -323,22 +321,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
 	Log_Info("hello");
 	//Utils::SetBreakPointAtMemoryLeak(154);
-	Lession1_Frame  *app = new Lession1_Frame;
-	if (!app)
-	{
-		return 0;
-	}
+	Lession1_Frame  app;
+	app.SetResourceBasePath("../res/");
 
 	// Initialize and run the system object.
-	if (app->Initialize(800, 600))
+	if (app.Initialize(800, 600))
 	{
-		app->Run();
+		app.Run();
 	}
 
 	// Shutdown and release the system object.
-	app->Shutdown();
-	delete app;
-	app = 0;
+	app.Shutdown();
 
 	return 0;
 }

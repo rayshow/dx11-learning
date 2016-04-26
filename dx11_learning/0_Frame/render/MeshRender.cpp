@@ -47,7 +47,10 @@ bool StaticMeshRender::Create(ID3D11Device* pd3dDevice, const SModelData& data)
 		//shader
 		this->setShaderFile(pResourceMgr, pMaterialData->shaderFile, pRenderData);
 		this->setShaderParameter(pMaterialData->shaderFile, pRenderData->effect_, pMaterialData);
+
+		//Identify = XMMatrixScaling(0.05, 0.05, 0.05);
 		XMStoreFloat4x4(&pRenderData->worldTransform_, Identify);
+		
 		materials_.push_back(pRenderData);
 	}
 	//inputlayout
@@ -185,8 +188,9 @@ void StaticMeshRender::updateParameter()
 		pEffect->GetVariableByName("World")->AsMatrix()->SetMatrix((float*)&pRenderData->worldTransform_);
 		pEffect->GetVariableByName("RotateProject")->AsMatrix()->SetMatrix(pCamara->GetRotateProjectStorePtr());
 		pEffect->GetVariableByName("WorldViewProject")->AsMatrix()->SetMatrix((float*)&pRenderData->worldViewProjectTransform_);
+		pEffect->GetVariableByName("CamaraWorldPos")->AsVector()->SetFloatVector(pCamara->GetEyePosStorePtr());
 		pEffect->GetVariableByName("Irridiancemap")->AsShaderResource()->SetResource(env.GetEnvironmentmaps()[0]);
-		pEffect->GetVariableByName("SpecularLukup")->AsShaderResource()->SetResource(env.GetEnvironmentmaps()[1]);
+		pEffect->GetVariableByName("FilteredSpecularmap")->AsShaderResource()->SetResource(env.GetEnvironmentmaps()[1]);
 		pEffect->GetVariableByName("IntergeLukupmap")->AsShaderResource()->SetResource(env.GetEnvironmentmaps()[2]);
 	}
 }

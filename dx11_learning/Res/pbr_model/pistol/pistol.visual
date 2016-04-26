@@ -8,9 +8,6 @@
 			<parameter name ="AlbedoMap" type="texture"> pbr_model/pistol/Cerberus_A.dds </parameter>
 			<parameter name ="NormalMap" type="texture"> pbr_model/pistol/Cerberus_N.dds </parameter>
 			<parameter name ="MiscMap" type="texture">   pbr_model/pistol/Cerberus_RMAC.dds</parameter>
-			<parameter name ="Color" type="vector">1,1,1,1</parameter>
-			<parameter name ="distance" type="float">100.0f</parameter>
-
 		</material>
 	</renderset>
 </visual>

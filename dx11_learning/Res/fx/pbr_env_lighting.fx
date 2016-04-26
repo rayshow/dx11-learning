@@ -2,17 +2,15 @@
 #include"base_define.fx"
 
 
-float4x4	World				:WorldMatrix;
-float4x4	WorldViewProject	:WorldViewProjectMatrix;
-
-Texture2D   Albedomap			:AlbedoMap;
-Texture2D   Normalmap			:NormalMap;
-Texture2D   Miscmap				:MiscMap;
-TextureCube Irridiancemap		:IrridianceMap;
-TextureCube FilteredSpecularmap :FilteredSpecularMap;
-Texture2D   IntergeLukupmap		:IntergeLukupMap;
-
-float4 CamaraWorldPos           :CamaraWorldPos;
+float4x4	World					:WorldMatrix;
+float4x4	WorldViewProject		:WorldViewProjectMatrix;
+Texture2D   Albedomap				:AlbedoMap;
+Texture2D   Normalmap				:NormalMap;
+Texture2D   Miscmap					:MiscMap;
+TextureCube Irridiancemap			:IrridianceMap;
+TextureCube FilteredSpecularmap		:FilteredSpecularMap;
+Texture2D   IntergeLukupmap			:IntergeLukupMap;
+float4		CamaraWorldPos			:CamaraWorldPos;
 
 
 
@@ -45,6 +43,7 @@ static const float TextureGamma = 2.0;
 #define eOutput_Matelness 5
 #define eOutput_Lukup 6
 #define eOutput_Normal 7
+
 
 
 // 顶点参数
@@ -89,7 +88,7 @@ resolveNormal(PS_TranslateInput I)
 	// Tangent basis from screen space derivatves. 
 	normal = I.f3Normal;
 	float3x3 tbnTransform;
-	float4 texNormal = Normalmap.SampleLevel(PointSampler, I.f2TexCoord, 0);
+	float4 texNormal = Normalmap.SampleLevel(anisotropicSampler, I.f2TexCoord, 0);
 	texNormal.xyz = normalize((2.0f * texNormal.xyz) - 1.0f);
 
 	float3 dp1 = ddx_fine(I.f3WorldPos.xyz);
@@ -136,8 +135,6 @@ PS_TranslateInput VS_FillBuffer(VS_VertexLayout I)
 	return O;
 }
 
-
-
 //片元，普通模型
 PS_Output_Single PS_FillBuffer(PS_TranslateInput I)
 {
@@ -145,10 +142,10 @@ PS_Output_Single PS_FillBuffer(PS_TranslateInput I)
 	//O.color0 = float4(0.3, 0, 0, 1);
 	//return O;
 	float2 coord = I.f2TexCoord;
-	float4 albedo = Albedomap.SampleLevel(LinearSampler, coord, 0);
+		float4 albedo = Albedomap.SampleLevel(anisotropicSampler, coord, 0);
 	albedo.rgb = resovleAlbedo(albedo.rgb, 2.2f);
 	float3 normalWarp = resolveNormal(I);
-	float3 misc = Miscmap.SampleLevel(LinearSampler, coord, 0);
+		float3 misc = Miscmap.SampleLevel(anisotropicSampler, coord, 0);
 
 	float roughness = misc.x;
 	float glossness = 1.0f - roughness;
@@ -159,32 +156,18 @@ PS_Output_Single PS_FillBuffer(PS_TranslateInput I)
 	float3 refl = normalize(reflect(-view, normalize(normalWarp)));
 	float VoN = dot(view, normalWarp);
 
-
 	//environment
-	float2 brdfTerm = IntergeLukupmap.SampleLevel(LinearSampler, float2(VoN, roughness), 0).xy;
+	float2 brdfTerm = IntergeLukupmap.SampleLevel(anisotropicSampler, float2(VoN, roughness), 0).xy;
 	float3 specularIBL = 0;
 	float3 irridiance = 0;
 
-	
 	irridiance = Irridiancemap.SampleLevel(anisotropicSampler, normalWarp, 0) / PI;
-	if (specularType == eSpecular_Realtime_Imp)
-	{
-		specularIBL = PrefilterSpecularMap(
-			roughness,
-			refl,
-			16,
-			FilteredSpecularmap,
-			anisotropicSampler);
-	}
-	else{
-		specularIBL = FilteredSpecularmap.SampleLevel(anisotropicSampler, refl, glossness * 9.0f).rgb;
-	}
-
+	specularIBL = FilteredSpecularmap.SampleLevel(anisotropicSampler, refl, glossness * 9.0f).rgb;
+	
 	float3 dielectricColor = float3(0.04, 0.04, 0.04);
 	float3 specular = lerp(dielectricColor, albedo.rgb, matelness);
 	float3 litColor = irridiance * albedo + (specularIBL*(specular*brdfTerm.x + brdfTerm.y));
 	litColor = litColor * bakedAO;
-
 
 	switch (outputType)
 	{
@@ -211,8 +194,7 @@ PS_Output_Single PS_FillBuffer(PS_TranslateInput I)
 		break;
 	}
 
-
-	O.color0.rgb = litColor;//specularIBL;//
+	O.color0.rgb = pow(specularIBL, 1 / 2.2);
 	return O;
 }
 

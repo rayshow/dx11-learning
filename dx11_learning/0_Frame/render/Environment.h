@@ -30,6 +30,9 @@ namespace ul
 		{
 			return environmentMaps_;
 		}
+
+		void Apply();
+
 	protected:
 		bool setEnvmap(
 			const std::string& diffuseName,

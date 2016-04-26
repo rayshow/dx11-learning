@@ -64,8 +64,8 @@ namespace ul
 		inline void SetPitch(ulFloat pitch) { this->pitch_ = pitch; }
 
 		XMFLOAT4& GetEyePosStoreType() { return position_; }
-
 		XMVECTOR GetEyePos() { return XMLoadFloat4(&position_); }
+		float* GetEyePosStorePtr(){ return (float*)(&position_);  }
 
 		inline XMMATRIX GetViewMatrix(){ return XMLoadFloat4x4(&view_); }
 

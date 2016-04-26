@@ -2,7 +2,7 @@
 
 
 float4x4 RotateProject: RotateProjectMatrix;
-TextureCube EnvCubemap:EnvCubeMap;
+TextureCube FilteredSpecularmap:FilteredSpecularMap;
 
 
 
@@ -39,7 +39,7 @@ PS_TranslateInput VS_FillBuffer(VS_Input_Xyznuv I)
 PS_Output_Single PS_FillBuffer(PS_TranslateInput I)
 {
 	PS_Output_Single O;
-	O.color0 = EnvCubemap.SampleLevel(anisotropicSampler, I.f3Dir, 0);
+	O.color0 = FilteredSpecularmap.SampleLevel(trilinearSampler, I.f3Dir, 0);
 	return O;
 }
 

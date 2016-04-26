@@ -70,7 +70,9 @@ namespace ul
 
 		void RenderAll(ID3D11DeviceContext* context)
 		{
-			//mainSkyBox_.Render(context);
+			mainEnvirment_.Apply();
+
+			mainSkyBox_.Render(context);
 			for (ulUint i = 0; i < staticObjects_.size(); ++i)
 			{
 				staticObjects_.at(i)->Render(context);

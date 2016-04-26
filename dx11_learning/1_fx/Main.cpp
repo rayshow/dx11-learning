@@ -28,13 +28,10 @@ public:
 		//camara
 		pCamara_ = sceneMgr_.CreateCamara();
 		sceneMgr_.SetMainCamara(pCamara_);
-		pCamara_->LookAt(XMFLOAT4(0, 0, -100, 0), XMFLOAT4(0, 0, 0, 0));
+		pCamara_->LookAt(XMFLOAT4(0, 0, -10, 0), XMFLOAT4(0, 0, 0, 0));
 		controller.SetCamara(pCamara_);
+		controller.SetRotateAndMoveScaler(2, 10);
 
-		ID3DX11Effect* pEffect= resourceMgr_.LoadEffectFromCompileFile("test.fxo");
-		ID3DX11EffectVariable* var= pEffect->GetVariableByName("WorldViewProject");
-		
-		bool valid =var->IsValid();
 		//gun
 		pistol_ = sceneMgr_.CreateStaticObject("pbr_model/pistol/pistol.fbx");
 		//pistol_->SetEffect("test.fxo");

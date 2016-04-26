@@ -96,7 +96,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	//ul::SetBreakPointAtMemoryLeak(505);
 	ul::OpenConsoleAndDebugLeak();
 
-
 	Log_Info("hello");
 	//Utils::SetBreakPointAtMemoryLeak(154);
 	Lession1_Frame  *app = new Lession1_Frame;
