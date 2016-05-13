@@ -21,6 +21,9 @@ namespace ul
 		ulFloat		uv_[2];
 	};
 
+
+
+
 	struct SVertexXyznuvtb : SVertexXyzNuv
 	{
 		ulFloat tangent_[3];
@@ -34,6 +37,7 @@ namespace ul
 		ulUbyte			   iii_[4];
 		ulUbyte            ww_[4];
 	};
+
 
 	const D3D11_INPUT_ELEMENT_DESC G_Layout_VertexXyznuv[] =
 	{

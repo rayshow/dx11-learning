@@ -42,7 +42,7 @@ bool Environment::setEnvmap(
 void Environment::Apply()
 {
 	ID3D11DeviceContext* context = ResourceMgr::GetSingletonPtr()->GetContext();
-	context->PSSetShaderResources(5, 3, environmentMaps_);
+	context->PSSetShaderResources(3, 3, environmentMaps_);
 }
 
 bool Environment::Initialize(const string& fileName)

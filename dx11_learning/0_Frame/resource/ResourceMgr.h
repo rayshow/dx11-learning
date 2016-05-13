@@ -154,6 +154,8 @@ namespace ul
 		AutoReleasePtr<ID3DBlob> ErrorBlobPtr;
 		HRESULT hr = D3DX11CompileFromFileA(szFileName, nullptr, nullptr, szEntryPoint, szShaderModel,
 			dwShaderFlags, 0, nullptr, ppBlobOut, ErrorBlobPtr.GetPtr(), nullptr);
+
+		
 		if (Fail(hr))
 		{
 			if (hr == D3D11_ERROR_FILE_NOT_FOUND)
@@ -371,10 +373,20 @@ namespace ul
 				"create fx from file %s error.", szFileName
 			);
 			fin.close();
+			
+
+			
 
 			releaseSetOnExit_.effectPool.insert(make_pair(szFileName, pEffect));
 			return pEffect;
 		}
+
+
+		const D3D11_INPUT_ELEMENT_DESC G_Layout_COLOR[] =
+		{
+			{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+			{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		};
 
 
 		inline ID3D11InputLayout* 
@@ -382,7 +394,7 @@ namespace ul
 			ulUint size, const D3DX11_PASS_DESC& desc)
 		{
 			ID3D11InputLayout* pLayout = nullptr;
-			Fail_Return_Null( pDevice_->CreateInputLayout(pEleDesc, size, desc.pIAInputSignature, desc.IAInputSignatureSize, &pLayout) );
+			Fail_Return_Null(pDevice_->CreateInputLayout(G_Layout_COLOR, size, desc.pIAInputSignature, desc.IAInputSignatureSize, &pLayout));
 			releaseSetOnExit_.inputLayouts.push_back(pLayout);
 			return pLayout;
 		}

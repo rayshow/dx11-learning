@@ -7,6 +7,9 @@
 #include<iostream>
 #include<ios>
 #include<fstream>
+#include<render/PostProcess.h>
+#include<functional>
+#include<D3DX10math.h>
 
 using namespace ul;
 using namespace std;
@@ -22,6 +25,12 @@ public:
 		ID3D11Device *dev,
 		ID3D11DeviceContext* context)
 	{
+		
+		std::hash<std::string> StringHash;
+		std::string test;
+		
+		
+		
 		//bg
 		sceneMgr_.SetEnvironment("skybox/sky1/dome1.env");
 
@@ -34,6 +43,7 @@ public:
 
 		//gun
 		pistol_ = sceneMgr_.CreateStaticObject("pbr_model/pistol/pistol.fbx");
+
 		//pistol_->SetEffect("test.fxo");
 
 		return true;
@@ -45,6 +55,9 @@ public:
 	{
 		aspect_ = (float)width / (float)height;
 		pCamara_->SetProject(BaseCamara::eCamara_Perspective, XM_PI / 4, aspect_, 0.1f, 10000.0f);
+
+		chain_.Create(width, height);
+		
 	};
 
 	virtual void RenderFrame(
@@ -75,6 +88,7 @@ private:
 	SkyBox*                      skyBox_;
 	FirstPersonController		 controller;
 	StaticMeshRender*            pistol_;
+	PostProcessChain             chain_;
 	
 };
 
@@ -86,7 +100,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	ul::OpenConsoleAndDebugLeak();	
 	Log_Info("hello");
 	//Utils::SetBreakPointAtMemoryLeak(154);
-
 
 	Lession1_Frame  app;
 	// Initialize and run the system object.

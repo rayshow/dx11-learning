@@ -4,17 +4,17 @@
 
 float4x4	World					:WorldMatrix;
 float4x4	WorldViewProject		:WorldViewProjectMatrix;
-Texture2D   Albedomap				:AlbedoMap;
-Texture2D   Normalmap				:NormalMap;
-Texture2D   Miscmap					:MiscMap;
-TextureCube Irridiancemap			:IrridianceMap;
-TextureCube FilteredSpecularmap		:FilteredSpecularMap;
-Texture2D   IntergeLukupmap			:IntergeLukupMap;
+Texture2D   Albedomap				:AlbedoMap: register(t0);
+Texture2D   Normalmap				:NormalMap : register(t1);
+Texture2D   Miscmap					:MiscMap : register(t2);
+TextureCube Irridiancemap			:IrridianceMap : register(t3);
+TextureCube FilteredSpecularmap		:FilteredSpecularMap : register(t4);
+Texture2D   IntergeLukupmap			:IntergeLukupMap : register(t5);
 float4		CamaraWorldPos			:CamaraWorldPos;
 
 
 
-cbuffer cbPerFrame : register(b0)
+shared cbuffer cbPerFrame : register(b0)
 {
 	uint     specularType;
 	uint     irridianceType;
@@ -135,6 +135,24 @@ PS_TranslateInput VS_FillBuffer(VS_VertexLayout I)
 	return O;
 }
 
+
+float3 Uncharted2Tonemap(float3 x)
+{
+	float A = 0.15;
+	float B = 0.50;
+	float C = 0.10;
+	float D = 0.20;
+	float E = 0.02;
+	float F = 0.30;
+
+	return ((x*(A*x + C*B) + D*E) / (x*(A*x + B) + D*F)) - E / F;
+}
+
+PS_Output_Single PS_FillBuffer(float3 pos:POSITION, float4 color:COLOR )
+{
+
+
+}
 //片元，普通模型
 PS_Output_Single PS_FillBuffer(PS_TranslateInput I)
 {
@@ -193,8 +211,18 @@ PS_Output_Single PS_FillBuffer(PS_TranslateInput I)
 		litColor = float3(brdfTerm, 0);
 		break;
 	}
+	
+	float maxLum = max(max(litColor.r, litColor.g), litColor.b);
 
-	O.color0.rgb = pow(specularIBL, 1 / 2.2);
+	//litColor = Uncharted2Tonemap(litColor) / Uncharted2Tonemap(7.0f);
+
+	litColor = pow(litColor, 1 / 2.2);
+	/*if (maxLum>7)
+	{
+		litColor = float3(0.3, 0, 0);
+	}*/
+
+	O.color0.rgb = litColor;
 	return O;
 }
 

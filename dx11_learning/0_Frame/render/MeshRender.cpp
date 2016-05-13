@@ -160,6 +160,8 @@ void StaticMeshRender::setInputLayout(ResourceMgr* pResourceMgr)
 		D3DX11_PASS_DESC passDesc;
 		materials_.at(0)->passes_.at(0)->GetDesc(&passDesc);
 		vertexLayout_ = pResourceMgr->CreateInputLayoutFromPassDesc(desc_, descCount_, passDesc);
+
+		
 	}
 }
 
